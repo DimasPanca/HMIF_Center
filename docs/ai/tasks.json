@@ -17,7 +17,7 @@
   ],
   "ringkasan": {
     "total": 116,
-    "done": 3,
+    "done": 4,
     "blocked": 1,
     "butuh_manusia": 6
   },
@@ -156,9 +156,9 @@
       "depends_on": [
         "T-002"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-01"
     },
     {
       "id": "T-009",
