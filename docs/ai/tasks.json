@@ -17,8 +17,8 @@
   ],
   "ringkasan": {
     "total": 116,
-    "done": 2,
-    "blocked": 0,
+    "done": 3,
+    "blocked": 1,
     "butuh_manusia": 6
   },
   "gerbang": [
@@ -100,9 +100,9 @@
       "depends_on": [
         "T-001"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-01"
     },
     {
       "id": "T-004",
@@ -111,9 +111,10 @@
       "depends_on": [
         "T-003"
       ],
-      "status": "TODO",
+      "status": "BLOCKED",
       "butuh_manusia": true,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Butuh database password Supabase untuk mengisi DATABASE_URL dan DIRECT_URL. API key sudah ada dan terverifikasi; bucket sudah dibuat dan uji privasi lolos. Sisa: langkah 4 dan 5 pada docs/ai/PROVISIONING_CHECKLIST.md (connection string + tiga extension)."
     },
     {
       "id": "T-005",
