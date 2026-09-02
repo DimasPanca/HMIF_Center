@@ -30,6 +30,7 @@ BEGIN
   INSERT INTO surat_template (kode_surat, varian, nama, storage_key, field_schema)
   VALUES ('05', 'PEMINJAMAN_RUANGAN', 'Surat Peminjaman Ruangan',
           'template/surat-05-peminjaman-ruangan_v1.docx', '{"fields":[]}'::JSONB)
+  ON CONFLICT (kode_surat, varian, versi) DO UPDATE SET kode_surat = EXCLUDED.kode_surat
   RETURNING id INTO v_tmpl;
 
   ---------------------------------------------------------------------------

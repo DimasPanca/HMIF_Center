@@ -29,8 +29,10 @@ BEGIN
   VALUES ('Uji 2026', '2026-09-01', '2027-08-31', 'AKTIF') RETURNING id INTO v_periode;
 
   INSERT INTO departemen (kode, nama, warna) VALUES ('KAD', 'Kaderisasi', '#1E90FF')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept_kad;
   INSERT INTO departemen (kode, nama, warna) VALUES ('KOMINFO', 'Kominfo', '#A3E635')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept_kom;
 
   INSERT INTO app_user (id, nama_lengkap, nim, email)

@@ -163,3 +163,76 @@ Sebelum menjalankan migrasi pertama:
 2. **Database → Reset database password**, lalu perbarui `DATABASE_URL` dan `DIRECT_URL`.
 3. Bangkitkan ulang `CRON_SECRET` dan perbarui di Vercel.
 4. Periksa `audit_log` untuk aktivitas yang tidak dikenali selama rentang kebocoran.
+
+---
+
+## 7. Deploy ke Vercel
+
+Diperiksa pada T-038. `npm run build` lulus **dengan maupun tanpa** `.env.local`,
+jadi build Vercel tidak akan gagal hanya karena environment variable belum
+diisi — kegagalannya baru muncul saat request pertama yang menyentuh database.
+Itu disengaja: `lib/db/connection.ts` gagal-cepat dengan pesan yang menyebut
+nama variabelnya.
+
+### Yang wajib diisi di Vercel
+
+**Project Settings → Environment Variables**, untuk environment *Production*
+dan *Preview*:
+
+| Variable | Catatan |
+|---|---|
+| `DATABASE_URL` | transaction pooler, port **6543**. Password wajib URL-encoded (`@` menjadi `%40`) |
+| `DIRECT_URL` | session pooler, port **5432**. Dipakai skrip admin, bukan runtime |
+| `NEXT_PUBLIC_SUPABASE_URL` | boleh publik |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | boleh publik ([ADR-018](../adr/ADR-018-penamaan-kunci-supabase.md)) |
+| `SUPABASE_SECRET_KEY` | **jangan pernah** diberi awalan `NEXT_PUBLIC_` |
+| `NEXT_PUBLIC_APP_URL` | URL deployment, tanpa garis miring di akhir |
+| `CRON_SECRET` | nilai sama dengan yang dipakai penjadwal |
+| `SCHEMA_VERSION`, `MAX_UPLOAD_BYTES`, `STORAGE_*` | sesuai `.env.example` |
+
+`PDF_ENABLED` dan `GDRIVE_ENABLED` tetap `false` sampai fase yang bersangkutan.
+
+### Yang tidak perlu
+
+- **`vercel.json` belum diperlukan.** Next.js App Router terdeteksi otomatis.
+  Berkas itu baru dibutuhkan saat endpoint `/api/cron/harian` ada, untuk
+  mendaftarkan Vercel Cron ([ADR-009](../adr/ADR-009-strategi-cron.md)).
+- **Migrasi tidak dijalankan Vercel.** `npm run db:migrate` dijalankan manual
+  dari mesin pengembang lewat `DIRECT_URL`. Menjalankannya saat build akan
+  membuat dua deployment bersamaan saling menimpa state migrasi.
+
+### Node
+
+`engines.node` disetel `>=20`. Vercel memakai versi Node terbaru yang
+didukungnya selama itu memenuhi syarat tersebut.
+
+---
+
+## 8. Konsekuensi RLS bagi sisi antarmuka
+
+Ditetapkan migrasi `015b` dan `015c`. **Perlu diketahui siapa pun yang
+menggarap halaman**, karena gejalanya bukan error melainkan halaman kosong.
+
+1. **Role `anon` tidak memperoleh hak apa pun.** Sebelum pengguna login,
+   Supabase client memakai role `anon`. Setiap query ke tabel `public` akan
+   mengembalikan **nol baris tanpa pesan error**. Jadi halaman yang menampilkan
+   data wajib berada di balik autentikasi; halaman publik tidak akan pernah
+   menampilkan apa pun.
+
+2. **Setelah login, role menjadi `authenticated`,** dan yang terlihat dibatasi
+   policy per peran. Pengguna tanpa baris `user_role` pada periode `AKTIF`
+   diperlakukan seperti tidak punya peran: ia melihat data yang policy-nya
+   `USING (true)` saja, dan tidak dapat menulis apa pun.
+
+3. **Penolakan baca tidak melempar error.** RLS menyaring baris, bukan menolak
+   query. Daftar yang kosong bisa berarti "memang tidak ada data" atau "tidak
+   berhak melihat" — antarmuka perlu membedakan keduanya dari peran pengguna,
+   bukan dari ada tidaknya error.
+
+4. **Penolakan tulis melempar error** dengan kode `42501`
+   (`new row violates row-level security policy`). Pesan itu tidak layak
+   ditampilkan apa adanya kepada pengguna.
+
+5. **Setiap view baru wajib `WITH (security_invoker = true)`.** Tanpa itu view
+   berjalan dengan hak pemiliknya dan menembus seluruh policy.
+   `npm run rls:coverage` menggagalkan build bila ada view yang melanggar.

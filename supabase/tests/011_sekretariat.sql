@@ -27,6 +27,7 @@ BEGIN
   INSERT INTO periode (nama, tanggal_mulai, tanggal_selesai, status)
   VALUES ('Uji 2025', '2025-09-01', '2026-08-31', 'ARSIP') RETURNING id INTO v_periode2;
   INSERT INTO departemen (kode, nama, warna) VALUES ('KAD', 'Kaderisasi', '#1E90FF')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept;
   INSERT INTO app_user (id, nama_lengkap, nim, email)
   VALUES (v_user, 'Sekum Uji', '3337220070', 'sekum2@example.test');

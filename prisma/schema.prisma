@@ -1,0 +1,1109 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model migrasi {
+  nama       String   @id
+  checksum   String
+  applied_at DateTime @default(now()) @db.Timestamptz(6)
+  durasi_ms  Int?
+
+  @@map("_migrasi")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model action_item {
+  id             String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  notulensi_id   String       @db.Uuid
+  tugas          String
+  pic_id         String?      @db.Uuid
+  deadline       DateTime?    @db.Date
+  kanban_card_id String?      @db.Uuid
+  kanban_card    kanban_card? @relation(fields: [kanban_card_id], references: [id], onUpdate: NoAction)
+  notulensi      notulensi    @relation(fields: [notulensi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user       app_user?    @relation(fields: [pic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([notulensi_id], map: "action_item_notulensi")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model app_config {
+  key        String    @id
+  value      Json
+  updated_by String?   @db.Uuid
+  updated_at DateTime  @default(now()) @db.Timestamptz(6)
+  app_user   app_user? @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model app_user {
+  id                                                String                 @id @db.Uuid
+  nama_lengkap                                      String
+  nim                                               String                 @unique(map: "app_user_nim_unique")
+  email                                             String                 @unique
+  angkatan                                          Int?
+  no_hp                                             String?
+  avatar_path                                       String?
+  is_active                                         Boolean                @default(true)
+  created_at                                        DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                                        DateTime               @default(now()) @db.Timestamptz(6)
+  action_item                                       action_item[]
+  app_config                                        app_config[]
+  audit_log                                         audit_log[]
+  backup                                            backup[]
+  booking_ruangan                                   booking_ruangan[]
+  checklist_item                                    checklist_item[]
+  divisi                                            divisi[]
+  divisi_member                                     divisi_member[]
+  dokumen                                           dokumen[]
+  gantt_task                                        gantt_task[]
+  image                                             image[]
+  invitation_invitation_created_byToapp_user        invitation[]           @relation("invitation_created_byToapp_user")
+  invitation_invitation_user_idToapp_user           invitation[]           @relation("invitation_user_idToapp_user")
+  job_desk                                          job_desk[]
+  kanban_card_kanban_card_assignee_idToapp_user     kanban_card[]          @relation("kanban_card_assignee_idToapp_user")
+  kanban_card_kanban_card_created_byToapp_user      kanban_card[]          @relation("kanban_card_created_byToapp_user")
+  kendala_kendala_assignee_idToapp_user             kendala[]              @relation("kendala_assignee_idToapp_user")
+  kendala_kendala_dibuat_olehToapp_user             kendala[]              @relation("kendala_dibuat_olehToapp_user")
+  kendala_reply                                     kendala_reply[]
+  kepanitiaan_kepanitiaan_bendaharaToapp_user       kepanitiaan[]          @relation("kepanitiaan_bendaharaToapp_user")
+  kepanitiaan_kepanitiaan_ketua_pelaksanaToapp_user kepanitiaan[]          @relation("kepanitiaan_ketua_pelaksanaToapp_user")
+  kepanitiaan_kepanitiaan_sekretarisToapp_user      kepanitiaan[]          @relation("kepanitiaan_sekretarisToapp_user")
+  kepanitiaan_kepanitiaan_wakil_pelaksanaToapp_user kepanitiaan[]          @relation("kepanitiaan_wakil_pelaksanaToapp_user")
+  lpj_lpj_disetujui_bendum_olehToapp_user           lpj[]                  @relation("lpj_disetujui_bendum_olehToapp_user")
+  lpj_lpj_disetujui_ketua_olehToapp_user            lpj[]                  @relation("lpj_disetujui_ketua_olehToapp_user")
+  nota_nota_uploader_idToapp_user                   nota[]                 @relation("nota_uploader_idToapp_user")
+  nota_nota_verified_byToapp_user                   nota[]                 @relation("nota_verified_byToapp_user")
+  notulensi_notulensi_notulis_idToapp_user          notulensi[]            @relation("notulensi_notulis_idToapp_user")
+  notulensi_notulensi_pemimpin_idToapp_user         notulensi[]            @relation("notulensi_pemimpin_idToapp_user")
+  notulensi_attendance                              notulensi_attendance[]
+  pengurus                                          pengurus[]
+  proker_proker_dibuat_olehToapp_user               proker[]               @relation("proker_dibuat_olehToapp_user")
+  proker_proker_disetujui_olehToapp_user            proker[]               @relation("proker_disetujui_olehToapp_user")
+  proker_proker_penanggung_jawabToapp_user          proker[]               @relation("proker_penanggung_jawabToapp_user")
+  proposal                                          proposal[]
+  rab_meta                                          rab_meta[]
+  signature                                         signature?
+  surat_surat_dibuat_olehToapp_user                 surat[]                @relation("surat_dibuat_olehToapp_user")
+  surat_surat_disetujui_olehToapp_user              surat[]                @relation("surat_disetujui_olehToapp_user")
+  surat_signer                                      surat_signer[]
+  tor                                               tor[]
+  user_role                                         user_role[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_log {
+  id         BigInt    @id @default(autoincrement())
+  user_id    String?   @db.Uuid
+  periode_id String?   @db.Uuid
+  aksi       String
+  entitas    String
+  entitas_id String?
+  nilai_lama Json?
+  nilai_baru Json?
+  ip_address String?   @db.Inet
+  user_agent String?
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  periode    periode?  @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user   app_user? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([entitas, entitas_id], map: "audit_entitas")
+  @@index([user_id, created_at(sort: Desc)], map: "audit_user_waktu")
+  @@index([created_at(sort: Desc)], map: "audit_waktu")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model backup {
+  id            String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  jenis         backup_jenis
+  status        backup_status @default(BERJALAN)
+  periode_id    String?       @db.Uuid
+  manifest      Json          @default("{}")
+  storage_key   String
+  ukuran_bytes  BigInt?
+  error_message String?
+  dibuat_oleh   String?       @db.Uuid
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at  DateTime?     @db.Timestamptz(6)
+  app_user      app_user?     @relation(fields: [dibuat_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode       periode?      @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([jenis, created_at(sort: Desc)], map: "backup_jenis_waktu")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model booking_ruangan {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  ruangan_id     String    @db.Uuid
+  periode_id     String    @db.Uuid
+  kegiatan       String
+  tanggal        DateTime  @db.Date
+  waktu_mulai    DateTime? @db.Time(6)
+  waktu_selesai  DateTime? @db.Time(6)
+  jumlah_peserta Int?
+  keperluan      String?
+  surat_id       String?   @db.Uuid
+  dibuat_oleh    String    @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  app_user       app_user  @relation(fields: [dibuat_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode        periode   @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ruangan        ruangan   @relation(fields: [ruangan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  surat          surat?    @relation(fields: [surat_id], references: [id], onUpdate: NoAction)
+
+  @@index([ruangan_id, tanggal], map: "booking_tanggal")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model checklist_item {
+  id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  card_id     String      @db.Uuid
+  teks        String
+  selesai     Boolean     @default(false)
+  assignee_id String?     @db.Uuid
+  deadline    DateTime?   @db.Date
+  urutan      Int         @default(0)
+  app_user    app_user?   @relation(fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  kanban_card kanban_card @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([card_id, urutan], map: "checklist_card")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model departemen {
+  id          String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kode        String        @unique
+  nama        String
+  warna       String
+  urutan      Int           @default(0)
+  is_active   Boolean       @default(true)
+  gantt_chart gantt_chart[]
+  kanban_card kanban_card[]
+  kendala     kendala[]
+  notulensi   notulensi[]
+  pengurus    pengurus[]
+  proker      proker[]
+  surat       surat[]
+  user_role   user_role[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model divisi {
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id String          @db.Uuid
+  nama           String
+  koordinator_id String?         @db.Uuid
+  warna          String?
+  urutan         Int             @default(0)
+  kepanitiaan    kepanitiaan     @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user       app_user?       @relation(fields: [koordinator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  divisi_member  divisi_member[]
+  gantt_chart    gantt_chart[]
+  job_desk       job_desk?
+  kanban_card    kanban_card[]
+  kendala        kendala[]
+  nota           nota[]
+  rab_section    rab_section[]
+
+  @@unique([kepanitiaan_id, nama], map: "divisi_unik_per_acara")
+  @@index([kepanitiaan_id], map: "divisi_kepanitiaan")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model divisi_member {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  divisi_id String   @db.Uuid
+  user_id   String   @db.Uuid
+  peran     String?
+  divisi    divisi   @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user  app_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([divisi_id, user_id], map: "divisi_member_unik")
+  @@index([user_id], map: "divisi_member_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model divisi_preset {
+  id        String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nama      String  @unique
+  deskripsi String
+  urutan    Int
+  is_active Boolean @default(true)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dokumen {
+  id             String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  surat_id       String?      @db.Uuid
+  kepanitiaan_id String?      @db.Uuid
+  jenis          String
+  format         String
+  storage_key    String
+  file_size      BigInt?
+  generated_by   String       @db.Uuid
+  created_at     DateTime     @default(now()) @db.Timestamptz(6)
+  app_user       app_user     @relation(fields: [generated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  kepanitiaan    kepanitiaan? @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  surat          surat?       @relation(fields: [surat_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model gantt_chart {
+  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  scope          String
+  proker_id      String?       @db.Uuid
+  divisi_id      String?       @db.Uuid
+  departemen_id  String?       @db.Uuid
+  kepanitiaan_id String?       @db.Uuid
+  judul          String
+  created_at     DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime      @default(now()) @db.Timestamptz(6)
+  departemen     departemen?   @relation(fields: [departemen_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  divisi         divisi?       @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  kepanitiaan    kepanitiaan?  @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  proker         proker?       @relation(fields: [proker_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  gantt_group    gantt_group[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model gantt_dependency {
+  id                                                String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  from_task                                         String     @db.Uuid
+  to_task                                           String     @db.Uuid
+  tipe                                              String     @default("FS")
+  gantt_task_gantt_dependency_from_taskTogantt_task gantt_task @relation("gantt_dependency_from_taskTogantt_task", fields: [from_task], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  gantt_task_gantt_dependency_to_taskTogantt_task   gantt_task @relation("gantt_dependency_to_taskTogantt_task", fields: [to_task], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([from_task, to_task], map: "gantt_dependency_unik")
+  @@index([from_task], map: "gantt_dependency_from")
+  @@index([to_task], map: "gantt_dependency_to")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model gantt_group {
+  id          String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  chart_id    String       @db.Uuid
+  nama        String
+  warna       String
+  pj_nama     String?
+  urutan      Int          @default(0)
+  collapsed   Boolean      @default(false)
+  gantt_chart gantt_chart  @relation(fields: [chart_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  gantt_task  gantt_task[]
+
+  @@index([chart_id, urutan], map: "gantt_group_chart")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model gantt_task {
+  id                                                      String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  group_id                                                String             @db.Uuid
+  nama                                                    String
+  tanggal_mulai                                           DateTime           @db.Date
+  tanggal_selesai                                         DateTime           @db.Date
+  progres                                                 Int                @default(0) @db.SmallInt
+  assignee_id                                             String?            @db.Uuid
+  is_milestone                                            Boolean            @default(false)
+  urutan                                                  Int                @default(0)
+  created_at                                              DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                                              DateTime           @default(now()) @db.Timestamptz(6)
+  gantt_dependency_gantt_dependency_from_taskTogantt_task gantt_dependency[] @relation("gantt_dependency_from_taskTogantt_task")
+  gantt_dependency_gantt_dependency_to_taskTogantt_task   gantt_dependency[] @relation("gantt_dependency_to_taskTogantt_task")
+  app_user                                                app_user?          @relation(fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  gantt_group                                             gantt_group        @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([group_id, urutan], map: "gantt_task_group")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model image {
+  id                 String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  uploader_id        String     @db.Uuid
+  original_filename  String
+  storage_uuid       String     @unique
+  master_path        String
+  preview_path       String
+  thumbnail_path     String
+  original_path      String?
+  original_mime_type String
+  master_mime_type   String
+  original_width     Int
+  original_height    Int
+  master_width       Int
+  master_height      Int
+  master_file_size   BigInt
+  kind               image_kind @default(FOTO)
+  is_scanned         Boolean    @default(false)
+  created_at         DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime   @default(now()) @db.Timestamptz(6)
+  app_user           app_user   @relation(fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nota               nota[]
+
+  @@index([uploader_id, created_at(sort: Desc)], map: "image_uploader")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invitation {
+  id                                       String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email                                    String
+  token_hash                               String    @unique
+  user_id                                  String    @db.Uuid
+  expires_at                               DateTime  @db.Timestamptz(6)
+  used_at                                  DateTime? @db.Timestamptz(6)
+  created_by                               String    @db.Uuid
+  created_at                               DateTime  @default(now()) @db.Timestamptz(6)
+  app_user_invitation_created_byToapp_user app_user  @relation("invitation_created_byToapp_user", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_invitation_user_idToapp_user    app_user  @relation("invitation_user_idToapp_user", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model job_desk {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  divisi_id  String    @unique @db.Uuid
+  konten     Json?
+  updated_by String?   @db.Uuid
+  updated_at DateTime  @default(now()) @db.Timestamptz(6)
+  divisi     divisi    @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user   app_user? @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model kanban_card {
+  id                                         String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  proker_id                                  String?          @db.Uuid
+  divisi_id                                  String?          @db.Uuid
+  departemen_id                              String?          @db.Uuid
+  judul                                      String
+  deskripsi                                  String?
+  kolom                                      kanban_kolom     @default(TODO)
+  prioritas                                  prioritas        @default(SEDANG)
+  assignee_id                                String?          @db.Uuid
+  deadline                                   DateTime?        @db.Date
+  urutan                                     Int              @default(0)
+  created_by                                 String           @db.Uuid
+  created_at                                 DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at                                 DateTime         @default(now()) @db.Timestamptz(6)
+  action_item                                action_item[]
+  checklist_item                             checklist_item[]
+  app_user_kanban_card_assignee_idToapp_user app_user?        @relation("kanban_card_assignee_idToapp_user", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_kanban_card_created_byToapp_user  app_user         @relation("kanban_card_created_byToapp_user", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departemen                                 departemen?      @relation(fields: [departemen_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  divisi                                     divisi?          @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  proker                                     proker?          @relation(fields: [proker_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model kendala {
+  id                                     String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  departemen_id                          String?         @db.Uuid
+  divisi_id                              String?         @db.Uuid
+  proker_id                              String?         @db.Uuid
+  judul                                  String
+  deskripsi                              String
+  prioritas                              prioritas       @default(SEDANG)
+  status                                 kendala_status  @default(TERBUKA)
+  assignee_id                            String?         @db.Uuid
+  dibuat_oleh                            String          @db.Uuid
+  resolved_at                            DateTime?       @db.Timestamptz(6)
+  catatan_penyelesaian                   String?
+  created_at                             DateTime        @default(now()) @db.Timestamptz(6)
+  app_user_kendala_assignee_idToapp_user app_user?       @relation("kendala_assignee_idToapp_user", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departemen                             departemen?     @relation(fields: [departemen_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user_kendala_dibuat_olehToapp_user app_user        @relation("kendala_dibuat_olehToapp_user", fields: [dibuat_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  divisi                                 divisi?         @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  proker                                 proker?         @relation(fields: [proker_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  kendala_reply                          kendala_reply[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model kendala_reply {
+  id                  String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kendala_id          String          @db.Uuid
+  parent_id           String?         @db.Uuid
+  konten              String
+  penulis_id          String          @db.Uuid
+  created_at          DateTime        @default(now()) @db.Timestamptz(6)
+  kendala             kendala         @relation(fields: [kendala_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  kendala_reply       kendala_reply?  @relation("kendala_replyTokendala_reply", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_kendala_reply kendala_reply[] @relation("kendala_replyTokendala_reply")
+  app_user            app_user        @relation(fields: [penulis_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([kendala_id, created_at], map: "kendala_reply_kendala")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model kepanitiaan {
+  id                                             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  proker_id                                      String        @unique @db.Uuid
+  nama_acara                                     String
+  tema                                           String?
+  kode_kegiatan                                  String?
+  ketua_pelaksana                                String?       @db.Uuid
+  wakil_pelaksana                                String?       @db.Uuid
+  sekretaris                                     String?       @db.Uuid
+  bendahara                                      String?       @db.Uuid
+  target_anggaran                                Decimal?      @db.Decimal(15, 2)
+  created_at                                     DateTime      @default(now()) @db.Timestamptz(6)
+  divisi                                         divisi[]
+  dokumen                                        dokumen[]
+  gantt_chart                                    gantt_chart[]
+  app_user_kepanitiaan_bendaharaToapp_user       app_user?     @relation("kepanitiaan_bendaharaToapp_user", fields: [bendahara], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_kepanitiaan_ketua_pelaksanaToapp_user app_user?     @relation("kepanitiaan_ketua_pelaksanaToapp_user", fields: [ketua_pelaksana], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proker                                         proker        @relation(fields: [proker_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user_kepanitiaan_sekretarisToapp_user      app_user?     @relation("kepanitiaan_sekretarisToapp_user", fields: [sekretaris], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_kepanitiaan_wakil_pelaksanaToapp_user app_user?     @relation("kepanitiaan_wakil_pelaksanaToapp_user", fields: [wakil_pelaksana], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lpj                                            lpj?
+  pemasukan                                      pemasukan[]
+  peserta                                        peserta[]
+  proposal                                       proposal?
+  rab_meta                                       rab_meta?
+  rundown                                        rundown[]
+  surat                                          surat[]
+  tor                                            tor?
+
+  @@index([ketua_pelaksana], map: "kepanitiaan_ketuplak")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model lpj {
+  id                                           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id                               String      @unique @db.Uuid
+  data_manual                                  Json        @default("{}")
+  analisis                                     Json?
+  status                                       lpj_status  @default(DRAFT)
+  disetujui_bendum_oleh                        String?     @db.Uuid
+  disetujui_bendum_at                          DateTime?   @db.Timestamptz(6)
+  disetujui_ketua_oleh                         String?     @db.Uuid
+  disetujui_ketua_at                           DateTime?   @db.Timestamptz(6)
+  updated_at                                   DateTime    @default(now()) @db.Timestamptz(6)
+  app_user_lpj_disetujui_bendum_olehToapp_user app_user?   @relation("lpj_disetujui_bendum_olehToapp_user", fields: [disetujui_bendum_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_lpj_disetujui_ketua_olehToapp_user  app_user?   @relation("lpj_disetujui_ketua_olehToapp_user", fields: [disetujui_ketua_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  kepanitiaan                                  kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nota {
+  id                                  String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  divisi_id                           String         @db.Uuid
+  image_id                            String         @db.Uuid
+  uploader_id                         String         @db.Uuid
+  tanggal_belanja                     DateTime       @db.Date
+  total_nota                          Decimal        @db.Decimal(15, 2)
+  keterangan                          String?
+  status                              nota_status    @default(MENUNGGU_VERIFIKASI)
+  verified_by                         String?        @db.Uuid
+  verified_at                         DateTime?      @db.Timestamptz(6)
+  alasan_penolakan                    String?
+  created_at                          DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at                          DateTime       @default(now()) @db.Timestamptz(6)
+  divisi                              divisi         @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  image                               image          @relation(fields: [image_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_nota_uploader_idToapp_user app_user       @relation("nota_uploader_idToapp_user", fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_nota_verified_byToapp_user app_user?      @relation("nota_verified_byToapp_user", fields: [verified_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nota_alokasi                        nota_alokasi[]
+
+  @@index([divisi_id, status], map: "nota_divisi_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nota_alokasi {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nota_id         String    @db.Uuid
+  rab_item_id     String?   @db.Uuid
+  uraian_luar_rab String?
+  jumlah_aktual   Decimal?  @db.Decimal(12, 2)
+  harga_aktual    Decimal?  @db.Decimal(15, 2)
+  nominal         Decimal   @db.Decimal(15, 2)
+  nota            nota      @relation(fields: [nota_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rab_item        rab_item? @relation(fields: [rab_item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([nota_id], map: "nota_alokasi_nota")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model notulensi {
+  id                                       String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  periode_id                               String                 @db.Uuid
+  departemen_id                            String?                @db.Uuid
+  judul                                    String
+  tanggal                                  DateTime               @db.Date
+  waktu_mulai                              DateTime?              @db.Time(6)
+  waktu_selesai                            DateTime?              @db.Time(6)
+  tempat                                   String?
+  pemimpin_id                              String?                @db.Uuid
+  notulis_id                               String?                @db.Uuid
+  konten                                   Json?
+  keputusan                                Json?
+  created_at                               DateTime               @default(now()) @db.Timestamptz(6)
+  action_item                              action_item[]
+  departemen                               departemen?            @relation(fields: [departemen_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_notulensi_notulis_idToapp_user  app_user?              @relation("notulensi_notulis_idToapp_user", fields: [notulis_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_notulensi_pemimpin_idToapp_user app_user?              @relation("notulensi_pemimpin_idToapp_user", fields: [pemimpin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode                                  periode                @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notulensi_attendance                     notulensi_attendance[]
+
+  @@index([periode_id, tanggal(sort: Desc)], map: "notulensi_periode")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notulensi_attendance {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  notulensi_id String    @db.Uuid
+  user_id      String    @db.Uuid
+  status       kehadiran @default(ALFA)
+  notulensi    notulensi @relation(fields: [notulensi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user     app_user  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([notulensi_id, user_id], map: "notulensi_hadir_unik")
+  @@index([user_id, status], map: "notulensi_hadir_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pemasukan {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id String      @db.Uuid
+  no_urut        Int
+  keterangan     String
+  saldo          Decimal     @default(0) @db.Decimal(15, 2)
+  kepanitiaan    kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([kepanitiaan_id, no_urut], map: "pemasukan_urut_unik")
+  @@index([kepanitiaan_id, no_urut], map: "pemasukan_kepanitiaan")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pengurus {
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  periode_id    String      @db.Uuid
+  user_id       String?     @db.Uuid
+  nama_lengkap  String
+  nim           String
+  jabatan       String
+  departemen_id String?     @db.Uuid
+  angkatan      Int?
+  is_aktif      Boolean     @default(true)
+  departemen    departemen? @relation(fields: [departemen_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode       periode     @relation(fields: [periode_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user      app_user?   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@unique([periode_id, nim], map: "pengurus_nim_unik")
+  @@index([periode_id, is_aktif], map: "pengurus_periode")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model periode {
+  id               String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nama             String
+  tanggal_mulai    DateTime          @db.Date
+  tanggal_selesai  DateTime          @db.Date
+  status           periode_status    @default(PERSIAPAN)
+  nomor_surat_awal Int               @default(1)
+  created_at       DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime          @default(now()) @db.Timestamptz(6)
+  audit_log        audit_log[]
+  backup           backup[]
+  booking_ruangan  booking_ruangan[]
+  notulensi        notulensi[]
+  pengurus         pengurus[]
+  proker           proker[]
+  proker_lock      proker_lock[]
+  surat            surat[]
+  surat_counter    surat_counter?
+  user_role        user_role[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model peserta {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id String      @db.Uuid
+  no_urut        Int
+  nama_lengkap   String
+  nim            String?
+  sudah_bayar    Boolean     @default(false)
+  tanggal_bayar  DateTime?   @db.Date
+  jumlah         Decimal     @default(0) @db.Decimal(15, 2)
+  kepanitiaan    kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([kepanitiaan_id, no_urut], map: "peserta_urut_unik")
+  @@index([kepanitiaan_id, no_urut], map: "peserta_kepanitiaan")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model proker {
+  id                                         String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  periode_id                                 String          @db.Uuid
+  departemen_id                              String          @db.Uuid
+  nama                                       String
+  kategori                                   proker_kategori
+  status                                     proker_status   @default(DRAFT)
+  deskripsi                                  String?
+  tujuan                                     String?
+  sasaran                                    String?
+  estimasi_peserta                           Int?
+  penanggung_jawab                           String?         @db.Uuid
+  tanggal_mulai_persiapan                    DateTime?       @db.Date
+  tanggal_hari_h_mulai                       DateTime?       @db.Date
+  tanggal_hari_h_selesai                     DateTime?       @db.Date
+  pola_ulang                                 Json?
+  estimasi_anggaran                          Decimal?        @db.Decimal(15, 2)
+  sumber_dana                                String[]
+  diajukan_at                                DateTime?       @db.Timestamptz(6)
+  disetujui_oleh                             String?         @db.Uuid
+  disetujui_at                               DateTime?       @db.Timestamptz(6)
+  alasan_penolakan                           String?
+  dibuat_oleh                                String          @db.Uuid
+  created_at                                 DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at                                 DateTime        @default(now()) @db.Timestamptz(6)
+  gantt_chart                                gantt_chart[]
+  kanban_card                                kanban_card[]
+  kendala                                    kendala[]
+  kepanitiaan                                kepanitiaan?
+  departemen                                 departemen      @relation(fields: [departemen_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_proker_dibuat_olehToapp_user      app_user        @relation("proker_dibuat_olehToapp_user", fields: [dibuat_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_proker_disetujui_olehToapp_user   app_user?       @relation("proker_disetujui_olehToapp_user", fields: [disetujui_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_proker_penanggung_jawabToapp_user app_user?       @relation("proker_penanggung_jawabToapp_user", fields: [penanggung_jawab], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode                                    periode         @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proker_lock                                proker_lock?
+
+  @@index([departemen_id], map: "proker_departemen")
+  @@index([periode_id, status], map: "proker_periode_status")
+}
+
+/// This table contains exclusion constraints and requires additional setup for migrations. Visit https://pris.ly/d/exclusion-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model proker_lock {
+  id         String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  proker_id  String                   @unique @db.Uuid
+  periode_id String                   @db.Uuid
+  rentang    Unsupported("daterange")
+  created_at DateTime                 @default(now()) @db.Timestamptz(6)
+  periode    periode                  @relation(fields: [periode_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  proker     proker                   @relation(fields: [proker_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([rentang], map: "proker_lock_rentang", type: Gist)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model proposal {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id String      @unique @db.Uuid
+  data           Json        @default("{}")
+  updated_by     String?     @db.Uuid
+  updated_at     DateTime    @default(now()) @db.Timestamptz(6)
+  kepanitiaan    kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user       app_user?   @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rab_item {
+  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  section_id     String         @db.Uuid
+  no_urut        Int
+  jenis_barang   String
+  jumlah_teks    String
+  jumlah_numerik Decimal?       @db.Decimal(12, 2)
+  harga_satuan   Decimal        @default(0) @db.Decimal(15, 2)
+  total          Decimal        @default(0) @db.Decimal(15, 2)
+  total_manual   Boolean        @default(false)
+  keterangan     String?
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+  nota_alokasi   nota_alokasi[]
+  rab_section    rab_section    @relation(fields: [section_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([section_id, no_urut], map: "rab_item_urut_unik")
+  @@index([section_id, no_urut], map: "rab_item_section")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rab_meta {
+  kepanitiaan_id    String      @id @db.Uuid
+  status            rab_status  @default(DRAFT)
+  dana_tak_terduga  Decimal     @default(0) @db.Decimal(15, 2)
+  disetujui_oleh    String?     @db.Uuid
+  disetujui_at      DateTime?   @db.Timestamptz(6)
+  alasan_buka_kunci String?
+  updated_at        DateTime    @default(now()) @db.Timestamptz(6)
+  app_user          app_user?   @relation(fields: [disetujui_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  kepanitiaan       kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rab_section {
+  id        String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  divisi_id String     @db.Uuid
+  nama      String
+  urutan    Int        @default(0)
+  rab_item  rab_item[]
+  divisi    divisi     @relation(fields: [divisi_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([divisi_id, nama], map: "rab_section_unik")
+  @@index([divisi_id, urutan], map: "rab_section_divisi")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ruangan {
+  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nama            String
+  lokasi          String?
+  kapasitas       Int?
+  pengelola       String?
+  catatan         String?
+  is_active       Boolean           @default(true)
+  booking_ruangan booking_ruangan[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rundown {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id String      @db.Uuid
+  tanggal        DateTime    @db.Date
+  waktu_mulai    DateTime?   @db.Time(6)
+  waktu_selesai  DateTime?   @db.Time(6)
+  acara          String
+  keterangan     String?
+  urutan         Int         @default(0)
+  kepanitiaan    kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([kepanitiaan_id, tanggal, urutan], map: "rundown_kepanitiaan")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model signature {
+  user_id     String   @id @db.Uuid
+  storage_key String
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  app_user    app_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model surat {
+  id                                      String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  periode_id                              String            @db.Uuid
+  template_id                             String            @db.Uuid
+  kode_surat                              String
+  nomor_urut                              Int?
+  kode_administrasi                       String            @default("UN43.3.7")
+  kode_kegiatan                           String            @default("HMIF")
+  bulan_romawi                            String?
+  tahun                                   Int?
+  nomor_lengkap                           String?
+  tanggal_surat                           DateTime          @db.Date
+  kota                                    String            @default("Cilegon")
+  lampiran                                String?           @default("-")
+  perihal                                 String
+  tujuan_nama                             String
+  tujuan_alamat                           String
+  isi_html                                String?
+  data_dinamis                            Json              @default("{}")
+  status                                  surat_status      @default(DRAFT)
+  format_output                           String            @default("DOCX")
+  kepanitiaan_id                          String?           @db.Uuid
+  departemen_id                           String?           @db.Uuid
+  dibuat_oleh                             String            @db.Uuid
+  disetujui_oleh                          String?           @db.Uuid
+  disetujui_at                            DateTime?         @db.Timestamptz(6)
+  alasan_penolakan                        String?
+  created_at                              DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at                              DateTime          @default(now()) @db.Timestamptz(6)
+  booking_ruangan                         booking_ruangan[]
+  dokumen                                 dokumen[]
+  departemen                              departemen?       @relation(fields: [departemen_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_surat_dibuat_olehToapp_user    app_user          @relation("surat_dibuat_olehToapp_user", fields: [dibuat_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user_surat_disetujui_olehToapp_user app_user?         @relation("surat_disetujui_olehToapp_user", fields: [disetujui_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  kepanitiaan                             kepanitiaan?      @relation(fields: [kepanitiaan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode                                 periode           @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  surat_template                          surat_template    @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  surat_signer                            surat_signer[]
+
+  @@index([periode_id, status], map: "surat_status_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model surat_counter {
+  periode_id     String   @id @db.Uuid
+  nomor_terakhir Int      @default(0)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+  periode        periode  @relation(fields: [periode_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model surat_signer {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  surat_id      String    @db.Uuid
+  urutan        Int
+  posisi        String
+  jabatan       String
+  nama          String
+  nim           String?
+  user_id       String?   @db.Uuid
+  pakai_ttd     Boolean   @default(false)
+  pakai_stempel Boolean   @default(false)
+  surat         surat     @relation(fields: [surat_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user      app_user? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([surat_id, urutan], map: "surat_signer_urut_unik")
+  @@index([surat_id, urutan], map: "surat_signer_surat")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model surat_template {
+  id           String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kode_surat   String
+  varian       String
+  nama         String
+  storage_key  String
+  field_schema Json
+  versi        Int     @default(1)
+  is_active    Boolean @default(true)
+  surat        surat[]
+
+  @@unique([kode_surat, varian, versi], map: "surat_template_unik")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tor {
+  id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  kepanitiaan_id String      @unique @db.Uuid
+  data           Json        @default("{}")
+  updated_by     String?     @db.Uuid
+  updated_at     DateTime    @default(now()) @db.Timestamptz(6)
+  kepanitiaan    kepanitiaan @relation(fields: [kepanitiaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user       app_user?   @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tujuan_surat_preset {
+  id        String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  label     String  @unique
+  nama      String?
+  alamat    String?
+  urutan    Int
+  is_active Boolean @default(true)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_role {
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id       String      @db.Uuid
+  periode_id    String      @db.Uuid
+  role          role_code
+  departemen_id String?     @db.Uuid
+  jabatan_teks  String?
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  departemen    departemen? @relation(fields: [departemen_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  periode       periode     @relation(fields: [periode_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  app_user      app_user    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, periode_id, role, departemen_id], map: "user_role_unik")
+  @@index([user_id, periode_id], map: "user_role_lookup")
+}
+
+/// This view or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+view v_antrian_approval {
+  jenis          String?
+  entitas_id     String?     @db.Uuid
+  periode_id     String?     @db.Uuid
+  judul          String?
+  asal           String?
+  pengaju        String?
+  diajukan_pada  DateTime?   @db.Timestamptz(6)
+  approver_roles role_code[]
+  revisi         Boolean?
+}
+
+/// This view or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+view v_master_gantt {
+  departemen_id           String?          @db.Uuid
+  departemen_nama         String?
+  departemen_warna        String?
+  departemen_urutan       Int?
+  proker_id               String?          @db.Uuid
+  proker_nama             String?
+  kategori                proker_kategori?
+  status                  proker_status?
+  tanggal_mulai_persiapan DateTime?        @db.Date
+  tanggal_hari_h_mulai    DateTime?        @db.Date
+  tanggal_hari_h_selesai  DateTime?        @db.Date
+  pj_nama                 String?
+  progres                 Decimal?         @db.Decimal
+}
+
+/// This view or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+view v_ringkasan_rab {
+  divisi_id                 String?  @db.Uuid
+  divisi_nama               String?
+  kepanitiaan_id            String?  @db.Uuid
+  nama_acara                String?
+  total_rencana             Decimal? @db.Decimal
+  total_aktual              Decimal? @db.Decimal
+  sisa                      Decimal? @db.Decimal
+  serapan_persen            Decimal? @db.Decimal
+  jumlah_nota_terverifikasi BigInt?
+}
+
+enum backup_jenis {
+  OTOMATIS
+  MANUAL
+  PRA_RESTORE
+}
+
+enum backup_status {
+  BERJALAN
+  SUKSES
+  GAGAL
+}
+
+enum image_kind {
+  FOTO
+  DOKUMEN
+}
+
+enum kanban_kolom {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum kehadiran {
+  HADIR
+  IZIN
+  SAKIT
+  ALFA
+}
+
+enum kendala_status {
+  TERBUKA
+  SEDANG_DITANGANI
+  SELESAI
+}
+
+enum lpj_status {
+  DRAFT
+  DIAJUKAN
+  DISETUJUI_BENDUM
+  FINAL
+}
+
+enum nota_status {
+  DIUNGGAH
+  MENUNGGU_VERIFIKASI
+  TERVERIFIKASI
+  DITOLAK
+  PERLU_PERBAIKAN
+}
+
+enum periode_status {
+  AKTIF
+  ARSIP
+  PERSIAPAN
+}
+
+enum prioritas {
+  RENDAH
+  SEDANG
+  TINGGI
+  KRITIS
+}
+
+enum proker_kategori {
+  TERJADWAL
+  BERKALA
+  RESPONSIF
+}
+
+enum proker_status {
+  DRAFT
+  MENUNGGU_APPROVAL
+  MENUNGGU_APPROVAL_REVISI
+  DISETUJUI
+  BERJALAN
+  SELESAI
+  DITOLAK
+  PERLU_REVISI
+  DIBATALKAN
+}
+
+enum rab_status {
+  DRAFT
+  DIAJUKAN
+  DISETUJUI
+  REALISASI
+  SELESAI
+}
+
+enum role_code {
+  ADMIN
+  KETUA
+  WAKIL
+  SEKUM
+  BENDUM
+  KADEPT
+  ANGGOTA
+  BPH
+}
+
+enum surat_status {
+  DRAFT
+  MENUNGGU_APPROVAL
+  DISETUJUI
+  TERBIT
+  DITOLAK
+  DIBATALKAN
+}
