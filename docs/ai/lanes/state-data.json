@@ -103,9 +103,9 @@
       "depends_on": [
         "T-020"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-022",
@@ -114,9 +114,9 @@
       "depends_on": [
         "T-021"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-023",
@@ -125,9 +125,9 @@
       "depends_on": [
         "T-022"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-024",
@@ -136,9 +136,9 @@
       "depends_on": [
         "T-023"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-025",
@@ -147,9 +147,9 @@
       "depends_on": [
         "T-024"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-026",
@@ -158,9 +158,9 @@
       "depends_on": [
         "T-025"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-027",
@@ -169,9 +169,9 @@
       "depends_on": [
         "T-026"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-028",
@@ -180,7 +180,7 @@
       "depends_on": [
         "T-027"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
