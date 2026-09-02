@@ -27,11 +27,11 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 
 | # | Inti invariant | Lapis | Status | Bukti / pemilik celah |
 |---|---|---|---|---|
-| INV-01 | Otorisasi dua lapis independen: RLS + guard aplikasi | RLS+APP | **SEBAGIAN** | RLS aktif pada 46 tabel dengan 180 policy; `npm run rls:coverage` menjaga cakupannya. **Belum terbukti oleh test tersimpan** — lihat catatan 7. Lapis guard aplikasi belum ada: T-045 dan seterusnya |
-| INV-02 | Klien tidak pernah menentukan role | RLS+APP | **SEBAGIAN** | `015a_rls_helpers.sql` menyisipkan klaim `role: ADMIN` palsu ke dalam JWT dan memastikan `auth_roles()` tetap kosong serta `is_pimpinan()` tetap false — role hanya dibaca dari `user_role`. **Belum terbukti:** guard di sisi service. T-045 dan seterusnya |
-| INV-03 | `BPH` tidak pernah memberi hak tulis | RLS | **SEBAGIAN** | `rls-coverage.ts` menolak setiap policy tulis yang menyebut `'BPH'` — 0 dari 180 saat ini. Probe langsung sebagai role `authenticated` juga membuktikan BPH ditolak membuat proker dan mengubah departemen, tetapi tetap dapat membaca. **Belum menjadi test tersimpan:** T-039 |
+| INV-01 | Otorisasi dua lapis independen: RLS + guard aplikasi | RLS+APP | **SEBAGIAN** | Lapis RLS **TERBUKTI**: `015c_rls_negatif.sql` menguji sebagai role `authenticated` sungguhan, dan 4 uji mutasi membuktikannya tidak sia-sia (lihat [RLS_TEST_MATRIX](RLS_TEST_MATRIX.md)). **Belum ada:** lapis guard aplikasi. T-045 dan seterusnya |
+| INV-02 | Klien tidak pernah menentukan role | RLS+APP | **SEBAGIAN** | `015a_rls_helpers.sql` menyisipkan klaim `role: ADMIN` palsu ke JWT dan memastikan `auth_roles()` tetap kosong; `015c_rls_negatif.sql` membuktikan Anggota tidak dapat menyisipkan `user_role` untuk dirinya sendiri. **Belum terbukti:** guard di sisi service. T-045 dan seterusnya |
+| INV-03 | `BPH` tidak pernah memberi hak tulis | RLS | **TERBUKTI** | `015c_rls_negatif.sql` membuktikan BPH ditolak menulis di enam titik dan tetap dapat membaca; juga bahwa pengguna `ANGGOTA`+`BPH` tetap dapat menulis sebagai Anggota. `rls-coverage.ts` menolak policy tulis yang menyebut `'BPH'`. Mutasi menambahkan BPH ke `departemen_update` tertangkap |
 | INV-04 | `BPH` tidak muncul sebagai approver | RLS+APP | **CELAH** | T-039 |
-| INV-05 | Approver proker = Ketua/Wakil; surat = Ketua/Wakil/Sekum | RLS | **SEBAGIAN** | Ditegakkan policy `proker_lock_insert` dan `surat_counter_update` di `015b`. Diverifikasi sebagai role `authenticated` sungguhan: Ketua menyetujui proker berhasil; Kadept, Sekum, BPH, dan Anggota ditolak. Sekum menerbitkan nomor surat berhasil; Kadept, Anggota, dan BPH ditolak. **Belum menjadi test tersimpan:** T-039. Lihat catatan 1 |
+| INV-05 | Approver proker = Ketua/Wakil; surat = Ketua/Wakil/Sekum | RLS | **TERBUKTI** | `015c_rls_negatif.sql` menguji lewat fungsi **dan** menyerang `proker_lock` serta `surat_counter` langsung. Uji mutasi menambahkan Sekum ke `proker_lock_insert` tertangkap — versi awal test ini LOLOS, lihat catatan 8 |
 | INV-06 | `audit_log` append-only | DB | **TERBUKTI** | `013_audit.sql` menolak UPDATE, DELETE, dan TRUNCATE bahkan dari pemilik database; `014c_audit_fn.sql` memastikan trigger audit tidak membuka celah untuk menyuntingnya |
 | INV-07 | Setiap operasi tulis meninggalkan baris audit | DB | **SEBAGIAN** | `014c_audit_fn.sql` membuktikan isi barisnya benar dan konteks kosong tidak menjatuhkan mutasi; `900_integrasi.sql` memastikan proker, surat, dan proker_lock tercatat. **Belum terbukti:** hanya 12 tabel yang dipasangi trigger, jadi tulisan ke tabel lain tidak tercatat sama sekali. Lihat catatan 2 |
 | INV-08 | Semua data ber-scope periode | DB+RLS | **SEBAGIAN** | `011_sekretariat.sql` (NIM unik per periode), `014b_surat_fn.sql` (counter direset per periode), dan `015a_rls_helpers.sql` (peran periode ARSIP tidak terbawa ke periode aktif). **Belum terbukti:** `my_divisi()` dan `my_kepanitiaan()` sengaja tidak menyaring periode — lihat catatan 5. T-038 |
@@ -75,8 +75,8 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 | INV-26 | `jumlah` disimpan dua kali: teks dan numerik | DB | **TERBUKTI** | `007_rab.sql` dan `900_integrasi.sql` memastikan `jumlah_teks` tersimpan apa adanya (`'150 kotak'`) agar ekspor Excel identik dengan arsip, sementara `jumlah_numerik` dipakai berhitung |
 | INV-27 | Kalkulasi klien wajib diverifikasi ulang di server | APP | **CELAH** | Fase 5 |
 | INV-28 | Total alokasi nota sama dengan total nota | DB+APP | **SEBAGIAN** | `008_nota.sql` dan `900_integrasi.sql` membuktikan **batas atas** dijaga trigger `cek_total_alokasi`, termasuk lewat jalur alokasi luar RAB. **Belum terbukti:** kesamaan persis saat submit, yang memang tugas service (ADR-006) |
-| INV-29 | RAB terkunci menolak perubahan di level RLS | RLS | **CELAH** | Policy `rab_item_*` dan `rab_section_*` di `015b` memanggil `rab_terbuka()`, tetapi belum ada satu pun test yang membuktikannya menolak. T-039 |
-| INV-30 | Lintas divisi: baca boleh, tulis tidak | RLS+UI | **CELAH** | Policy `rab_item_select` membuka baca satu kepanitiaan sementara policy tulisnya memakai `my_divisi_aktif()`, tetapi belum diuji. T-039 |
+| INV-29 | RAB terkunci menolak perubahan di level RLS | RLS | **TERBUKTI** | `015c_rls_negatif.sql` menguji ketiga keadaan: `DRAFT` boleh, `DISETUJUI` ditolak, dibuka kembali boleh lagi. Mutasi melepas `rab_terbuka()` dari policy tertangkap |
+| INV-30 | Lintas divisi: baca boleh, tulis tidak | RLS+UI | **SEBAGIAN** | `015c_rls_negatif.sql` membuktikan sisi database: anggota membaca RAB divisi lain dalam acara sama, dan UPDATE-nya mengubah **0 baris** tanpa error. Mutasi mempersempit `rab_item_select` tertangkap. **Belum terbukti:** tombol edit tidak dirender di antarmuka — lane `ui` |
 
 ---
 
@@ -135,7 +135,7 @@ permanen. Sampai itu selesai, INV-15 tetap **SEBAGIAN**.
 
 ### 4. Test yang sudah dibuktikan tidak sia-sia
 
-Test hijau belum tentu menguji apa pun. Tujuh test kritis dibuktikan lewat
+Test hijau belum tentu menguji apa pun. Sebelas test kritis dibuktikan lewat
 mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 
 | Yang dirusak | Test yang menangkap | Pesan gagalnya |
@@ -145,6 +145,10 @@ mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 | `NULLIF` dihapus dari `app.ip` (T-035) | `014c_audit_fn.sql` | `invalid input syntax for type inet: ""` |
 | Penangkap error dihapus dari `konteks_user_id` (T-035) | `014c_audit_fn.sql` | `invalid input syntax for type json` |
 | `DELETE FROM proker_lock` dilumpuhkan di `lepas_kunci_selesai` (T-036) | `900_integrasi.sql` | kunci tidak dilepas untuk proker selesai |
+| `SEKUM` ditambahkan ke `proker_lock_insert` (T-039) | `015c_rls_negatif.sql` | Sekum berhasil mengunci kalender langsung |
+| `rab_terbuka()` dilepas dari `rab_section_insert` (T-039) | `015c_rls_negatif.sql` | panitia menambah RAB setelah `DISETUJUI` |
+| `BPH` ditambahkan ke `departemen_update` (T-039) | `015c_rls_negatif.sql` | BPH mengubah 1 baris departemen |
+| `rab_item_select` dipersempit ke divisi sendiri (T-039) | `015c_rls_negatif.sql` | anggota tak dapat membaca RAB divisi lain |
 | `my_kepanitiaan()` dikembalikan ke bentuk SYSTEM_DESIGN §5.2 (T-037) | `015a_rls_helpers.sql` | ketua pelaksana memperoleh `{}` |
 | `SET search_path` dilepas dari `auth_roles()` (T-037) | `015a_rls_helpers.sql` | hanya 5 dari 6 helper terkunci |
 
@@ -226,3 +230,34 @@ mengulanginya:
 Sementara ini, verifikasi T-038 dilakukan lewat probe ad hoc sebagai role
 `authenticated`: 20 pemeriksaan, seluruhnya lulus. Probe itu tidak tersimpan
 sebagai test.
+
+### 8. Test yang lulus karena alasan yang salah
+
+Ditemukan pada T-039 lewat uji mutasi, dan layak diingat karena bentuk
+kesalahannya umum.
+
+Versi pertama test negatif RLS menguji penolakan Sekum hanya lewat pemanggilan
+`setujui_proker()`. Test itu hijau. Tetapi ketika policy `proker_lock_insert`
+sengaja dilonggarkan sampai mengizinkan Sekum, **test tetap hijau** — jadi ia
+tidak menguji apa pun.
+
+Sebabnya: Sekum tidak punya departemen, sehingga sudah tertahan policy
+`proker_update` saat `SELECT ... FOR UPDATE` di dalam fungsi, jauh sebelum
+menyentuh `proker_lock`. Perlindungannya kebetulan, dan akan runtuh tanpa suara
+bila Sekum kelak diberi hak menyunting proker.
+
+Perbaikannya bukan melonggarkan test, melainkan **menyerang titik penegakannya
+secara langsung** — `INSERT INTO proker_lock` dan `UPDATE surat_counter` tanpa
+lewat fungsi, persis seperti yang dilakukan seseorang yang memegang kredensial
+dan berbicara ke PostgREST.
+
+Pelajarannya: menguji sebuah invariant lewat jalur yang nyaman belum tentu
+menguji invariantnya. Uji mutasi yang membedakan keduanya.
+
+### 9. `npm run db:test` tidak mengukur keamanan
+
+Diulang di sini karena mudah terlupa: dari 20 berkas test, **hanya satu** yang
+menguji RLS. Sisanya berjalan sebagai `postgres` yang ber-BYPASSRLS.
+
+Bila suatu saat 180 policy hilang, 19 dari 20 berkas tetap hijau. Yang berteriak
+hanya `015c_rls_negatif.sql` dan `npm run rls:coverage`.
