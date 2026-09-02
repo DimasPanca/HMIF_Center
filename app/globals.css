@@ -1,50 +1,43 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@config "../tailwind.config.ts";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
+  --color-sidebar-ring: var(--border-focus);
+  --color-sidebar-border: var(--border-default);
+  --color-sidebar-accent-foreground: var(--text-primary);
+  --color-sidebar-accent: var(--bg-muted);
+  --color-sidebar-primary-foreground: var(--primary-text);
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-foreground: var(--text-primary);
+  --color-sidebar: var(--bg-subtle);
+  --color-chart-5: var(--dept-rnd);
+  --color-chart-4: var(--dept-kominfo);
+  --color-chart-3: var(--dept-internal);
+  --color-chart-2: var(--dept-mikat);
+  --color-chart-1: var(--dept-kaderisasi);
+  --color-ring: var(--border-focus);
+  --color-input: var(--border-default);
+  --color-border: var(--border-default);
+  --color-destructive: var(--danger);
+  --color-accent-foreground: var(--text-primary);
+  --color-accent: var(--accent-subtle);
+  --color-muted-foreground: var(--text-tertiary);
+  --color-muted: var(--bg-muted);
+  --color-secondary-foreground: var(--text-primary);
+  --color-secondary: var(--bg-subtle);
+  --color-primary-foreground: var(--primary-text);
   --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-popover-foreground: var(--text-primary);
+  --color-popover: var(--bg-elevated);
+  --color-card-foreground: var(--text-primary);
+  --color-card: var(--bg-panel);
+  --color-foreground: var(--text-primary);
+  --color-background: var(--bg-base);
 }
 
 :root {
@@ -169,6 +162,65 @@
   --gantt-hari-h: #FFFFFF;
   --gantt-today:  #1E90FF;
   --gantt-bar-bg: var(--bg-panel);
+
+  /* Brand mentah */
+  --brand-navy:  #111C44;
+  --brand-blue:  #0066A9;
+  --brand-tech:  #1E90FF;
+  --brand-teal:  #00B4D8;
+  --brand-slate: #3D5A80;
+  --brand-steel: #6C757D;
+  --brand-soft:  #DCE6F1;
+  --brand-gray:  #E6EAF2;
+  --brand-dark:  #0A0F1F;
+
+  /* Font */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "SF Mono", Consolas, monospace;
+
+  /* Skala tipografi */
+  --text-display: 32px;
+  --text-h1: 24px;
+  --text-h2: 20px;
+  --text-h3: 16px;
+  --text-body: 14px;
+  --text-body-md: 14px;
+  --text-sm: 13px;
+  --text-xs: 12px;
+  --text-2xs: 11px;
+
+  /* Skala spacing basis 4px */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius: 6px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px rgba(17, 28, 68, 0.06);
+  --shadow-md: 0 4px 12px rgba(17, 28, 68, 0.08);
+  --shadow-lg: 0 12px 32px rgba(17, 28, 68, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(30, 144, 255, 0.25);
+
+  /* Hanya dua durasi transisi yang diizinkan. */
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
 }
 
 [data-theme="dark"] {
@@ -176,6 +228,11 @@
   --gantt-hari-h: #FFFFFF;
   --gantt-today:  #1E90FF;
   --gantt-bar-bg: #111C44;
+  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 @layer base {
@@ -186,7 +243,48 @@
   body {
     background-color: var(--bg-base);
     color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 20px;
   }
+}
+
+@layer utilities {
+  .bg-base { background-color: var(--bg-base); }
+  .bg-subtle { background-color: var(--bg-subtle); }
+  .bg-muted { background-color: var(--bg-muted); }
+  .bg-panel { background-color: var(--bg-panel); }
+  .bg-elevated { background-color: var(--bg-elevated); }
+  .bg-inset { background-color: var(--bg-inset); }
+
+  .text-primary { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-tertiary { color: var(--text-tertiary); }
+  .text-disabled { color: var(--text-disabled); }
+  .text-inverse { color: var(--text-inverse); }
+  .text-link { color: var(--text-link); }
+
+  .border-subtle { border-color: var(--border-subtle); }
+  .border-default { border-color: var(--border-default); }
+  .border-strong { border-color: var(--border-strong); }
+  .border-focus { border-color: var(--border-focus); }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.mono,
+.nominal {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.nominal {
+  text-align: right;
 }
 
 @media (prefers-reduced-motion: reduce) {
