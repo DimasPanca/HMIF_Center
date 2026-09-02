@@ -40,9 +40,11 @@ BEGIN
   VALUES (v_user, 'Kadept Uji', '3337220002', 'kadept@example.test');
 
   INSERT INTO departemen (kode, nama, warna) VALUES ('KAD', 'Kaderisasi', '#1E90FF')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept_a;
 
   INSERT INTO departemen (kode, nama, warna) VALUES ('KOMINFO', 'Kominfo', '#A3E635')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept_b;
 
   INSERT INTO proker (periode_id, departemen_id, nama, kategori, status,

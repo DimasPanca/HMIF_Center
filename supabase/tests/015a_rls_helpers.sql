@@ -40,8 +40,10 @@ BEGIN
   VALUES ('HMIF 2025/2026', '2025-09-01', '2026-08-31', 'ARSIP') RETURNING id INTO v_arsip;
 
   INSERT INTO departemen (kode, nama, warna) VALUES ('KAD', 'Kaderisasi', '#1E90FF')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept1;
   INSERT INTO departemen (kode, nama, warna) VALUES ('MIKAT', 'Minat dan Bakat', '#22C55E')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept2;
 
   INSERT INTO app_user (id, nama_lengkap, nim, email) VALUES

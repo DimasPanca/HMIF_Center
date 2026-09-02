@@ -64,8 +64,10 @@ BEGIN
   VALUES ('HMIF 2026/2027', '2026-09-01', '2027-08-31', 'AKTIF') RETURNING id INTO v_periode;
 
   INSERT INTO departemen (kode, nama, warna) VALUES ('KAD', 'Kaderisasi', '#1E90FF')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_deptA;
   INSERT INTO departemen (kode, nama, warna) VALUES ('MIKAT', 'Minat Bakat', '#22C55E')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_deptB;
 
   INSERT INTO app_user (id, nama_lengkap, nim, email) VALUES
@@ -129,6 +131,7 @@ BEGIN
 
   INSERT INTO surat_template (kode_surat, varian, nama, storage_key, field_schema)
   VALUES ('05', 'PEMINJAMAN_RUANGAN', 'Peminjaman', 'template/05.docx', '{}'::JSONB)
+  ON CONFLICT (kode_surat, varian, versi) DO UPDATE SET kode_surat = EXCLUDED.kode_surat
   RETURNING id INTO v_tmpl;
   INSERT INTO surat (periode_id, template_id, kode_surat, tanggal_surat, perihal,
                      tujuan_nama, tujuan_alamat, dibuat_oleh, status)

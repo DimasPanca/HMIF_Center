@@ -26,6 +26,7 @@ BEGIN
 
   INSERT INTO departemen (kode, nama, warna, urutan)
   VALUES ('KAD', 'Kaderisasi', '#1E90FF', 1)
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept;
 
   ---------------------------------------------------------------------------

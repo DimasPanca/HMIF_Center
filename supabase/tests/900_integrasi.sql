@@ -54,6 +54,7 @@ BEGIN
     (v_kadept, 'Kepala Kaderisasi','3337220003','kadept@integrasi.test');
 
   INSERT INTO departemen (kode, nama, warna) VALUES ('KAD', 'Kaderisasi', '#1E90FF')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
   RETURNING id INTO v_dept;
 
   INSERT INTO user_role (user_id, periode_id, role, departemen_id) VALUES
@@ -118,6 +119,7 @@ BEGIN
   ---------------------------------------------------------------------------
   INSERT INTO surat_template (kode_surat, varian, nama, storage_key, field_schema)
   VALUES ('05', 'PEMINJAMAN_RUANGAN', 'Peminjaman Ruangan', 'template/05.docx', '{}'::JSONB)
+  ON CONFLICT (kode_surat, varian, versi) DO UPDATE SET kode_surat = EXCLUDED.kode_surat
   RETURNING id INTO v_tmpl;
 
   INSERT INTO surat (periode_id, template_id, kode_surat, tanggal_surat,

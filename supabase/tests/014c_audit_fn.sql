@@ -121,6 +121,7 @@ BEGIN
   DECLARE v_dept UUID; v_proker UUID;
   BEGIN
     INSERT INTO departemen (kode, nama, warna) VALUES ('AUD', 'Departemen Uji', '#123456')
+  ON CONFLICT (kode) DO UPDATE SET kode = EXCLUDED.kode
     RETURNING id INTO v_dept;
 
     -- Kepanitiaan menggantung pada proker, bukan langsung pada periode:
