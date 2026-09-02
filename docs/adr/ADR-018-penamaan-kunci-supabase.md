@@ -22,9 +22,14 @@ Penamaan itu berasal dari sistem kunci lama Supabase, yang menerbitkan JWT beraw
 Project `hmif-center-dev` yang dibuat pada 1 September 2026 menerbitkan kunci berformat baru:
 
 ```
-sb_publishable_QoVcRx7UWPej1EYjg-JiKw_MRzHJFg1
-sb_secret_...
+sb_publishable_<nilai acak dari dashboard>
+sb_secret_<nilai acak dari dashboard>
 ```
+
+> Nilai kunci sengaja tidak ditulis di repositori, bahkan untuk publishable key
+> yang secara desain memang ikut ke bundle browser. Menuliskannya membuat rotasi
+> lebih sulit dinalar dan mengaburkan batas mana yang boleh dan tidak boleh
+> di-commit. Nilai sebenarnya hanya ada di `.env.local`.
 
 Dashboard, dokumentasi, dan contoh kode Supabase saat ini memakai istilah **publishable key** dan **secret key**. Pemilik produk mengonfirmasi bahwa penamaan yang berlaku sekarang adalah:
 

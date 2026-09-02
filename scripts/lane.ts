@@ -124,6 +124,9 @@ const BEKU: string[] = [
   'docs/ai/lanes/LANE-DATA.md',
   'docs/ai/lanes/LANE-UI.md',
   'docs/adr/README.md',
+  // ADR 001-019 dibuat sebelum kerja paralel dan tidak dimiliki lane mana pun.
+  'docs/adr/ADR-00*.md',
+  'docs/adr/ADR-01*.md',
   'CLAUDE.md',
   'AGENTS.md',
   'README.md',
