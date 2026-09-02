@@ -27,14 +27,14 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 
 | # | Inti invariant | Lapis | Status | Bukti / pemilik celah |
 |---|---|---|---|---|
-| INV-01 | Otorisasi dua lapis independen: RLS + guard aplikasi | RLS+APP | **CELAH** | RLS belum ada. T-037, T-038, T-039 |
-| INV-02 | Klien tidak pernah menentukan role | APP | **CELAH** | Role dibaca server-side. T-045 dan seterusnya |
-| INV-03 | `BPH` tidak pernah memberi hak tulis | RLS | **CELAH** | T-039 (test negatif RLS) |
+| INV-01 | Otorisasi dua lapis independen: RLS + guard aplikasi | RLS+APP | **CELAH** | Helper RLS sudah ada dan diuji (`015a_rls_helpers.sql`), tetapi belum ada satu pun policy. T-038, T-039 |
+| INV-02 | Klien tidak pernah menentukan role | RLS+APP | **SEBAGIAN** | `015a_rls_helpers.sql` menyisipkan klaim `role: ADMIN` palsu ke dalam JWT dan memastikan `auth_roles()` tetap kosong serta `is_pimpinan()` tetap false — role hanya dibaca dari `user_role`. **Belum terbukti:** guard di sisi service. T-045 dan seterusnya |
+| INV-03 | `BPH` tidak pernah memberi hak tulis | RLS | **CELAH** | `015a_rls_helpers.sql` mengunci kenyataan bahwa `is_pimpinan()` mencakup BPH, sehingga fungsi itu haram dipakai pada policy tulis. Penolakan tulisnya sendiri belum ada. T-039 |
 | INV-04 | `BPH` tidak muncul sebagai approver | RLS+APP | **CELAH** | T-039 |
 | INV-05 | Approver proker = Ketua/Wakil; surat = Ketua/Wakil/Sekum | RLS+APP | **CELAH** | Lihat catatan 1 di bawah — ini celah paling tajam saat ini |
 | INV-06 | `audit_log` append-only | DB | **TERBUKTI** | `013_audit.sql` menolak UPDATE, DELETE, dan TRUNCATE bahkan dari pemilik database; `014c_audit_fn.sql` memastikan trigger audit tidak membuka celah untuk menyuntingnya |
 | INV-07 | Setiap operasi tulis meninggalkan baris audit | DB | **SEBAGIAN** | `014c_audit_fn.sql` membuktikan isi barisnya benar dan konteks kosong tidak menjatuhkan mutasi; `900_integrasi.sql` memastikan proker, surat, dan proker_lock tercatat. **Belum terbukti:** hanya 12 tabel yang dipasangi trigger, jadi tulisan ke tabel lain tidak tercatat sama sekali. Lihat catatan 2 |
-| INV-08 | Semua data ber-scope periode | DB+RLS | **SEBAGIAN** | `011_sekretariat.sql` (NIM unik per periode, bukan global) dan `014b_surat_fn.sql` (counter direset per periode). **Belum terbukti:** pembacaan lintas periode belum dibatasi. T-038 |
+| INV-08 | Semua data ber-scope periode | DB+RLS | **SEBAGIAN** | `011_sekretariat.sql` (NIM unik per periode), `014b_surat_fn.sql` (counter direset per periode), dan `015a_rls_helpers.sql` (peran periode ARSIP tidak terbawa ke periode aktif). **Belum terbukti:** `my_divisi()` dan `my_kepanitiaan()` sengaja tidak menyaring periode — lihat catatan 5. T-038 |
 
 ## Anti-bentrok proker (INV-09 … INV-13)
 
@@ -135,7 +135,7 @@ permanen. Sampai itu selesai, INV-15 tetap **SEBAGIAN**.
 
 ### 4. Test yang sudah dibuktikan tidak sia-sia
 
-Test hijau belum tentu menguji apa pun. Lima test kritis dibuktikan lewat
+Test hijau belum tentu menguji apa pun. Tujuh test kritis dibuktikan lewat
 mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 
 | Yang dirusak | Test yang menangkap | Pesan gagalnya |
@@ -145,6 +145,8 @@ mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 | `NULLIF` dihapus dari `app.ip` (T-035) | `014c_audit_fn.sql` | `invalid input syntax for type inet: ""` |
 | Penangkap error dihapus dari `konteks_user_id` (T-035) | `014c_audit_fn.sql` | `invalid input syntax for type json` |
 | `DELETE FROM proker_lock` dilumpuhkan di `lepas_kunci_selesai` (T-036) | `900_integrasi.sql` | kunci tidak dilepas untuk proker selesai |
+| `my_kepanitiaan()` dikembalikan ke bentuk SYSTEM_DESIGN §5.2 (T-037) | `015a_rls_helpers.sql` | ketua pelaksana memperoleh `{}` |
+| `SET search_path` dilepas dari `auth_roles()` (T-037) | `015a_rls_helpers.sql` | hanya 5 dari 6 helper terkunci |
 
 Lakukan hal yang sama untuk setiap test invariant baru sebelum menandainya
 **TERBUKTI**.
@@ -164,3 +166,32 @@ test tidak pernah meninggalkan data. Menjalankan satu berkas saja:
 ```bash
 npm run db:test -- 900_integrasi
 ```
+
+### 5. `my_divisi()` dan `my_kepanitiaan()` sengaja tidak menyaring periode
+
+Berbeda dengan `auth_roles()` dan `my_departemen()` yang hanya membaca periode
+`AKTIF`, dua helper itu mengembalikan seluruh keanggotaan lintas periode. Itu
+disengaja: mode arsip mengizinkan mantan panitia membaca kembali acara periode
+lalu.
+
+Akibatnya keduanya **tidak boleh dipakai sendirian pada policy tulis**. Policy
+INSERT, UPDATE, dan DELETE di 015b wajib menambahkan syarat periode aktif —
+tanpa itu, mantan panitia 2025/2026 masih dapat menyunting RAB acara yang sudah
+diarsipkan. T-038 yang menutupnya, dan T-039 yang membuktikannya dengan test
+negatif.
+
+### 6. Cacat yang ditemukan pada SYSTEM_DESIGN §5.2
+
+`my_kepanitiaan()` versi dokumen menggabungkan dua `SELECT` beragregat dengan
+`UNION`. Bentuk itu menghasilkan dua **baris** array, sedangkan fungsi SQL yang
+mengembalikan `UUID[]` hanya mengambil baris pertama — sehingga cabang ketua
+pelaksana tidak pernah ikut. Diukur pada T-037 terhadap versi dokumen:
+
+| kasus | hasil versi dokumen | seharusnya |
+|---|---|---|
+| hanya ketua pelaksana | `{}` | 1 kepanitiaan |
+| anggota divisi dan ketua acara lain | 1 kepanitiaan | 2 kepanitiaan |
+
+Migrasi `015a` memakai bentuk yang benar: himpunan id digabung lebih dulu, baru
+diagregat satu kali. Dokumen sumbernya tidak diubah karena beku selama kerja
+paralel; koreksinya tercatat di header migrasi.
