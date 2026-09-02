@@ -17,7 +17,7 @@
   ],
   "ringkasan": {
     "total": 116,
-    "done": 28,
+    "done": 42,
     "blocked": 0,
     "butuh_manusia": 6
   },
@@ -243,9 +243,9 @@
       "depends_on": [
         "T-013"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-017",
@@ -254,9 +254,9 @@
       "depends_on": [
         "T-016"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-018",
@@ -265,9 +265,9 @@
       "depends_on": [
         "T-017"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-019",
@@ -431,9 +431,9 @@
       "depends_on": [
         "T-032"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-034",
@@ -442,9 +442,9 @@
       "depends_on": [
         "T-033"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-035",
@@ -453,9 +453,9 @@
       "depends_on": [
         "T-034"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-036",
@@ -464,9 +464,9 @@
       "depends_on": [
         "T-035"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-037",
@@ -475,9 +475,9 @@
       "depends_on": [
         "T-036"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-038",
@@ -486,9 +486,9 @@
       "depends_on": [
         "T-037"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-039",
@@ -497,9 +497,9 @@
       "depends_on": [
         "T-038"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-040",
@@ -508,9 +508,9 @@
       "depends_on": [
         "T-039"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-041",
@@ -519,9 +519,9 @@
       "depends_on": [
         "T-040"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-042",
@@ -531,9 +531,9 @@
         "T-041",
         "T-008"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-043",
@@ -542,9 +542,9 @@
       "depends_on": [
         "T-042"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-044",
@@ -553,7 +553,7 @@
       "depends_on": [
         "T-043"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -564,7 +564,7 @@
       "depends_on": [
         "T-043"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
