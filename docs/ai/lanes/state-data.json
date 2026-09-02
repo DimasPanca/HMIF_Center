@@ -1,0 +1,352 @@
+{
+  "lane": "data",
+  "nama": "DATA & PLATFORM",
+  "branch": "lane/data",
+  "adr_range": [
+    20,
+    39
+  ],
+  "milik": [
+    "supabase/**",
+    "prisma/**",
+    "lib/db/**",
+    "lib/storage/**",
+    "lib/images/**",
+    "lib/auth/**",
+    "scripts/**",
+    "package.json",
+    "package-lock.json",
+    "eslint.config.mjs",
+    ".prettierrc",
+    ".prettierignore",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "next.config.ts",
+    "docs/ai/lanes/state-data.json",
+    "docs/ai/DB_TEST_MATRIX.md",
+    "docs/ai/RLS_TEST_MATRIX.md"
+  ],
+  "tasks": [
+    {
+      "id": "T-010",
+      "fase": 1,
+      "judul": "Tooling, script, gerbang kualitas",
+      "depends_on": [
+        "T-009"
+      ],
+      "status": "READY",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-011",
+      "fase": 1,
+      "judul": "Kerangka folder project",
+      "depends_on": [
+        "T-009"
+      ],
+      "status": "READY",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-097",
+      "fase": 7,
+      "judul": "Pipeline gambar sisi klien",
+      "depends_on": [
+        "T-009"
+      ],
+      "status": "READY",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-019",
+      "fase": 1,
+      "judul": "Koneksi database & harness migrasi",
+      "depends_on": [
+        "T-010",
+        "T-004"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-020",
+      "fase": 1,
+      "judul": "Migrasi 001 extensions",
+      "depends_on": [
+        "T-019"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-021",
+      "fase": 1,
+      "judul": "Migrasi 002 enums",
+      "depends_on": [
+        "T-020"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-022",
+      "fase": 1,
+      "judul": "Migrasi 003 inti - periode, user, role",
+      "depends_on": [
+        "T-021"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-023",
+      "fase": 1,
+      "judul": "Migrasi 004 proker & proker_lock",
+      "depends_on": [
+        "T-022"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-024",
+      "fase": 1,
+      "judul": "Migrasi 005 kepanitiaan & divisi",
+      "depends_on": [
+        "T-023"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-025",
+      "fase": 1,
+      "judul": "Migrasi 006 gantt",
+      "depends_on": [
+        "T-024"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-026",
+      "fase": 1,
+      "judul": "Migrasi 007 RAB",
+      "depends_on": [
+        "T-025"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-027",
+      "fase": 1,
+      "judul": "Migrasi 008 image, nota, alokasi",
+      "depends_on": [
+        "T-026"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-028",
+      "fase": 1,
+      "judul": "Migrasi 009 persuratan",
+      "depends_on": [
+        "T-027"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-029",
+      "fase": 1,
+      "judul": "Migrasi 010 kanban & kendala",
+      "depends_on": [
+        "T-028"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-030",
+      "fase": 1,
+      "judul": "Migrasi 011 kesekretariatan",
+      "depends_on": [
+        "T-029"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-031",
+      "fase": 1,
+      "judul": "Migrasi 012 dokumen acara",
+      "depends_on": [
+        "T-030"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-032",
+      "fase": 1,
+      "judul": "Migrasi 013 audit, backup, config",
+      "depends_on": [
+        "T-031"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-033",
+      "fase": 1,
+      "judul": "Fungsi DB A - anti-bentrok",
+      "depends_on": [
+        "T-032"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-034",
+      "fase": 1,
+      "judul": "Fungsi DB B - penomoran surat",
+      "depends_on": [
+        "T-033"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-035",
+      "fase": 1,
+      "judul": "Fungsi DB C - audit & alokasi",
+      "depends_on": [
+        "T-034"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-036",
+      "fase": 1,
+      "judul": "Suite test SQL menyeluruh",
+      "depends_on": [
+        "T-035"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-037",
+      "fase": 1,
+      "judul": "RLS - fungsi helper",
+      "depends_on": [
+        "T-036"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-038",
+      "fase": 1,
+      "judul": "RLS - policy seluruh tabel",
+      "depends_on": [
+        "T-037"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-039",
+      "fase": 1,
+      "judul": "Uji negatif RLS",
+      "depends_on": [
+        "T-038"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-040",
+      "fase": 1,
+      "judul": "View agregat (v_master_gantt)",
+      "depends_on": [
+        "T-039"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-041",
+      "fase": 1,
+      "judul": "Trigger audit 12 tabel",
+      "depends_on": [
+        "T-040"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-042",
+      "fase": 1,
+      "judul": "Seed data referensi",
+      "depends_on": [
+        "T-041",
+        "T-008"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-043",
+      "fase": 1,
+      "judul": "Prisma client & audit context",
+      "depends_on": [
+        "T-042"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-044",
+      "fase": 1,
+      "judul": "Storage Adapter",
+      "depends_on": [
+        "T-043"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    }
+  ]
+}

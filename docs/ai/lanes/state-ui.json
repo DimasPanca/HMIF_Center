@@ -1,0 +1,145 @@
+{
+  "lane": "ui",
+  "nama": "ANTARMUKA & DESIGN SYSTEM",
+  "branch": "lane/ui",
+  "adr_range": [
+    40,
+    59
+  ],
+  "milik": [
+    "app/**",
+    "components/**",
+    "lib/utils/**",
+    "lib/theme.ts",
+    "lib/gantt/**",
+    "lib/shortcuts.ts",
+    "tailwind.config.ts",
+    "postcss.config.mjs",
+    "components.json",
+    "docs/ai/lanes/state-ui.json"
+  ],
+  "tasks": [
+    {
+      "id": "T-012",
+      "fase": 1,
+      "judul": "Token warna",
+      "depends_on": [
+        "T-009"
+      ],
+      "status": "READY",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-013",
+      "fase": 1,
+      "judul": "Konfigurasi Tailwind & tipografi",
+      "depends_on": [
+        "T-012"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-014",
+      "fase": 1,
+      "judul": "Tema light/dark tanpa flash",
+      "depends_on": [
+        "T-013"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-015",
+      "fase": 1,
+      "judul": "Utilitas format lokal Indonesia",
+      "depends_on": [
+        "T-009"
+      ],
+      "status": "READY",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-016",
+      "fase": 1,
+      "judul": "Komponen dasar A - kontrol form",
+      "depends_on": [
+        "T-013"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-017",
+      "fase": 1,
+      "judul": "Komponen dasar B - penyajian data",
+      "depends_on": [
+        "T-016"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-018",
+      "fase": 1,
+      "judul": "Komponen dasar C - umpan balik",
+      "depends_on": [
+        "T-017"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-072",
+      "fase": 3,
+      "judul": "Mesin geometri Gantt",
+      "depends_on": [
+        "T-015"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-073",
+      "fase": 3,
+      "judul": "Komponen Gantt SVG",
+      "depends_on": [
+        "T-072",
+        "T-013"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-074",
+      "fase": 3,
+      "judul": "Virtualisasi & performa Gantt",
+      "depends_on": [
+        "T-073"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-078",
+      "fase": 3,
+      "judul": "Editor Gantt & 4 level lainnya",
+      "depends_on": [
+        "T-073"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    }
+  ]
+}
