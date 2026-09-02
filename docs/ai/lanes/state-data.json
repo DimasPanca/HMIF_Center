@@ -81,9 +81,9 @@
         "T-010",
         "T-004"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-020",
@@ -92,9 +92,9 @@
       "depends_on": [
         "T-019"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-021",
@@ -103,7 +103,7 @@
       "depends_on": [
         "T-020"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },

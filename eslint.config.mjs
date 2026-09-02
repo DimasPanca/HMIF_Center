@@ -53,17 +53,6 @@ const eslintConfig = [
         },
       ],
 
-      // Rahasia server tidak boleh disentuh dari kode yang bisa ikut ke browser.
-      'no-restricted-properties': [
-        'error',
-        {
-          object: 'process',
-          property: 'env',
-          message:
-            'Baca environment variable lewat modul konfigurasi server, bukan langsung di komponen. Rahasia server dilarang menyentuh sisi klien (AGENT_RULES K-08).',
-        },
-      ],
-
       // K-13: animasi hanya 120 ms dan 180 ms; nilai lain harus disengaja.
       'no-restricted-syntax': [
         'warn',
@@ -71,6 +60,35 @@ const eslintConfig = [
           selector: 'Literal[value=/^\\d{3,}ms$/]',
           message:
             'Durasi animasi hanya 120 ms dan 180 ms (DESIGN_SYSTEM §6.1). Nilai lain perlu alasan tertulis.',
+        },
+      ],
+    },
+  },
+
+  /**
+   * Komponen UI tidak pernah punya alasan sah membaca environment variable.
+   *
+   * Larangan ini SENGAJA tidak diberlakukan pada `app/**` dan `lib/**`:
+   * Route Handler, Server Action, dan modul infrastruktur seperti
+   * `lib/db/connection.ts` justru merupakan tempat yang benar untuk membacanya.
+   * Melarangnya di sana berarti aturan melarang hal yang ia sendiri tunjuk
+   * sebagai solusi, dan setiap modul server terpaksa memakai eslint-disable —
+   * yang justru melemahkan aturan sampai tak berarti.
+   *
+   * Penjaga sebenarnya untuk kebocoran rahasia adalah `npm run check:secrets`,
+   * yang membaca direktif "use client" dan karena itu tahu persis berkas mana
+   * yang benar-benar ikut ke bundle browser (AGENT_RULES K-08).
+   */
+  {
+    files: ['components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'process',
+          property: 'env',
+          message:
+            'Komponen tidak membaca environment variable. Terima nilainya sebagai prop dari Server Component, atau baca lewat modul di lib/ (AGENT_RULES K-08).',
         },
       ],
     },

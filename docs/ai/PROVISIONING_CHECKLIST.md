@@ -136,10 +136,13 @@ Tanpa `btree_gist`, `EXCLUDE` constraint pada `proker_lock` tidak dapat dibuat d
 Jalankan di **SQL Editor** Supabase:
 
 ```sql
-create extension if not exists "uuid-ossp";
-create extension if not exists btree_gist;
-create extension if not exists pg_trgm;
+create schema if not exists extensions;
+create extension if not exists "uuid-ossp" with schema extensions;
+create extension if not exists btree_gist  with schema extensions;
+create extension if not exists pg_trgm     with schema extensions;
 ```
+
+Ketiganya sengaja di schema `extensions`, bukan `public` — lihat [ADR-020](../adr/ADR-020-schema-extension.md). Di `public`, extension ikut terhapus setiap `db:reset` dan database hasil reset tidak dapat dipakai.
 
 ### Verifikasi
 

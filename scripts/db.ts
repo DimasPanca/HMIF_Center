@@ -26,6 +26,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import postgres from 'postgres';
 
 const AKAR = process.cwd();
@@ -104,12 +105,11 @@ async function main(): Promise<void> {
       await sql.unsafe('GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role');
       await sql.unsafe('GRANT ALL ON SCHEMA public TO postgres');
       console.log('  Schema public dibuat ulang beserta grant Supabase.');
-      // btree_gist dan pg_trgm terpasang di schema public, jadi ikut terhapus.
-      // Migrasi 001_extensions.sql yang mengembalikannya. Bila belum ada migrasi,
-      // database sengaja dibiarkan tanpa extension supaya kondisinya jujur —
-      // menyembunyikannya berarti kegagalan baru ketahuan saat migrasi anti-bentrok.
-      console.log('  Extension di schema public ikut terhapus;');
-      console.log('  dikembalikan oleh migrasi 001_extensions.sql.\n');
+      // Extension selamat dari reset karena berada di schema `extensions`,
+      // bukan `public` (ADR-020). Sebelum keputusan itu, setiap reset menghapus
+      // btree_gist dan pg_trgm sehingga database hasil reset tidak bisa dipakai
+      // sampai migrasi 001 dijalankan.
+      console.log('  Extension di schema `extensions` tidak ikut terhapus (ADR-020).\n');
     }
 
     await sql.unsafe(`
@@ -185,6 +185,26 @@ async function main(): Promise<void> {
     console.log('');
   } finally {
     await sql.end({ timeout: 5 }).catch(() => {});
+  }
+
+  // db:reset diakhiri seed supaya database benar-benar siap pakai, bukan sekadar
+  // berskema. Seed dijalankan sebagai proses terpisah agar koneksinya sendiri
+  // dan kegagalannya tidak tercampur dengan kegagalan migrasi.
+  if (perintah === 'reset') {
+    const berkasSeed = path.join(AKAR, 'prisma', 'seed.ts');
+    if (!fs.existsSync(berkasSeed)) {
+      console.log('  Seed dilewati: prisma/seed.ts belum ada (dibuat pada T-042).\n');
+      return;
+    }
+    console.log('  Menjalankan seed...\n');
+    const hasil = spawnSync('npx', ['tsx', 'prisma/seed.ts'], {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+    if (hasil.status !== 0) {
+      console.error('\n  Seed gagal. Skema sudah terbentuk, tetapi data referensi belum masuk.\n');
+      process.exit(1);
+    }
   }
 }
 
