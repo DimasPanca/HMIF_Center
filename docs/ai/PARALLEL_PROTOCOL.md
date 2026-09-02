@@ -117,10 +117,12 @@ CLAUDE.md   AGENTS.md   README.md   .gitignore   Design/**   Template/**
 
 Bila menemukan pertentangan baru, tulis ADR memakai rentang lane sendiri agar tidak pernah tabrakan nomor:
 
-| Lane | Rentang |
-|---|---|
-| `data` | **ADR-020 … ADR-039** |
-| `ui` | **ADR-040 … ADR-059** |
+| Lane | Rentang | Pola kepemilikan di `lane.ts` |
+|---|---|---|
+| `data` | **ADR-020 … ADR-039** | `docs/adr/ADR-02*.md`, `docs/adr/ADR-03*.md` |
+| `ui` | **ADR-040 … ADR-059** | `docs/adr/ADR-04*.md`, `docs/adr/ADR-05*.md` |
+
+Rentang ini ditegakkan `guard`, bukan sekadar disepakati: lane `ui` yang mencoba membuat `ADR-025` akan ditolak, dan sebaliknya.
 
 Jangan menyentuh `docs/adr/README.md` — indeksnya disusun ulang saat sync.
 
@@ -189,6 +191,10 @@ Sync dilakukan **manusia**, bukan agent. Agent berhenti dan melapor saat mencapa
 
 Setelah S3, kedua lane bertemu di T-045 (auth) yang membutuhkan hasil keduanya. **Rencana lane disusun ulang di titik itu**, tidak diteruskan buta.
 
+### Sync tak terjadwal
+
+Sync boleh terjadi di luar S1–S3 bila ditemukan cacat yang memblokir salah satu lane — kontrak task yang tidak konsisten, kepemilikan file yang belum terdefinisi, atau protokol yang bertentangan dengan `guard`. Prosedurnya sama persis dengan sync biasa. Menunda perbaikan sampai sync terjadwal berarti membiarkan satu lane menganggur, dan itu lebih mahal daripada satu merge tambahan.
+
 ### Prosedur sync
 
 ```bash
@@ -237,6 +243,8 @@ Bila merge menghasilkan konflik, **kepemilikan file dilanggar di suatu tempat.**
 | Task yang dibutuhkan ada di lane lain | **Berhenti.** Lapor ke manusia. Jangan kerjakan task lane lain. |
 | Butuh file milik lane lain | Angkat sebagai sync point. Jangan mengedit lintas lane. |
 | Merge konflik saat sync | Kepemilikan dilanggar. Telusuri commit penyebabnya sebelum menyelesaikan konflik. |
+| **Kontrak task bertentangan dengan dirinya sendiri** | **Berhenti, jangan tebak mana yang benar.** Contoh nyata: field `Baca` menyebut §2.2–§2.5 sementara butir kontrak menuntut nilai dari §6.4 dan §10.3; atau kriteria selesai melarang hex di luar satu berkas, padahal berkas lain di luar daftar Ubah memuat hex. Lapor ke manusia — kontrak diperbaiki di `main`, lalu kedua lane rebase. |
+| **Protokol menyuruh sesuatu yang `guard` larang** | Sama: **berhenti dan lapor.** Bila keduanya bertentangan, yang salah adalah desainnya, bukan agent. Jangan memaksa commit dan jangan melewati `guard`. |
 | `claim` ditolak karena dependency | Benar, jangan dipaksa. Ambil task READY lain atau tunggu sync. |
 | Lane `data` terblokir password database | Kerjakan T-097. Bila habis juga, berhenti dan lapor. Lane `ui` tetap jalan. |
 

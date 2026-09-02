@@ -88,6 +88,9 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/RLS_TEST_MATRIX.md',
     'docs/ai/PROVISIONING_CHECKLIST.md',
     'docs/ai/ENV_SETUP.md',
+    // Rentang ADR lane data: 020-039
+    'docs/adr/ADR-02*.md',
+    'docs/adr/ADR-03*.md',
   ],
   ui: [
     'app/**',
@@ -101,6 +104,9 @@ const MILIK: Record<Lane, string[]> = {
     'postcss.config.mjs',
     'components.json',
     'docs/ai/lanes/state-ui.json',
+    // Rentang ADR lane ui: 040-059
+    'docs/adr/ADR-04*.md',
+    'docs/adr/ADR-05*.md',
   ],
 };
 

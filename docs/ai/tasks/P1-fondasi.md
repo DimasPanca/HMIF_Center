@@ -93,10 +93,10 @@ find app components lib prisma supabase -type d | sort
 ## Blok B — Design System
 
 ### T-012 · Token warna
-**Fase** 1 · **Butuh** T-009 · **Baca** DESIGN_SYSTEM §2.2, §2.3, §2.4, §2.5
+**Fase** 1 · **Butuh** T-009 · **Baca** DESIGN_SYSTEM §2.2, §2.3, §2.4, §2.5, **§6.4**, **§10.3**
 
 **Buat:** `app/globals.css`
-**Ubah:** `app/layout.tsx`
+**Ubah:** `app/layout.tsx` · `app/page.tsx`
 
 **Kontrak:**
 1. Salin **persis** seluruh token light mode ke `:root` dan dark mode ke `[data-theme="dark"]` — nama variabel dan nilai hex tidak boleh diubah.
@@ -104,6 +104,8 @@ find app components lib prisma supabase -type d | sort
 3. Tambahkan 3 gradien §2.5 sebagai variabel, dengan komentar berisi larangan pemakaian (bukan untuk latar halaman/card/tabel/sidebar).
 4. Tambahkan token khusus Gantt yang dipakai T-073 (`--gantt-grid`, `--gantt-hari-h`, `--gantt-today`, `--gantt-bar-bg`), nilainya diambil dari DESIGN_SYSTEM §10.3.
 5. Sertakan blok `@media (prefers-reduced-motion: reduce)` yang mematikan seluruh transisi (DESIGN_SYSTEM §6.4).
+6. Hapus nilai hex inline pada `app/page.tsx` — placeholder T-009 memakai `#6C757D` langsung di `style`. Ganti dengan token, atau hapus stylingnya sama sekali. Tanpa ini kriteria "tidak ada hex di luar globals.css" mustahil dipenuhi.
+7. `shadcn init` menulis `@custom-variant dark (&:is(.dark *))`, sedangkan DESIGN_SYSTEM §2.3 memakai `[data-theme="dark"]`. **DESIGN_SYSTEM yang menang.** Ubah menjadi `@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *))` dan catat sebagai **ADR-040**.
 
 **Verifikasi:**
 ```bash
