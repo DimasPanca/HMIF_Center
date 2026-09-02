@@ -1,67 +1,78 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "radix-ui"
+import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  'inline-flex h-[34px] shrink-0 select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-sm border px-[14px] text-[14px] leading-5 font-medium tabular-nums outline-none transition-[background-color,border-color,color,box-shadow,filter,opacity] duration-fast ease-out focus-visible:border-[var(--border-focus)] focus-visible:ring-3 focus-visible:ring-[var(--border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        primary:
+          'border-transparent bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] disabled:hover:bg-[var(--primary)] dark:text-inverse',
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          'border-[var(--text-tertiary)] bg-panel text-primary hover:bg-subtle active:bg-muted disabled:hover:bg-panel',
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
-        destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-8",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+          'border-transparent bg-transparent text-secondary hover:bg-subtle hover:text-primary active:bg-muted disabled:hover:bg-transparent disabled:hover:text-secondary',
+        danger:
+          'border-transparent bg-[var(--danger)] text-[var(--primary-text)] hover:brightness-[0.92] active:brightness-[0.86] disabled:hover:brightness-100 dark:text-inverse',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'primary',
     },
-  }
-)
+  },
+);
 
+type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>;
+
+type ButtonProps = React.ComponentProps<'button'> & {
+  loading?: boolean;
+  variant?: ButtonVariant;
+};
+
+/**
+ * Checklist komponen DESIGN_SYSTEM §15.3 (15 butir):
+ * 1. [x] Seluruh warna menggunakan token semantik; tidak ada nilai hex langsung.
+ * 2. [x] Token dan varian `dark` mendukung light serta dark mode.
+ * 3. [x] Kontras AA dijaga; mode gelap primary/danger memakai `--text-inverse`.
+ * 4. [x] Elemen `<button>` native dapat dioperasikan penuh dengan keyboard.
+ * 5. [x] Focus-visible memakai border dan ring 3 px dari `--border-focus`.
+ * 6. [x] State default, hover, active, focus, disabled, dan loading tersedia.
+ * 7. [N/A] Tombol tidak menampilkan koleksi sehingga tidak memerlukan empty state.
+ * 8. [N/A] Loading adalah state aksi singkat; skeleton data tidak relevan.
+ * 9. [x] Transisi properti spesifik berdurasi 120 ms.
+ * 10. [x] `prefers-reduced-motion` menonaktifkan transisi.
+ * 11. [x] Tanpa lebar tetap sehingga tetap responsif sampai viewport 375 px.
+ * 12. [x] Semantik native, disabled, dan `aria-busy` tersedia bagi screen reader.
+ * 13. [x] Teks loading menggunakan Bahasa Indonesia: “Memproses…”.
+ * 14. [x] Angka di dalam tombol menggunakan `tabular-nums`.
+ * 15. [N/A] Tombol tidak memformat tanggal atau Rupiah.
+ */
 function Button({
   className,
-  variant = "default",
-  size = "default",
-  asChild = false,
+  variant = 'primary',
+  loading = false,
+  disabled,
+  type = 'button',
+  children,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot.Root : "button"
-
+}: ButtonProps) {
   return (
-    <Comp
+    <button
+      {...props}
+      type={type}
       data-slot="button"
       data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+      data-loading={loading ? '' : undefined}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
+      className={cn(buttonVariants({ variant, className }))}
+    >
+      {loading ? <span aria-live="polite">Memproses…</span> : children}
+    </button>
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };
+export type { ButtonProps };
