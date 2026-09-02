@@ -14,6 +14,27 @@ const jetBrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
+const themeScript = `
+(function () {
+  var theme = 'system';
+
+  try {
+    var storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system') {
+      theme = storedTheme;
+    }
+  } catch (_) {}
+
+  var prefersDark = typeof matchMedia === 'function' &&
+    matchMedia('(prefers-color-scheme: dark)').matches;
+  var resolvedTheme = theme === 'dark' || (theme === 'system' && prefersDark)
+    ? 'dark'
+    : 'light';
+
+  document.documentElement.setAttribute('data-theme', resolvedTheme);
+})();
+`;
+
 export const metadata: Metadata = {
   title: 'HMIF Center',
   description: 'Sistem E-Administrasi Himpunan Mahasiswa Informatika FT UNTIRTA',
@@ -33,7 +54,11 @@ export default function RootLayout({
       lang="id"
       data-theme="light"
       className={`${inter.variable} ${jetBrainsMono.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   );
