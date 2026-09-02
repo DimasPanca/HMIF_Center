@@ -17,8 +17,8 @@ npx tsx scripts/db-ping.ts
 | 1 | Project Supabase `hmif-center-dev` | **Selesai** | `db-ping` — secret key diterima HTTP 200 |
 | 2 | API key masuk `.env.local` | **Selesai** | `db-ping` — publishable & secret key keduanya diterima |
 | 3 | Bucket `private` + `public` | **Selesai** | uji unggah/baca: tanpa auth ditolak, signed URL berhasil |
-| 4 | **Database password → `DATABASE_URL` / `DIRECT_URL`** | **MENUNGGU MANUSIA** | `db-ping` — pemeriksaan Postgres masih `DILEWATI` |
-| 5 | **Extension `btree_gist`, `pg_trgm`, `uuid-ossp`** | **MENUNGGU** (butuh langkah 4) | `db-ping` — pemeriksaan extension |
+| 4 | Database password → `DATABASE_URL` / `DIRECT_URL` | **Selesai** | `db-ping` — PostgreSQL 17.6 terhubung |
+| 5 | Extension `btree_gist`, `pg_trgm`, `uuid-ossp` | **Selesai** | `EXCLUDE` constraint diuji nyata, bentrok ditolak `23P01` |
 | 6 | Project Vercel + hubungkan repo | Belum | Deployment preview hidup |
 | 7 | Gotenberg (konversi PDF) | **Opsional** — dilewati | `PDF_ENABLED=false` ([ADR-010](../adr/ADR-010-strategi-pdf.md)) |
 
@@ -93,11 +93,15 @@ const H={apikey:sec,Authorization:"Bearer "+sec,"Content-Type":"application/json
 
 ---
 
-## 4. Database password — **MENUNGGU MANUSIA**
+## 4. Database password — **selesai**
 
-Ini satu-satunya hal yang memblokir seluruh jalur database (**T-019 sampai T-043**).
+API key tidak bisa dipakai untuk koneksi Postgres; yang dipakai adalah *database password* yang diketik saat project dibuat.
 
-API key **tidak bisa** dipakai untuk koneksi Postgres. Yang dibutuhkan adalah *database password* yang diketik saat project dibuat.
+### Dua hal yang terbukti saat pengisian
+
+**Password memuat `@`, jadi WAJIB di-URL-encode menjadi `%40`.** Tanpa itu parser connection string memotong URL di posisi `@` pertama, dan koneksi gagal dengan pesan yang tidak menunjuk ke penyebabnya.
+
+**Hanya host `aws-0-ap-southeast-1` yang menerima tenant project ini.** Host `aws-1` menolak dengan `tenant/user postgres.szashcqawyhpvlvdtskq not found`. Kelima kandidat diuji satu per satu sebelum dipilih.
 
 ### Langkah
 
@@ -125,7 +129,7 @@ npx tsx scripts/db-ping.ts     # "Koneksi Postgres" harus LULUS, bukan DILEWATI
 
 ---
 
-## 5. Extension database — **MENUNGGU** (butuh langkah 4)
+## 5. Extension database — **selesai**
 
 Tanpa `btree_gist`, `EXCLUDE` constraint pada `proker_lock` tidak dapat dibuat dan **seluruh sistem anti-bentrok proker gagal** (INV-09). Ini bukan detail opsional.
 
@@ -147,6 +151,25 @@ order by extname;
 ```
 
 Atau: `npx tsx scripts/db-ping.ts` → baris **"Extension wajib"** harus `LULUS`.
+
+### Hasil verifikasi
+
+```
+btree_gist   v1.7
+pg_trgm      v1.6
+uuid-ossp    v1.1
+```
+
+Extension yang terpasang belum membuktikan apa pun. Yang diuji adalah mekanismenya:
+
+| Uji | Hasil |
+|---|---|
+| Buat tabel dengan `EXCLUDE USING gist (periode_id WITH =, rentang WITH &&)` | berhasil |
+| Sisipkan proker A, rentang 1 Nov – 7 Des | tersimpan |
+| Sisipkan proker B yang beririsan (20–25 Nov) | **ditolak, kode `23P01` exclusion_violation** |
+| Sisipkan proker C setelah rentang A (8–20 Des) | tersimpan |
+
+Ini menutup risiko **R3** pada PRD §11 (race condition penguncian proker) sebelum satu baris migrasi ditulis.
 
 > Migrasi `001_extensions.sql` (T-020) juga menjalankan ketiga perintah ini. Menjalankannya lebih awal di SQL Editor mempercepat deteksi bila tier tidak mengizinkan salah satu extension.
 

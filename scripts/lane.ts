@@ -64,7 +64,17 @@ const MILIK: Record<Lane, string[]> = {
     'lib/storage/**',
     'lib/images/**',
     'lib/auth/**',
+    'lib/rab/**',
+    'lib/surat/**',
+    'lib/documents/**',
+    'lib/lpj/**',
+    'lib/backup/**',
+    'lib/realtime/**',
+    'lib/README.md',
     'scripts/**',
+    'templates/**',
+    'e2e/**',
+    'public/**',
     'package.json',
     'package-lock.json',
     'eslint.config.mjs',
@@ -76,6 +86,8 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/lanes/state-data.json',
     'docs/ai/DB_TEST_MATRIX.md',
     'docs/ai/RLS_TEST_MATRIX.md',
+    'docs/ai/PROVISIONING_CHECKLIST.md',
+    'docs/ai/ENV_SETUP.md',
   ],
   ui: [
     'app/**',
@@ -84,6 +96,7 @@ const MILIK: Record<Lane, string[]> = {
     'lib/theme.ts',
     'lib/gantt/**',
     'lib/shortcuts.ts',
+    'hooks/**',
     'tailwind.config.ts',
     'postcss.config.mjs',
     'components.json',
@@ -415,7 +428,7 @@ function cmdSync(): number {
 function cmdInit(): number {
   const PEMBAGIAN: Record<Lane, string[]> = {
     data: [
-      'T-010', 'T-011', 'T-097',
+      'T-004', 'T-010', 'T-011', 'T-097',
       'T-019', 'T-020', 'T-021', 'T-022', 'T-023', 'T-024', 'T-025', 'T-026',
       'T-027', 'T-028', 'T-029', 'T-030', 'T-031', 'T-032', 'T-033', 'T-034',
       'T-035', 'T-036', 'T-037', 'T-038', 'T-039', 'T-040', 'T-041', 'T-042',
