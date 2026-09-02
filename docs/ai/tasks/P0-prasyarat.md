@@ -70,7 +70,7 @@ ls docs/adr/*.md | wc -l && grep -L "Status: Diterima" docs/adr/ADR-*.md
 1. `.env.example` memuat **seluruh** variabel SYSTEM_DESIGN §20.1 dengan nilai contoh kosong dan komentar satu baris per variabel.
 2. Tambahkan variabel yang belum ada di dokumen tetapi dibutuhkan keputusan terkunci: `PDF_ENABLED=false` (ADR-010), `MAX_UPLOAD_BYTES=15728640` (ADR-014).
 3. `scripts/check-env.ts` memvalidasi dengan Zod: variabel wajib ada dan tidak kosong; variabel yang harus URL divalidasi sebagai URL; keluar dengan exit code 1 dan mencetak **daftar** variabel yang kurang (bukan berhenti di variabel pertama).
-4. Variabel server-only (`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `GDRIVE_SERVICE_ACCOUNT_JSON`) ditandai di komentar sebagai **JANGAN pernah diimpor di client component**.
+4. Variabel server-only (`SUPABASE_SECRET_KEY`, `CRON_SECRET`, `GDRIVE_SERVICE_ACCOUNT_JSON`) ditandai di komentar sebagai **JANGAN pernah diimpor di client component**.
 5. `ENV_SETUP.md` berisi langkah manusia mendapatkan tiap nilai (dari dashboard mana, menu mana).
 
 **Verifikasi:**

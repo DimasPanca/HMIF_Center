@@ -38,8 +38,8 @@ const ATURAN: Aturan[] = [
 
   // Supabase
   { nama: 'NEXT_PUBLIC_SUPABASE_URL', wajib: true, jenis: 'url' },
-  { nama: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', wajib: true },
-  { nama: 'SUPABASE_SERVICE_ROLE_KEY', wajib: true, rahasia: true,
+  { nama: 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', wajib: true },
+  { nama: 'SUPABASE_SECRET_KEY', wajib: true, rahasia: true,
     catatan: 'server-only, jangan diimpor di client component' },
 
   // Storage

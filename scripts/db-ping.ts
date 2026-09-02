@@ -160,8 +160,8 @@ async function cekPostgres(env: Record<string, string>) {
 async function main() {
   const env = bacaEnv();
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const secret = env.SUPABASE_SERVICE_ROLE_KEY;
+  const anon = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const secret = env.SUPABASE_SECRET_KEY;
 
   console.log('\n  db-ping — HMIF Center\n');
 

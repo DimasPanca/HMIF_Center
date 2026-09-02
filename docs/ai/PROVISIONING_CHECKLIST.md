@@ -49,8 +49,8 @@ Tersimpan di `.env.local` (tidak masuk version control).
 
 | Variable | Jenis kunci | Peran |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `sb_publishable_…` | Menghormati RLS, boleh dipakai di browser |
-| `SUPABASE_SERVICE_ROLE_KEY` | `sb_secret_…` | **Melewati RLS**, server-only |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` | Menghormati RLS, boleh dipakai di browser |
+| `SUPABASE_SECRET_KEY` | `sb_secret_…` | **Melewati RLS**, server-only |
 
 **Catatan penting soal endpoint verifikasi.** Publishable key **ditolak 401 di `/rest/v1/`** dengan pesan *"Only secret API keys can be used for this endpoint"*. Itu perilaku by design untuk endpoint spec OpenAPI, **bukan** tanda kuncinya salah. `db-ping` karena itu menguji publishable key lewat `/auth/v1/settings`, jalur yang memang dipakai dari browser.
 
@@ -82,7 +82,7 @@ Seluruh turunan nota berada di bucket privat sesuai [ADR-011](../adr/ADR-011-pri
 
 ```bash
 node -e '
-const url=process.env.NEXT_PUBLIC_SUPABASE_URL, sec=process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url=process.env.NEXT_PUBLIC_SUPABASE_URL, sec=process.env.SUPABASE_SECRET_KEY;
 const H={apikey:sec,Authorization:"Bearer "+sec,"Content-Type":"application/json"};
 (async()=>{ for (const b of [{name:"private",public:false},{name:"public",public:true}]) {
   const r=await fetch(url+"/storage/v1/bucket",{method:"POST",headers:H,

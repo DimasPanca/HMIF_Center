@@ -77,5 +77,6 @@ Dalam ketiga kasus itu: tulis ADR berstatus **Usulan**, tandai task `BLOCKED`, l
 | [ADR-015](ADR-015-approval-lpj.md) | Approval LPJ | Diterima | T-021, T-031, T-105 |
 | [ADR-016](ADR-016-retensi-backup.md) | Retensi backup | Diterima | T-110, T-111 |
 | [ADR-017](ADR-017-haluan-kerja-pasca-mvp.md) | Haluan Kerja pasca-MVP | Diterima | T-051, T-109 |
+| [ADR-018](ADR-018-penamaan-kunci-supabase.md) | Penamaan environment variable kunci Supabase | Diterima | T-003, T-004, T-009, T-044, T-045 |
 
 Seluruh ADR di atas berstatus **Diterima** dan mengikat. ADR-005, ADR-006, dan ADR-008 memuat SQL final yang wajib dipakai apa adanya oleh berkas migrasi.

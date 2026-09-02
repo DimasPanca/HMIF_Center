@@ -122,7 +122,7 @@ Aturan bisnis yang bila dilanggar merusak nilai inti sistem.
 | **K-05** | **Tidak ada nilai hex mentah** di komponen. Semua warna lewat CSS variable / token Tailwind dari DESIGN_SYSTEM §2. |
 | **K-06** | Default halaman adalah **React Server Component**. Tambahkan `"use client"` hanya bila butuh state/efek/event. |
 | **K-07** | Query berat atau kritis (anti-bentrok, penomoran, agregasi Gantt) memakai **raw SQL / fungsi DB**, bukan ORM chaining. |
-| **K-08** | Secret hanya di environment variable. `SUPABASE_SERVICE_ROLE_KEY` **tidak boleh** diimpor di file client component. |
+| **K-08** | Secret hanya di environment variable. `SUPABASE_SECRET_KEY` **tidak boleh** diimpor di file client component. |
 | **K-09** | Setiap mutasi lewat `withAuditContext()` agar `app.ip`, `app.user_agent`, `app.periode_id` terisi. |
 | **K-10** | Import path memakai alias `@/`. Tidak ada `../../../`. |
 | **K-11** | Komentar kode seperlunya dan dalam Bahasa Indonesia; jelaskan **kenapa**, bukan **apa**. |

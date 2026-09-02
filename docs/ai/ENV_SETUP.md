@@ -25,8 +25,8 @@ Dashboard Supabase → **Project Settings → API Keys**
 | Variable | Diambil dari | Catatan |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Bentuknya `https://<project-ref>.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Publishable key** | Boleh terekspos ke browser |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Secret key** | **RAHASIA.** Melewati seluruh RLS |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **Publishable key** | Boleh terekspos ke browser |
+| `SUPABASE_SECRET_KEY` | **Secret key** | **RAHASIA.** Melewati seluruh RLS |
 
 > **Format kunci baru.** Project Supabase yang dibuat sejak 2025 menerbitkan kunci berformat
 > `sb_publishable_...` dan `sb_secret_...`, menggantikan anon/service_role JWT lama yang diawali `eyJ...`.
@@ -152,7 +152,7 @@ Sebelum menjalankan migrasi pertama:
 - [ ] `DATABASE_URL` dan `DIRECT_URL` **berbeda** (port 6543 vs 5432)
 - [ ] Tiga extension terpasang, terverifikasi lewat `select extname from pg_extension`
 - [ ] Bucket `private` benar-benar tidak publik — coba buka URL objeknya tanpa token, harus ditolak
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` tidak pernah muncul di berkas ber-`"use client"`
+- [ ] `SUPABASE_SECRET_KEY` tidak pernah muncul di berkas ber-`"use client"`
 
 ## 6. Bila kredensial bocor
 

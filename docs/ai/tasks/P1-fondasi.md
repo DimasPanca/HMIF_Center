@@ -49,7 +49,7 @@ npm run build
 2. `npm run verify` = `typecheck && lint && test`, gagal bila salah satu gagal.
 3. `scripts/db.ts` menjalankan berkas `supabase/migrations/*.sql` berurutan berdasarkan nama, mencatat yang sudah diterapkan di tabel `_migrasi` (kolom: nama, checksum, applied_at), dan menolak berkas yang checksum-nya berubah setelah diterapkan.
 4. `scripts/db-test.ts` menjalankan setiap `supabase/tests/*.sql` di dalam transaksi yang **selalu ROLLBACK**, mencetak OK/GAGAL per berkas, exit 1 bila ada yang gagal.
-5. ESLint: larang `console.log` (izinkan `console.error`), larang import relatif melewati satu level (`../../`), larang import `SUPABASE_SERVICE_ROLE_KEY` di berkas ber-`"use client"`.
+5. ESLint: larang `console.log` (izinkan `console.error`), larang import relatif melewati satu level (`../../`), larang import `SUPABASE_SECRET_KEY` di berkas ber-`"use client"`.
 6. Prettier: 2 spasi, single quote, trailing comma, lebar 100.
 
 **Verifikasi:**
