@@ -35,8 +35,13 @@ BEGIN
   INSERT INTO audit_log (aksi, entitas, entitas_id, user_agent)
   VALUES ('CRON', 'proker_lock', 'sistem', 'sistem');
 
-  SELECT count(*)::INT INTO v_jumlah FROM audit_log;
-  ASSERT v_jumlah = 2, format('Audit log: %s baris, seharusnya 2', v_jumlah);
+  -- Dibatasi pada dua baris yang ditulis test ini. Sejak migrasi 014c
+  -- memasang trigger fn_audit, INSERT periode dan app_user di atas ikut
+  -- menghasilkan baris audit — menghitung seluruh tabel akan menjadikan test
+  -- ini gagal setiap kali daftar tabel teraudit bertambah.
+  SELECT count(*)::INT INTO v_jumlah FROM audit_log
+  WHERE entitas_id IN ('abc-123', 'sistem');
+  ASSERT v_jumlah = 2, format('Audit log: %s baris tulisan manual, seharusnya 2', v_jumlah);
 
   ---------------------------------------------------------------------------
   -- 2. UPDATE DITOLAK — bahkan oleh pemilik database (INV-06)
@@ -64,7 +69,8 @@ BEGIN
   END;
   ASSERT v_ditolak, 'DELETE pada audit_log DITERIMA - jejak audit dapat dihapus';
 
-  SELECT count(*)::INT INTO v_jumlah FROM audit_log;
+  SELECT count(*)::INT INTO v_jumlah FROM audit_log
+  WHERE entitas_id IN ('abc-123', 'sistem');
   ASSERT v_jumlah = 2, 'Baris audit hilang walau DELETE ditolak';
 
   ---------------------------------------------------------------------------
