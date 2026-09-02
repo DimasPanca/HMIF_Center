@@ -27,11 +27,11 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 
 | # | Inti invariant | Lapis | Status | Bukti / pemilik celah |
 |---|---|---|---|---|
-| INV-01 | Otorisasi dua lapis independen: RLS + guard aplikasi | RLS+APP | **CELAH** | Helper RLS sudah ada dan diuji (`015a_rls_helpers.sql`), tetapi belum ada satu pun policy. T-038, T-039 |
+| INV-01 | Otorisasi dua lapis independen: RLS + guard aplikasi | RLS+APP | **SEBAGIAN** | RLS aktif pada 46 tabel dengan 180 policy; `npm run rls:coverage` menjaga cakupannya. **Belum terbukti oleh test tersimpan** — lihat catatan 7. Lapis guard aplikasi belum ada: T-045 dan seterusnya |
 | INV-02 | Klien tidak pernah menentukan role | RLS+APP | **SEBAGIAN** | `015a_rls_helpers.sql` menyisipkan klaim `role: ADMIN` palsu ke dalam JWT dan memastikan `auth_roles()` tetap kosong serta `is_pimpinan()` tetap false — role hanya dibaca dari `user_role`. **Belum terbukti:** guard di sisi service. T-045 dan seterusnya |
-| INV-03 | `BPH` tidak pernah memberi hak tulis | RLS | **CELAH** | `015a_rls_helpers.sql` mengunci kenyataan bahwa `is_pimpinan()` mencakup BPH, sehingga fungsi itu haram dipakai pada policy tulis. Penolakan tulisnya sendiri belum ada. T-039 |
+| INV-03 | `BPH` tidak pernah memberi hak tulis | RLS | **SEBAGIAN** | `rls-coverage.ts` menolak setiap policy tulis yang menyebut `'BPH'` — 0 dari 180 saat ini. Probe langsung sebagai role `authenticated` juga membuktikan BPH ditolak membuat proker dan mengubah departemen, tetapi tetap dapat membaca. **Belum menjadi test tersimpan:** T-039 |
 | INV-04 | `BPH` tidak muncul sebagai approver | RLS+APP | **CELAH** | T-039 |
-| INV-05 | Approver proker = Ketua/Wakil; surat = Ketua/Wakil/Sekum | RLS+APP | **CELAH** | Lihat catatan 1 di bawah — ini celah paling tajam saat ini |
+| INV-05 | Approver proker = Ketua/Wakil; surat = Ketua/Wakil/Sekum | RLS | **SEBAGIAN** | Ditegakkan policy `proker_lock_insert` dan `surat_counter_update` di `015b`. Diverifikasi sebagai role `authenticated` sungguhan: Ketua menyetujui proker berhasil; Kadept, Sekum, BPH, dan Anggota ditolak. Sekum menerbitkan nomor surat berhasil; Kadept, Anggota, dan BPH ditolak. **Belum menjadi test tersimpan:** T-039. Lihat catatan 1 |
 | INV-06 | `audit_log` append-only | DB | **TERBUKTI** | `013_audit.sql` menolak UPDATE, DELETE, dan TRUNCATE bahkan dari pemilik database; `014c_audit_fn.sql` memastikan trigger audit tidak membuka celah untuk menyuntingnya |
 | INV-07 | Setiap operasi tulis meninggalkan baris audit | DB | **SEBAGIAN** | `014c_audit_fn.sql` membuktikan isi barisnya benar dan konteks kosong tidak menjatuhkan mutasi; `900_integrasi.sql` memastikan proker, surat, dan proker_lock tercatat. **Belum terbukti:** hanya 12 tabel yang dipasangi trigger, jadi tulisan ke tabel lain tidak tercatat sama sekali. Lihat catatan 2 |
 | INV-08 | Semua data ber-scope periode | DB+RLS | **SEBAGIAN** | `011_sekretariat.sql` (NIM unik per periode), `014b_surat_fn.sql` (counter direset per periode), dan `015a_rls_helpers.sql` (peran periode ARSIP tidak terbawa ke periode aktif). **Belum terbukti:** `my_divisi()` dan `my_kepanitiaan()` sengaja tidak menyaring periode — lihat catatan 5. T-038 |
@@ -75,8 +75,8 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 | INV-26 | `jumlah` disimpan dua kali: teks dan numerik | DB | **TERBUKTI** | `007_rab.sql` dan `900_integrasi.sql` memastikan `jumlah_teks` tersimpan apa adanya (`'150 kotak'`) agar ekspor Excel identik dengan arsip, sementara `jumlah_numerik` dipakai berhitung |
 | INV-27 | Kalkulasi klien wajib diverifikasi ulang di server | APP | **CELAH** | Fase 5 |
 | INV-28 | Total alokasi nota sama dengan total nota | DB+APP | **SEBAGIAN** | `008_nota.sql` dan `900_integrasi.sql` membuktikan **batas atas** dijaga trigger `cek_total_alokasi`, termasuk lewat jalur alokasi luar RAB. **Belum terbukti:** kesamaan persis saat submit, yang memang tugas service (ADR-006) |
-| INV-29 | RAB terkunci menolak perubahan di level RLS | RLS | **CELAH** | T-038, T-039 |
-| INV-30 | Lintas divisi: baca boleh, tulis tidak | RLS+UI | **CELAH** | T-038, T-039 |
+| INV-29 | RAB terkunci menolak perubahan di level RLS | RLS | **CELAH** | Policy `rab_item_*` dan `rab_section_*` di `015b` memanggil `rab_terbuka()`, tetapi belum ada satu pun test yang membuktikannya menolak. T-039 |
+| INV-30 | Lintas divisi: baca boleh, tulis tidak | RLS+UI | **CELAH** | Policy `rab_item_select` membuka baca satu kepanitiaan sementara policy tulisnya memakai `my_divisi_aktif()`, tetapi belum diuji. T-039 |
 
 ---
 
@@ -195,3 +195,34 @@ pelaksana tidak pernah ikut. Diukur pada T-037 terhadap versi dokumen:
 Migrasi `015a` memakai bentuk yang benar: himpunan id digabung lebih dulu, baru
 diagregat satu kali. Dokumen sumbernya tidak diubah karena beku selama kerja
 paralel; koreksinya tercatat di header migrasi.
+
+### 7. Tidak ada satu pun berkas test yang menguji RLS
+
+Ini yang paling mudah salah paham, jadi ditulis eksplisit.
+
+Role `postgres` di Supabase memiliki **BYPASSRLS** — diperiksa langsung:
+`rolsuper=false, rolbypassrls=true`. Bahkan `FORCE ROW LEVEL SECURITY` tidak
+menghentikannya. Seluruh berkas di `supabase/tests/` berjalan lewat koneksi
+`postgres`.
+
+Akibatnya: **ke-19 berkas test itu akan tetap hijau seandainya seluruh policy
+di `015b` dihapus.** Angka "19 lulus" tidak mengatakan apa pun tentang
+otorisasi.
+
+Test yang benar-benar menguji RLS wajib memakai `SET LOCAL ROLE authenticated`
+beserta `request.jwt.claims`. Itu tugas T-039.
+
+Dua jebakan yang sudah ditemukan saat memverifikasi T-038, supaya T-039 tidak
+mengulanginya:
+
+- **Penolakan SELECT tidak melempar error.** RLS menyaring baris, bukan
+  menolak query. `select count(*) from audit_log` sebagai Anggota tetap
+  sukses — hasilnya saja 0. Test negatif yang hanya menunggu exception akan
+  lulus walau seluruh jejak audit terbuka. Periksa jumlah barisnya.
+- **Satu penolakan membatalkan seluruh transaksi.** Setiap percobaan negatif
+  harus dibungkus `SAVEPOINT`, kalau tidak percobaan berikutnya gagal dengan
+  alasan yang menyesatkan (`current transaction is aborted`).
+
+Sementara ini, verifikasi T-038 dilakukan lewat probe ad hoc sebagai role
+`authenticated`: 20 pemeriksaan, seluruhnya lulus. Probe itu tidak tersimpan
+sebagai test.

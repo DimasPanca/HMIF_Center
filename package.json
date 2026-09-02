@@ -26,7 +26,8 @@
     "db:status": "tsx scripts/db.ts status",
     "db:test": "tsx scripts/db-test.ts",
     "seed": "tsx prisma/seed.ts",
-    "lane": "tsx scripts/lane.ts"
+    "lane": "tsx scripts/lane.ts",
+    "rls:coverage": "tsx scripts/rls-coverage.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
