@@ -1,22 +1,31 @@
 /**
  * rls-coverage — memeriksa cakupan Row Level Security.
  *
- * Tiga hal yang diperiksa, masing-masing menutup satu cara RLS gagal diam-diam:
+ * Enam hal yang diperiksa. Masing-masing menutup satu cara RLS gagal tanpa
+ * menimbulkan error — dan itulah yang membuatnya berbahaya: gejalanya bukan
+ * aplikasi yang rusak, melainkan aplikasi yang tampak baik-baik saja.
  *
  *   1. TABEL TANPA RLS AKTIF.
- *      Tabel yang terlewat adalah tabel yang terbuka penuh bagi siapa pun
- *      yang memegang kredensial `authenticated`.
+ *      Terbuka penuh bagi siapa pun yang memegang kredensial `authenticated`.
  *
- *   2. TABEL BER-RLS TAPI TANPA POLICY SAMA SEKALI.
- *      Ini menutup total, bukan membuka. Aman, tetapi hampir selalu berarti
- *      seseorang lupa — dan gejalanya di aplikasi adalah "data hilang".
+ *   2. TABEL TANPA GRANT untuk `authenticated`.
+ *      RLS baru diperiksa SETELAH hak tabel biasa lolos. Tanpa GRANT, policy
+ *      tabel itu tidak pernah dievaluasi dan aplikasi melihatnya kosong.
  *
- *   3. BPH PADA POLICY TULIS (INV-03).
+ *   3. TIDAK ADA HAK BAWAAN (ALTER DEFAULT PRIVILEGES).
+ *      `GRANT ... ON ALL TABLES` hanya mengenai tabel yang ada saat itu.
+ *      Tanpa hak bawaan, setiap tabel dan view dari migrasi berikutnya lahir
+ *      tanpa hak apa pun bagi aplikasi.
+ *
+ *   4. VIEW TANPA security_invoker.
+ *      View berjalan dengan hak PEMILIKNYA. Pemiliknya `postgres`, yang
+ *      ber-BYPASSRLS — jadi view biasa menembus seluruh policy.
+ *
+ *   5. BPH PADA POLICY TULIS (INV-03).
  *      BPH adalah peran pengawas: baca di mana-mana, tulis di mana pun tidak.
- *      Satu penyebutan 'BPH' pada policy INSERT/UPDATE/DELETE membatalkan itu.
  *
- * Juga memeriksa hak tabel: policy tidak pernah dievaluasi bila role
- * `authenticated` tidak punya GRANT apa pun.
+ *   6. USING (true) PADA POLICY TULIS.
+ *      Policy tulis yang tidak membatasi apa pun.
  *
  * Sumber: docs/ai/tasks/P1-fondasi.md T-038 · PRD §5.1 · INV-01, INV-03
  */
@@ -32,6 +41,8 @@ const BUKAN_DOMAIN = new Set(['_migrasi']);
 
 /** Operasi yang dihitung sebagai "tulis". */
 const TULIS = new Set(['INSERT', 'UPDATE', 'DELETE', 'ALL']);
+
+const NL = '\n';
 
 function bacaEnv(): Record<string, string> {
   const berkas = path.join(AKAR, '.env.local');
@@ -51,6 +62,7 @@ interface BarisTabel {
   tabel: string;
   rls: boolean;
   policy: number;
+  hak: number;
 }
 
 interface BarisPolicy {
@@ -65,23 +77,34 @@ async function utama(): Promise<void> {
   const koneksi = env.DIRECT_URL ?? env.DATABASE_URL;
 
   if (!koneksi) {
-    process.stderr.write('\n  DIRECT_URL/DATABASE_URL belum diisi. Jalankan: npm run check:env\n\n');
+    process.stderr.write(
+      NL + '  DIRECT_URL/DATABASE_URL belum diisi. Jalankan: npm run check:env' + NL + NL,
+    );
     process.exit(1);
   }
 
   const sql = postgres(koneksi, { ssl: 'require', max: 1, connect_timeout: 30, onnotice: () => {} });
+  const tulis = (s: string): void => {
+    process.stdout.write(s + NL);
+  };
   let keluar = 0;
 
   try {
-    const tabel = (await sql<BarisTabel[]>`
-      SELECT c.relname                                        AS tabel,
-             c.relrowsecurity                                 AS rls,
-             (SELECT count(*)::INT FROM pg_policy p WHERE p.polrelid = c.oid) AS policy
-      FROM pg_class c
-      JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relkind = 'r'
-      ORDER BY c.relname
-    `).filter((t) => !BUKAN_DOMAIN.has(t.tabel));
+    const tabel = (
+      await sql<BarisTabel[]>`
+        SELECT c.relname        AS tabel,
+               c.relrowsecurity AS rls,
+               (SELECT count(*)::INT FROM pg_policy p WHERE p.polrelid = c.oid) AS policy,
+               (SELECT count(*)::INT FROM information_schema.role_table_grants g
+                 WHERE g.table_schema = 'public'
+                   AND g.table_name   = c.relname
+                   AND g.grantee      = 'authenticated')                         AS hak
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public' AND c.relkind = 'r'
+        ORDER BY c.relname
+      `
+    ).filter((t) => !BUKAN_DOMAIN.has(t.tabel));
 
     const policy = await sql<BarisPolicy[]>`
       SELECT c.relname AS tabel,
@@ -98,90 +121,130 @@ async function utama(): Promise<void> {
       ORDER BY c.relname, p.polname
     `;
 
-    const hakAuth = await sql<{ n: number }[]>`
+    const hakBawaan = await sql<{ n: number }[]>`
       SELECT count(*)::INT AS n
-      FROM information_schema.role_table_grants
-      WHERE table_schema = 'public' AND grantee = 'authenticated'
+      FROM pg_default_acl d
+      JOIN pg_namespace n ON n.oid = d.defaclnamespace
+      WHERE n.nspname = 'public'
+        AND d.defaclobjtype = 'r'
+        AND array_to_string(d.defaclacl, ',') LIKE '%authenticated=%'
     `;
 
-    const tanpaRls    = tabel.filter((t) => !t.rls);
-    const tanpaPolicy = tabel.filter((t) => t.rls && t.policy === 0);
-    const bphTulis    = policy.filter(
-      (p) => TULIS.has(p.perintah) && /'BPH'/i.test(p.ekspresi),
-    );
+    const viewTembus = await sql<{ nama: string }[]>`
+      SELECT c.relname AS nama
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relkind = 'v'
+        AND NOT COALESCE((
+          SELECT o.option_value = 'true'
+          FROM pg_options_to_table(c.reloptions) o
+          WHERE o.option_name = 'security_invoker'
+        ), false)
+      ORDER BY c.relname
+    `;
+
+    const tanpaRls     = tabel.filter((t) => !t.rls);
+    const tanpaHak     = tabel.filter((t) => t.hak === 0);
+    const tanpaPolicy  = tabel.filter((t) => t.rls && t.policy === 0);
+    const bphTulis     = policy.filter((p) => TULIS.has(p.perintah) && /'BPH'/i.test(p.ekspresi));
     const tulisTerbuka = policy.filter(
       (p) => TULIS.has(p.perintah) && /^\s*true\s*$/.test(p.ekspresi.trim()),
     );
 
     const lebar = Math.max(...tabel.map((t) => t.tabel.length), 10);
 
-    process.stdout.write(`\n  rls-coverage — ${tabel.length} tabel domain\n\n`);
+    tulis('');
+    tulis(`  rls-coverage — ${tabel.length} tabel domain`);
+    tulis('');
 
     for (const t of tabel) {
-      const tanda = !t.rls ? '[TIDAK]' : t.policy === 0 ? '[KOSONG]' : '[ OK ]';
-      const ket   = !t.rls
+      const tanda = !t.rls
+        ? '[TIDAK]'
+        : t.hak === 0
+          ? '[NOHAK]'
+          : t.policy === 0
+            ? '[KOSONG]'
+            : '[ OK ]';
+      const ket = !t.rls
         ? 'RLS tidak aktif'
-        : t.policy === 0
-          ? 'RLS aktif tanpa policy — tertutup total'
-          : `${t.policy} policy`;
-      process.stdout.write(`    ${tanda.padEnd(9)}${t.tabel.padEnd(lebar + 2)}${ket}\n`);
+        : t.hak === 0
+          ? 'tanpa GRANT — policy tidak pernah dievaluasi'
+          : t.policy === 0
+            ? 'RLS aktif tanpa policy — tertutup total'
+            : `${t.policy} policy`;
+      tulis(`    ${tanda.padEnd(9)}${t.tabel.padEnd(lebar + 2)}${ket}`);
     }
 
-    process.stdout.write('\n');
-
-    if (hakAuth[0]!.n === 0) {
-      process.stdout.write(
-        '  [GAGAL] Role `authenticated` tidak punya GRANT apa pun di schema public.\n' +
-        '          RLS baru diperiksa SETELAH hak tabel biasa lolos, jadi seluruh\n' +
-        '          policy di atas tidak akan pernah dievaluasi — aplikasi hanya akan\n' +
-        '          melihat database kosong.\n\n',
-      );
-      keluar = 1;
-    }
+    tulis('');
 
     if (tanpaRls.length > 0) {
-      process.stdout.write(`  [GAGAL] ${tanpaRls.length} tabel tanpa RLS aktif:\n`);
-      for (const t of tanpaRls) process.stdout.write(`            ${t.tabel}\n`);
-      process.stdout.write('\n');
+      tulis(`  [GAGAL] ${tanpaRls.length} tabel tanpa RLS aktif:`);
+      for (const t of tanpaRls) tulis(`            ${t.tabel}`);
+      tulis('');
       keluar = 1;
     }
 
-    if (tanpaPolicy.length > 0) {
-      process.stdout.write(
-        `  [PERIKSA] ${tanpaPolicy.length} tabel ber-RLS tanpa policy (tertutup total):\n`,
-      );
-      for (const t of tanpaPolicy) process.stdout.write(`            ${t.tabel}\n`);
-      process.stdout.write('            Aman, tetapi pastikan itu memang disengaja.\n\n');
+    if (tanpaHak.length > 0) {
+      tulis(`  [GAGAL] ${tanpaHak.length} tabel tanpa GRANT untuk role authenticated:`);
+      for (const t of tanpaHak) tulis(`            ${t.tabel}`);
+      tulis('          RLS baru diperiksa SETELAH hak tabel biasa lolos, sehingga');
+      tulis('          policy tabel ini tidak pernah dievaluasi. Aplikasi hanya');
+      tulis('          akan melihatnya kosong.');
+      tulis('');
+      keluar = 1;
+    }
+
+    if (hakBawaan[0]!.n === 0) {
+      tulis('  [GAGAL] Tidak ada ALTER DEFAULT PRIVILEGES untuk authenticated.');
+      tulis('          Tabel dan view dari migrasi BERIKUTNYA akan lahir tanpa hak');
+      tulis('          apa pun. Lihat supabase/migrations/015c_default_privileges.sql');
+      tulis('');
+      keluar = 1;
+    }
+
+    if (viewTembus.length > 0) {
+      tulis(`  [GAGAL] ${viewTembus.length} view tanpa security_invoker:`);
+      for (const v of viewTembus) tulis(`            ${v.nama}`);
+      tulis('          View berjalan dengan hak PEMILIKNYA. Karena pemiliknya');
+      tulis('          postgres yang ber-BYPASSRLS, view ini menembus seluruh policy.');
+      tulis('          Perbaikan: CREATE VIEW ... WITH (security_invoker = true)');
+      tulis('');
+      keluar = 1;
     }
 
     if (bphTulis.length > 0) {
-      process.stdout.write(`  [GAGAL] ${bphTulis.length} policy TULIS menyebut BPH (INV-03):\n`);
-      for (const p of bphTulis) {
-        process.stdout.write(`            ${p.tabel}.${p.nama} (${p.perintah})\n`);
-      }
-      process.stdout.write('\n');
+      tulis(`  [GAGAL] ${bphTulis.length} policy TULIS menyebut BPH (INV-03):`);
+      for (const p of bphTulis) tulis(`            ${p.tabel}.${p.nama} (${p.perintah})`);
+      tulis('');
       keluar = 1;
     }
 
     if (tulisTerbuka.length > 0) {
-      process.stdout.write(`  [GAGAL] ${tulisTerbuka.length} policy TULIS memakai USING (true):\n`);
-      for (const p of tulisTerbuka) {
-        process.stdout.write(`            ${p.tabel}.${p.nama} (${p.perintah})\n`);
-      }
-      process.stdout.write('\n');
+      tulis(`  [GAGAL] ${tulisTerbuka.length} policy TULIS memakai USING (true):`);
+      for (const p of tulisTerbuka) tulis(`            ${p.tabel}.${p.nama} (${p.perintah})`);
+      tulis('');
       keluar = 1;
     }
 
+    if (tanpaPolicy.length > 0) {
+      tulis(`  [PERIKSA] ${tanpaPolicy.length} tabel ber-RLS tanpa policy (tertutup total):`);
+      for (const t of tanpaPolicy) tulis(`            ${t.tabel}`);
+      tulis('            Aman, tetapi pastikan itu memang disengaja.');
+      tulis('');
+    }
+
     const berpolicy = tabel.filter((t) => t.rls && t.policy > 0).length;
-    process.stdout.write(
+    tulis(
       `  ${berpolicy} tabel berpolicy, ${tanpaRls.length} tanpa RLS, ` +
-      `${tanpaPolicy.length} tanpa policy, ${policy.length} policy total\n`,
+        `${tanpaHak.length} tanpa GRANT, ${policy.length} policy total`,
     );
 
     if (keluar === 0) {
-      process.stdout.write('  [ OK ] Cakupan RLS lengkap, tidak ada BPH pada operasi tulis.\n\n');
+      tulis('  [ OK ] Cakupan RLS lengkap, hak bawaan terpasang, tidak ada BPH pada tulis.');
+      tulis('');
     } else {
-      process.stdout.write('  [GAGAL] Perbaiki temuan di atas sebelum melanjutkan.\n\n');
+      tulis('  [GAGAL] Perbaiki temuan di atas sebelum melanjutkan.');
+      tulis('');
     }
   } finally {
     await sql.end();
@@ -191,6 +254,8 @@ async function utama(): Promise<void> {
 }
 
 utama().catch((e: unknown) => {
-  process.stderr.write(`\n  rls-coverage gagal: ${e instanceof Error ? e.message : String(e)}\n\n`);
+  process.stderr.write(
+    NL + `  rls-coverage gagal: ${e instanceof Error ? e.message : String(e)}` + NL + NL,
+  );
   process.exit(1);
 });
