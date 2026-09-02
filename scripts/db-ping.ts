@@ -18,6 +18,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import postgres from 'postgres';
 
 type Hasil = 'LULUS' | 'GAGAL' | 'DILEWATI';
 const laporan: { nama: string; hasil: Hasil; pesan: string }[] = [];
@@ -108,34 +109,23 @@ async function cekPostgres(env: Record<string, string>) {
     return;
   }
 
-  let Client: new (o: { connectionString: string; ssl?: unknown }) => {
-    connect(): Promise<void>;
-    query(q: string): Promise<{ rows: Record<string, string>[] }>;
-    end(): Promise<void>;
-  };
+  const sql = postgres(conn, { ssl: 'require', max: 1, idle_timeout: 5, connect_timeout: 15 });
   try {
-    ({ Client } = (await import('pg')) as unknown as { Client: typeof Client });
-  } catch {
-    catat('Koneksi Postgres', 'DILEWATI', 'paket "pg" belum terpasang — jalankan lagi setelah T-009');
-    catat('Extension wajib', 'DILEWATI', 'menunggu paket pg');
-    return;
-  }
-
-  const client = new Client({ connectionString: conn, ssl: { rejectUnauthorized: false } });
-  try {
-    await client.connect();
-    const versi = await client.query('SHOW server_version');
-    const major = parseInt(String(versi.rows[0]?.server_version ?? '0'), 10);
+    const versi = (await sql`SHOW server_version`) as unknown as { server_version: string }[];
+    const teks = versi[0]?.server_version ?? '0';
+    const major = parseInt(teks, 10);
     if (major < 15) {
       catat('Koneksi Postgres', 'GAGAL', `versi ${major}, dibutuhkan minimal 15`);
     } else {
-      catat('Koneksi Postgres', 'LULUS', `terhubung, PostgreSQL ${versi.rows[0]?.server_version}`);
+      catat('Koneksi Postgres', 'LULUS', `terhubung, PostgreSQL ${teks}`);
     }
 
-    const ext = await client.query(
-      "SELECT extname FROM pg_extension WHERE extname IN ('uuid-ossp','btree_gist','pg_trgm') ORDER BY extname"
-    );
-    const ada = ext.rows.map((r) => r.extname);
+    const ext = (await sql`
+      SELECT extname FROM pg_extension
+      WHERE extname IN ('uuid-ossp', 'btree_gist', 'pg_trgm')
+      ORDER BY extname
+    `) as unknown as { extname: string }[];
+    const ada = ext.map((r) => r.extname);
     const kurang = ['btree_gist', 'pg_trgm', 'uuid-ossp'].filter((e) => !ada.includes(e));
     if (kurang.length) {
       catat(
@@ -153,7 +143,7 @@ async function cekPostgres(env: Record<string, string>) {
     catat('Koneksi Postgres', 'GAGAL', (err as Error).message);
     catat('Extension wajib', 'DILEWATI', 'koneksi gagal');
   } finally {
-    await client.end().catch(() => {});
+    await sql.end({ timeout: 5 }).catch(() => {});
   }
 }
 
