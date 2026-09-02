@@ -1,0 +1,183 @@
+/**
+ * Storage Adapter untuk Supabase Storage — implementasi yang dipakai MVP.
+ *
+ * Memakai SECRET KEY, jadi modul ini server-only dan berjalan melewati policy
+ * Storage. Otorisasi siapa boleh membaca apa dikerjakan lapisan service
+ * sebelum memanggil adapter, bukan oleh Storage itu sendiri.
+ *
+ * Sumber: SYSTEM_DESIGN §12, §12.2 · §18.1 · docs/ai/tasks/P1-fondasi.md T-044
+ */
+
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  MAKS_DETIK_SIGNED_URL,
+  NotImplementedError,
+  SalahBucketError,
+  type OpsiPut,
+  type StorageAdapter,
+  type StorageObject,
+} from './adapter';
+import { bucketUntuk, pastikanBucketCocok, type NamaBucket } from './keys';
+
+if (typeof window !== 'undefined') {
+  throw new Error('lib/storage/supabase-adapter.ts memegang secret key dan server-only.');
+}
+
+function wajib(nama: string): string {
+  const nilai = process.env[nama];
+  if (!nilai) {
+    throw new Error(`Environment variable ${nama} belum diisi. Jalankan: npm run check:env`);
+  }
+  return nilai;
+}
+
+export class SupabaseStorageAdapter implements StorageAdapter {
+  private readonly klien: SupabaseClient;
+  private readonly bucket: Record<NamaBucket, string>;
+  private readonly urlDasar: string;
+
+  constructor(klien?: SupabaseClient) {
+    this.urlDasar = wajib('NEXT_PUBLIC_SUPABASE_URL').replace(/\/+$/, '');
+    this.klien =
+      klien ??
+      createClient(this.urlDasar, wajib('SUPABASE_SECRET_KEY'), {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+
+    this.bucket = {
+      private: process.env.STORAGE_BUCKET_PRIVATE ?? 'private',
+      public: process.env.STORAGE_BUCKET_PUBLIC ?? 'public',
+    };
+  }
+
+  /** Nama bucket sesungguhnya untuk sebuah key. */
+  private bucketNyata(key: string): string {
+    return this.bucket[bucketUntuk(key)];
+  }
+
+  async put(
+    key: string,
+    data: Buffer | Blob,
+    contentType: string,
+    opts?: OpsiPut,
+  ): Promise<{ key: string }> {
+    // Menolak lebih dulu bila key dan permintaan pemanggil bertentangan.
+    // Lihat alasannya di keys.pastikanBucketCocok().
+    const jenis = pastikanBucketCocok(key, opts?.public);
+
+    const { error } = await this.klien.storage.from(this.bucket[jenis]).upload(key, data, {
+      contentType,
+      upsert: opts?.upsert ?? false,
+    });
+
+    if (error) throw new Error(`Gagal mengunggah "${key}" ke bucket ${jenis}: ${error.message}`);
+    return { key };
+  }
+
+  async get(key: string): Promise<Buffer> {
+    const { data, error } = await this.klien.storage.from(this.bucketNyata(key)).download(key);
+    if (error || !data) {
+      throw new Error(`Gagal mengambil "${key}": ${error?.message ?? 'objek kosong'}`);
+    }
+    return Buffer.from(await data.arrayBuffer());
+  }
+
+  async getSignedUrl(key: string, expiresInSeconds: number): Promise<string> {
+    if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0) {
+      throw new Error(`expiresInSeconds harus angka positif, diterima: ${expiresInSeconds}`);
+    }
+    if (expiresInSeconds > MAKS_DETIK_SIGNED_URL) {
+      throw new Error(
+        `Umur signed URL ${expiresInSeconds} detik melebihi batas ${MAKS_DETIK_SIGNED_URL}. ` +
+          `SYSTEM_DESIGN §18.1 menetapkan tautan berdurasi pendek; untuk akses lebih ` +
+          `lama ambil isinya lewat get() di server, jangan memperpanjang URL-nya.`,
+      );
+    }
+
+    const { data, error } = await this.klien.storage
+      .from(this.bucketNyata(key))
+      .createSignedUrl(key, Math.trunc(expiresInSeconds));
+
+    if (error || !data) {
+      throw new Error(`Gagal membuat signed URL "${key}": ${error?.message ?? 'kosong'}`);
+    }
+    return data.signedUrl;
+  }
+
+  getPublicUrl(key: string): string {
+    // Objek privat TIDAK punya URL publik. Mengembalikan sesuatu yang
+    // berbentuk URL tetapi selalu ditolak server hanya memindahkan
+    // kegagalannya ke tempat yang lebih sulit dilacak — biasanya ke gambar
+    // yang tidak muncul di halaman, tanpa pesan apa pun.
+    if (bucketUntuk(key) !== 'public') {
+      throw new SalahBucketError(
+        `"${key}" berada di bucket privat dan tidak punya URL publik. ` +
+          `Pakai getSignedUrl(key, DETIK_SIGNED_URL).`,
+      );
+    }
+    return `${this.urlDasar}/storage/v1/object/public/${this.bucket.public}/${key}`;
+  }
+
+  async delete(key: string): Promise<void> {
+    const { error } = await this.klien.storage.from(this.bucketNyata(key)).remove([key]);
+    if (error) throw new Error(`Gagal menghapus "${key}": ${error.message}`);
+  }
+
+  /**
+   * Daftar objek di bawah sebuah prefix, REKURSIF.
+   *
+   * Supabase `list()` hanya mengembalikan satu tingkat dan menandai folder
+   * dengan `id: null`. Tanpa penelusuran di bawah ini, `list('backup/')`
+   * mengembalikan nama-nama folder alih-alih berkasnya — dan kode pemanggil
+   * yang mengira sudah memegang daftar berkas akan diam-diam melewatkan
+   * semuanya.
+   */
+  async list(prefix: string): Promise<StorageObject[]> {
+    const jenis = bucketUntuk(prefix || 'nota/master/');
+    return this.telusuri(this.bucket[jenis], prefix);
+  }
+
+  private async telusuri(bucket: string, prefix: string): Promise<StorageObject[]> {
+    const hasil: StorageObject[] = [];
+    const jalur = prefix.replace(/\/+$/, '');
+
+    const { data, error } = await this.klien.storage.from(bucket).list(jalur, { limit: 1000 });
+    if (error) throw new Error(`Gagal mendaftar "${prefix}": ${error.message}`);
+    if (!data) return hasil;
+
+    for (const item of data) {
+      const key = jalur ? `${jalur}/${item.name}` : item.name;
+
+      // id === null menandai folder, bukan objek.
+      if (item.id === null) {
+        hasil.push(...(await this.telusuri(bucket, `${key}/`)));
+        continue;
+      }
+
+      const meta = item.metadata as { size?: number; mimetype?: string } | null;
+      hasil.push({
+        key,
+        size: meta?.size ?? 0,
+        contentType: meta?.mimetype ?? null,
+        updatedAt: item.updated_at ? new Date(item.updated_at) : null,
+      });
+    }
+    return hasil;
+  }
+
+  async exists(key: string): Promise<boolean> {
+    const potong = key.lastIndexOf('/');
+    const folder = potong === -1 ? '' : key.slice(0, potong);
+    const nama = potong === -1 ? key : key.slice(potong + 1);
+
+    const { data, error } = await this.klien.storage
+      .from(this.bucketNyata(key))
+      .list(folder, { limit: 1, search: nama });
+
+    if (error) throw new Error(`Gagal memeriksa "${key}": ${error.message}`);
+    return (data ?? []).some((o) => o.name === nama);
+  }
+}
+
+/** Dipakai adapter stub supaya pesannya seragam. */
+export { NotImplementedError };

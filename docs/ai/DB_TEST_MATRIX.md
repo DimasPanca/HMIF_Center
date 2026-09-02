@@ -60,7 +60,7 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 | # | Inti invariant | Lapis | Status | Bukti / pemilik celah |
 |---|---|---|---|---|
 | INV-18 | Tiga turunan dibuat paralel dari satu sumber decode | APP | **CELAH** | T-097, T-098 |
-| INV-19 | Unduhan selalu `master_path`, tanpa rekompresi | APP | **CELAH** | T-098 dan endpoint unduh |
+| INV-19 | Unduhan selalu `master_path`, tanpa rekompresi | APP | **SEBAGIAN** | `lib/storage/__tests__/adapter.test.ts` membuktikan pada bucket dev sungguhan bahwa master nota berada di bucket privat, TIDAK dapat diambil lewat URL publik, dan hanya terbuka lewat signed URL 5 menit. `keys.ts` menolak permintaan menyimpannya ke bucket publik. **Belum terbukti:** endpoint unduh selalu memilih master dan tidak merekompresi. T-098 |
 | INV-20 | EXIF dirotasi sebelum resize, metadata sensitif dihapus sesudahnya | APP | **CELAH** | T-097 |
 | INV-21 | MIME divalidasi lewat magic bytes; nama file storage memakai UUID | APP+DB | **SEBAGIAN** | `image.storage_uuid` bersifat `UNIQUE` dan diisi UUID, bukan nama dari pengguna. **Belum terbukti:** validasi magic bytes. T-097 |
 | INV-22 | Tidak pernah upscale; aspect ratio tidak dipaksa | DB | **TERBUKTI** | `008_nota.sql` menolak baris `image` yang master-nya lebih besar dari sumbernya |
@@ -135,7 +135,7 @@ permanen. Sampai itu selesai, INV-15 tetap **SEBAGIAN**.
 
 ### 4. Test yang sudah dibuktikan tidak sia-sia
 
-Test hijau belum tentu menguji apa pun. Sebelas test kritis dibuktikan lewat
+Test hijau belum tentu menguji apa pun. Tiga belas test kritis dibuktikan lewat
 mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 
 | Yang dirusak | Test yang menangkap | Pesan gagalnya |
@@ -149,6 +149,8 @@ mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 | `rab_terbuka()` dilepas dari `rab_section_insert` (T-039) | `015c_rls_negatif.sql` | panitia menambah RAB setelah `DISETUJUI` |
 | `BPH` ditambahkan ke `departemen_update` (T-039) | `015c_rls_negatif.sql` | BPH mengubah 1 baris departemen |
 | `rab_item_select` dipersempit ke divisi sendiri (T-039) | `015c_rls_negatif.sql` | anggota tak dapat membaca RAB divisi lain |
+| pemeriksaan bucket dilepas dari `put()` (T-044) | `lib/storage/__tests__/adapter.test.ts` | master nota diterima ke bucket publik |
+| `getPublicUrl()` tak lagi menolak key privat (T-044) | `lib/storage/__tests__/adapter.test.ts` | URL publik diberikan untuk berkas privat |
 | `my_kepanitiaan()` dikembalikan ke bentuk SYSTEM_DESIGN §5.2 (T-037) | `015a_rls_helpers.sql` | ketua pelaksana memperoleh `{}` |
 | `SET search_path` dilepas dari `auth_roles()` (T-037) | `015a_rls_helpers.sql` | hanya 5 dari 6 helper terkunci |
 
