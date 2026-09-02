@@ -47,9 +47,9 @@
       "depends_on": [
         "T-009"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-02"
     },
     {
       "id": "T-011",
@@ -81,7 +81,7 @@
         "T-010",
         "T-004"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
