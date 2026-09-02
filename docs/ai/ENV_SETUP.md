@@ -74,10 +74,13 @@ Ketiga extension ini **wajib** dan diaktifkan lewat SQL Editor sebelum migrasi p
 Tanpa `btree_gist`, seluruh sistem anti-bentrok proker gagal (INV-09).
 
 ```sql
-create extension if not exists "uuid-ossp";
-create extension if not exists btree_gist;
-create extension if not exists pg_trgm;
+create schema if not exists extensions;
+create extension if not exists "uuid-ossp" with schema extensions;
+create extension if not exists btree_gist  with schema extensions;
+create extension if not exists pg_trgm     with schema extensions;
 ```
+
+Schema `extensions`, bukan `public` — lihat [ADR-020](../adr/ADR-020-schema-extension.md).
 
 Verifikasi:
 
