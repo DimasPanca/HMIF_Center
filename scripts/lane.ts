@@ -112,6 +112,12 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/PROVISIONING_CHECKLIST.md',
     'docs/ai/ENV_SETUP.md',
 
+    // Serah-terima antar-sesi. Memuat keputusan yang lahir di percakapan dan
+    // tidak punya rumah lain — pembagian task yang belum tuntas, urutan yang
+    // diminta pemilik produk, jebakan lingkungan yang sudah pernah memakan
+    // waktu. Ditulis lane ini karena isinya tentang pekerjaan lane ini.
+    'docs/ai/HANDOFF-DATA.md',
+
     // Laporan yang isinya tentang kode lane ini.
     'docs/ai/TEMPLATE_MAPPING.md',
     'docs/ai/SECURITY_AUDIT.md',
