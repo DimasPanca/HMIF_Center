@@ -19,6 +19,7 @@ import {
   type GanttBarRect,
 } from '@/lib/gantt/geometry';
 import type { GanttGroupVM, GanttTaskVM, GanttViewModel } from '@/lib/gantt/types';
+import { useVirtualRows } from '@/lib/gantt/use-virtual-rows';
 import { cn } from '@/lib/utils';
 
 type GanttChartProps = {
@@ -31,26 +32,34 @@ type GanttChartProps = {
 };
 
 type GroupLayout = {
+  kind: 'group';
   key: string;
+  index: number;
   group: GanttGroupVM;
   y: number;
+  height: number;
   rect?: GanttBarRect;
 };
 
 type TaskLayout = {
+  kind: 'task';
   key: string;
+  index: number;
   group: GanttGroupVM;
   task: GanttTaskVM;
   y: number;
+  height: number;
   rect: GanttBarRect;
+  hariHRect?: { x: number; width: number };
+  connector?: GanttConnectorItem;
 };
 
+type LayoutRow = GroupLayout | TaskLayout;
+
 type ChartLayout = {
-  groupRows: GroupLayout[];
-  taskRows: TaskLayout[];
-  connectors: GanttConnectorItem[];
-  rowLines: number[];
+  rows: LayoutRow[];
   height: number;
+  width: number;
 };
 
 type TooltipState = {
@@ -61,17 +70,22 @@ type TooltipState = {
 
 const TOOLTIP_DELAY_MS = 400;
 const PANEL_TRANSITION_MS = 180;
+const GANTT_HEADER_HEIGHT = 50;
+const VIRTUAL_ROW_BUFFER = 5;
+const useBrowserLayoutEffect =
+  typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect;
 
 function timelineWidth(model: GanttViewModel): number {
   const lastColumn = model.timeline.columns.at(-1);
   return Math.max(lastColumn ? lastColumn.x + lastColumn.width : 0, 1);
 }
 
-function buildLayout(model: GanttViewModel, collapsedGroups: ReadonlySet<string>): ChartLayout {
-  const groupRows: GroupLayout[] = [];
-  const taskRows: TaskLayout[] = [];
-  const connectors: GanttConnectorItem[] = [];
-  const rowLines: number[] = [];
+function buildLayout(
+  model: GanttViewModel,
+  collapsedGroups: ReadonlySet<string>,
+  containerWidth: number,
+): ChartLayout {
+  const rows: LayoutRow[] = [];
   const geometryContext = {
     start: model.timeline.start,
     pxPerDay: model.timeline.pxPerDay,
@@ -92,9 +106,16 @@ function buildLayout(model: GanttViewModel, collapsedGroups: ReadonlySet<string>
         )
       : undefined;
 
-    groupRows.push({ key: `group-${group.id}`, group, y, rect: groupRect });
+    rows.push({
+      kind: 'group',
+      key: `group-${group.id}`,
+      index: rows.length,
+      group,
+      y,
+      height: GANTT_DIMENSIONS.groupRowHeight,
+      rect: groupRect,
+    });
     y += GANTT_DIMENSIONS.groupRowHeight;
-    rowLines.push(y);
 
     if (!collapsedGroups.has(group.id)) {
       for (const task of group.tasks) {
@@ -108,12 +129,21 @@ function buildLayout(model: GanttViewModel, collapsedGroups: ReadonlySet<string>
           geometryContext,
         );
 
-        taskRows.push({ key: `task-${task.id}`, group, task, y, rect: taskRect });
-        if (groupRect) {
-          connectors.push({ id: `${group.id}-${task.id}`, parent: groupRect, child: taskRect });
-        }
+        rows.push({
+          kind: 'task',
+          key: `task-${task.id}`,
+          index: rows.length,
+          group,
+          task,
+          y,
+          height: GANTT_DIMENSIONS.taskRowHeight,
+          rect: taskRect,
+          hariHRect: hariHRect(task, taskRect, model),
+          connector: groupRect
+            ? { id: `${group.id}-${task.id}`, parent: groupRect, child: taskRect }
+            : undefined,
+        });
         y += GANTT_DIMENSIONS.taskRowHeight;
-        rowLines.push(y);
       }
     }
 
@@ -121,11 +151,9 @@ function buildLayout(model: GanttViewModel, collapsedGroups: ReadonlySet<string>
   }
 
   return {
-    groupRows,
-    taskRows,
-    connectors,
-    rowLines,
+    rows,
     height: Math.max(y, GANTT_DIMENSIONS.groupRowHeight + GANTT_DIMENSIONS.groupGap * 2),
+    width: Math.max(timelineWidth(model), containerWidth, 1),
   };
 }
 
@@ -180,6 +208,33 @@ function hariHRect(
   return clippedEnd > clippedX ? { x: clippedX, width: clippedEnd - clippedX } : undefined;
 }
 
+function useElementWidth(ref: React.RefObject<HTMLElement | null>): number {
+  const [width, setWidth] = React.useState(0);
+
+  useBrowserLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const measure = () => {
+      const next = Math.max(0, Math.ceil(element.clientWidth));
+      setWidth((current) => (current === next ? current : next));
+    };
+
+    measure();
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    resizeObserver?.observe(element);
+    if (!resizeObserver) window.addEventListener('resize', measure);
+
+    return () => {
+      resizeObserver?.disconnect();
+      if (!resizeObserver) window.removeEventListener('resize', measure);
+    };
+  }, [ref]);
+
+  return width;
+}
+
 function GanttChart({
   model,
   className,
@@ -189,6 +244,8 @@ function GanttChart({
   onTaskSelect,
 }: GanttChartProps) {
   const rootRef = React.useRef<HTMLElement>(null);
+  const verticalScrollRef = React.useRef<HTMLDivElement>(null);
+  const timelineViewportRef = React.useRef<HTMLDivElement>(null);
   const horizontalScrollRef = React.useRef<HTMLDivElement>(null);
   const tooltipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -200,15 +257,40 @@ function GanttChart({
   const [tooltip, setTooltip] = React.useState<TooltipState | null>(null);
   const [selectedItem, setSelectedItem] = React.useState<GanttDisplayItem | null>(null);
   const [panelOpen, setPanelOpen] = React.useState(false);
-  const layout = React.useMemo(() => buildLayout(model, collapsedGroups), [collapsedGroups, model]);
-  const width = React.useMemo(() => timelineWidth(model), [model]);
-  const today = toUtcDay(model.today);
-  const timelineStart = toUtcDay(model.timeline.start);
-  const timelineEnd = toUtcDay(model.timeline.end);
-  const isTodayVisible = today >= timelineStart && today <= timelineEnd;
-  const todayX = isTodayVisible
-    ? dateToX(today, { start: timelineStart, pxPerDay: model.timeline.pxPerDay })
-    : null;
+  const containerWidth = useElementWidth(timelineViewportRef);
+  const layout = React.useMemo(
+    () => buildLayout(model, collapsedGroups, containerWidth),
+    [collapsedGroups, containerWidth, model],
+  );
+  const estimatedViewportHeight = typeof maxHeight === 'number' ? Math.max(1, maxHeight) : 520;
+  const virtualRows = useVirtualRows(layout.rows, verticalScrollRef, {
+    overscan: VIRTUAL_ROW_BUFFER,
+    estimatedViewportHeight,
+    contentOffsetTop: GANTT_HEADER_HEIGHT,
+    stickyInsetTop: GANTT_HEADER_HEIGHT,
+  });
+  const visibleConnectors = React.useMemo(
+    () =>
+      virtualRows.rows.flatMap((row) =>
+        row.kind === 'task' && row.connector ? [row.connector] : [],
+      ),
+    [virtualRows.rows],
+  );
+  const visibleRowLines = React.useMemo(
+    () => virtualRows.rows.map((row) => row.y + row.height),
+    [virtualRows.rows],
+  );
+  const width = layout.width;
+  const todayX = React.useMemo(() => {
+    const today = toUtcDay(model.today);
+    const timelineStart = toUtcDay(model.timeline.start);
+    const timelineEnd = toUtcDay(model.timeline.end);
+    const isTodayVisible = today >= timelineStart && today <= timelineEnd;
+
+    return isTodayVisible
+      ? dateToX(today, { start: timelineStart, pxPerDay: model.timeline.pxPerDay })
+      : null;
+  }, [model.timeline.end, model.timeline.pxPerDay, model.timeline.start, model.today]);
 
   const setRootRef = React.useCallback((node: HTMLElement | null) => {
     rootRef.current = node;
@@ -341,6 +423,9 @@ function GanttChart({
       ref={setRootRef}
       data-slot="gantt-chart"
       data-scroll-x="0"
+      data-rendered-row-count={virtualRows.rows.length}
+      data-total-row-count={virtualRows.totalCount}
+      data-virtual-buffer={VIRTUAL_ROW_BUFFER}
       className={cn(
         'hmif-gantt relative isolate w-full overflow-hidden rounded-sm border border-default bg-panel text-primary shadow-sm',
         className,
@@ -348,7 +433,9 @@ function GanttChart({
       aria-label={ariaLabel}
     >
       <div
+        ref={verticalScrollRef}
         data-slot="gantt-vertical-scroll"
+        data-testid="gantt-vertical-scroll"
         className="overflow-y-auto overscroll-contain"
         style={{ maxHeight }}
         onWheel={handleWheel}
@@ -373,49 +460,56 @@ function GanttChart({
             className="hmif-gantt-body sticky left-0 z-20 overflow-hidden border-r border-default bg-panel"
             style={{ height: layout.height }}
           >
-            {layout.groupRows.map(({ key, group, y }) => {
-              const collapsed = collapsedGroups.has(group.id);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  data-slot="gantt-group-toggle"
-                  data-testid={`gantt-group-toggle-${group.id}`}
-                  aria-expanded={!collapsed}
-                  aria-label={`${collapsed ? 'Bentangkan' : 'Lipat'} grup ${group.label}`}
-                  className="hmif-gantt-group-toggle absolute left-0 flex w-full items-center gap-2 overflow-hidden border-b border-subtle bg-panel px-2 text-left text-[13px] font-semibold text-primary outline-none hover:bg-subtle focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)] motion-reduce:transition-none"
-                  style={{ top: y, height: GANTT_DIMENSIONS.groupRowHeight }}
-                  onClick={() => toggleGroup(group)}
-                >
-                  <span aria-hidden="true" className="inline-block w-3 shrink-0 text-center">
-                    ▾
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <span className="truncate">{group.label}</span>
-                  {collapsed && group.tasks.length > 0 ? (
-                    <span className="ml-auto shrink-0 text-[11px] font-normal text-tertiary tabular-nums">
-                      {group.tasks.length}
+            {virtualRows.rows.map((row) => {
+              if (row.kind === 'group') {
+                const { key, group, y, height, index } = row;
+                const collapsed = collapsedGroups.has(group.id);
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    data-slot="gantt-group-toggle"
+                    data-testid={`gantt-group-toggle-${group.id}`}
+                    data-gantt-row-index={index}
+                    aria-expanded={!collapsed}
+                    aria-label={`${collapsed ? 'Bentangkan' : 'Lipat'} grup ${group.label}`}
+                    className="hmif-gantt-group-toggle absolute left-0 flex w-full items-center gap-2 overflow-hidden border-b border-subtle bg-panel px-2 text-left text-[13px] font-semibold text-primary outline-none hover:bg-subtle focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)] motion-reduce:transition-none"
+                    style={{ top: y, height }}
+                    onClick={() => toggleGroup(group)}
+                  >
+                    <span aria-hidden="true" className="inline-block w-3 shrink-0 text-center">
+                      ▾
                     </span>
-                  ) : null}
-                </button>
+                    <span
+                      aria-hidden="true"
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <span className="truncate">{group.label}</span>
+                    {collapsed && group.tasks.length > 0 ? (
+                      <span className="ml-auto shrink-0 text-[11px] font-normal text-tertiary tabular-nums">
+                        {group.tasks.length}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              }
+
+              const { key, task, y, height, index } = row;
+              return (
+                <div
+                  key={key}
+                  data-slot="gantt-task-label"
+                  data-gantt-row-index={index}
+                  className="absolute left-0 flex w-full items-center overflow-hidden border-b border-subtle bg-panel pr-2 pl-8 text-[12px] text-secondary"
+                  style={{ top: y, height }}
+                  title={task.label}
+                >
+                  <span className="truncate">{task.label}</span>
+                </div>
               );
             })}
-
-            {layout.taskRows.map(({ key, task, y }) => (
-              <div
-                key={key}
-                data-slot="gantt-task-label"
-                className="absolute left-0 flex w-full items-center overflow-hidden border-b border-subtle bg-panel pr-2 pl-8 text-[12px] text-secondary"
-                style={{ top: y, height: GANTT_DIMENSIONS.taskRowHeight }}
-                title={task.label}
-              >
-                <span className="truncate">{task.label}</span>
-              </div>
-            ))}
 
             {model.groups.length === 0 ? (
               <p className="px-3 py-4 text-[12px] leading-4 text-secondary">
@@ -425,7 +519,9 @@ function GanttChart({
           </div>
 
           <div
+            ref={timelineViewportRef}
             data-slot="gantt-timeline-viewport"
+            data-testid="gantt-timeline-viewport"
             className="hmif-gantt-body relative overflow-hidden bg-[var(--gantt-bg)]"
             style={{ height: layout.height }}
           >
@@ -443,38 +539,40 @@ function GanttChart({
                 columns={model.timeline.columns}
                 width={width}
                 height={layout.height}
-                rowLines={layout.rowLines}
+                rowLines={visibleRowLines}
               />
-              <Connectors items={layout.connectors} />
+              <Connectors items={visibleConnectors} />
 
-              {layout.groupRows.map(({ key, group, rect }) => {
-                const summary = group.bars[0];
-                const item = groupDisplayItem(group, collapsedGroups.has(group.id));
-                if (!summary || !rect || !item) return null;
+              {virtualRows.rows.map((row) => {
+                if (row.kind === 'group') {
+                  const { key, group, rect } = row;
+                  const summary = group.bars[0];
+                  const item = groupDisplayItem(group, collapsedGroups.has(group.id));
+                  if (!summary || !rect || !item) return null;
 
-                return (
-                  <GroupBar
-                    key={key}
-                    group={group}
-                    bar={summary}
-                    rect={rect}
-                    active={selectedItem?.id === item.id}
-                    onHoverStart={(event) => scheduleTooltip(item, event)}
-                    onHoverMove={moveTooltipAnchor}
-                    onHoverEnd={hideTooltip}
-                    onActivate={() => activateItem(item)}
-                  />
-                );
-              })}
+                  return (
+                    <GroupBar
+                      key={key}
+                      group={group}
+                      bar={summary}
+                      rect={rect}
+                      active={selectedItem?.id === item.id}
+                      onHoverStart={(event) => scheduleTooltip(item, event)}
+                      onHoverMove={moveTooltipAnchor}
+                      onHoverEnd={hideTooltip}
+                      onActivate={() => activateItem(item)}
+                    />
+                  );
+                }
 
-              {layout.taskRows.map(({ key, task, rect }) => {
+                const { key, task, rect } = row;
                 const item = taskDisplayItem(task);
                 return (
                   <TaskBar
                     key={key}
                     task={task}
                     rect={rect}
-                    hariHRect={hariHRect(task, rect, model)}
+                    hariHRect={row.hariHRect}
                     active={selectedItem?.id === task.id}
                     onHoverStart={(event) => scheduleTooltip(item, event)}
                     onHoverMove={moveTooltipAnchor}
