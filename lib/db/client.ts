@@ -51,6 +51,29 @@ function buatKlien(): PrismaClient {
 // berkas berubah sampai kuota koneksi Supabase habis.
 const global_ = globalThis as unknown as { __hmifPrisma?: PrismaClient };
 
-export const db: PrismaClient = global_.__hmifPrisma ?? buatKlien();
-
-if (process.env.NODE_ENV !== 'production') global_.__hmifPrisma = db;
+/**
+ * MALAS, bukan langsung. Klien baru dibuat saat method pertama dipakai.
+ *
+ * Versi pertama berbunyi `export const db = global_.__hmifPrisma ?? buatKlien()`,
+ * dan itu membaca DATABASE_URL saat modulnya DIIMPOR. Akibatnya:
+ *
+ *   - `npm run verify` gagal di mesin yang belum memegang kredensial database,
+ *     walau seluruh test yang gagal itu memang melewati bagian databasenya.
+ *     Berkas test yang sekadar mengimpor lib/auth/session.ts ikut jatuh.
+ *   - `next build` mengevaluasi modul yang diimpor. Satu halaman yang
+ *     mengimpor tipe dari sini akan menggagalkan build Vercel bila env-nya
+ *     belum lengkap, dengan pesan yang menunjuk ke dalam node_modules.
+ *
+ * Kegagalannya tetap keras dan tetap menyebut nama variabelnya — hanya
+ * terjadi pada saat yang benar, yaitu saat database sungguh-sungguh dipakai.
+ *
+ * Pola yang sama dipakai `lib/storage/index.ts` dan
+ * `lib/storage/supabase-adapter.ts`, dengan alasan yang sama persis.
+ */
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop: string | symbol) {
+    global_.__hmifPrisma ??= buatKlien();
+    const nilai = Reflect.get(global_.__hmifPrisma as object, prop) as unknown;
+    return typeof nilai === 'function' ? nilai.bind(global_.__hmifPrisma) : nilai;
+  },
+});

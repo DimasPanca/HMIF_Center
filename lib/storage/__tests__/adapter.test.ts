@@ -138,6 +138,41 @@ describe('pemilihan driver', () => {
     expect(buatAdapter('s3').constructor.name).toBe('S3Adapter');
   });
 
+  it('DAPAT DIBUAT TANPA KREDENSIAL APA PUN', () => {
+    // Regresi. Versi pertama membaca environment variable di constructor,
+    // sehingga sekadar MEMILIH driver menuntut SUPABASE_SECRET_KEY. Lane ui
+    // melaporkannya: `npm run verify` di worktree mereka gagal, padahal
+    // worktree itu memang sengaja tidak diberi secret key (hak minimum).
+    //
+    // Akibatnya bukan hanya di test — `next build` mengevaluasi modul yang
+    // diimpor, jadi satu halaman yang mengimpor tipe dari sini akan
+    // menggagalkan build Vercel bila env-nya belum lengkap.
+    const simpan = { ...process.env };
+    for (const k of [
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'SUPABASE_SECRET_KEY',
+      'STORAGE_BUCKET_PRIVATE',
+      'STORAGE_BUCKET_PUBLIC',
+    ]) {
+      delete process.env[k];
+    }
+
+    try {
+      expect(() => buatAdapter('supabase')).not.toThrow();
+      expect(() => buatAdapter('gdrive')).not.toThrow();
+      expect(() => buatAdapter('local')).not.toThrow();
+      expect(() => buatAdapter('s3')).not.toThrow();
+
+      // Tetapi memakainya TANPA kredensial harus gagal keras, dan pesannya
+      // harus menyebut nama variabelnya.
+      expect(() => buatAdapter('supabase').getPublicUrl('aset/x.png')).toThrow(
+        /NEXT_PUBLIC_SUPABASE_URL/,
+      );
+    } finally {
+      Object.assign(process.env, simpan);
+    }
+  });
+
   it('menolak nama driver yang tidak dikenal alih-alih jatuh ke bawaan', () => {
     // Deployment yang dikira memakai S3 tetapi diam-diam menulis ke Supabase
     // baru ketahuan saat mencari berkas di tempat yang salah.
