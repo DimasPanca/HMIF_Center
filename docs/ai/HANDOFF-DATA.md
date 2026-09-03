@@ -23,11 +23,17 @@ ia dipercaya.
 
 ## 1. Keadaan per 2026-09-04
 
-Lane `data` **33/33 DONE**. Tidak ada yang READY — bukan karena pekerjaan habis,
+Lane `data` **35/35 DONE**. Tidak ada yang READY — bukan karena pekerjaan habis,
 melainkan karena pembagian task ke lane belum dilanjutkan. Lihat §2.
 
 Aplikasi **sudah dapat di-login**. Gate `test:e2e -- login` hijau 31 lulus,
 1 sengaja dilewati, dan stabil pada tiga jalan berturut-turut.
+
+Inti Program Kerja sudah ada separuhnya. T-065 dibelah seperti T-045: lane data
+menulis `lib/proker/{schema,status,service}.ts` dan kontraknya di
+`docs/ai/PROKER_CONTRACT.md`; **`app/api/proker/**` masih kosong dan menunggu
+lane ui.** T-066 selesai utuh — `npx tsx scripts/stress-anti-bentrok.ts`, 22
+assertion, stabil pada lima jalan berturut-turut.
 
 ---
 
@@ -69,11 +75,14 @@ jadi penundaan ini tidak memblokir apa pun — ia hanya menggeser urutan.
 
 **Urutan yang diminta:** fitur non-surat dulu. Yang paling membuka jalan:
 
-1. **T-065 separuh data** — `lib/proker/{service,schema,status}.ts`. Inti
-   Program Kerja beserta anti-bentrok kalender. Butuh T-046 (selesai) dan T-033
-   (selesai). Sesudahnya tulis kontraknya seperti `AUTH_CONTRACT.md` untuk lane ui.
-2. **T-066** — uji konkurensi anti-bentrok. Seluruh berkasnya milik lane data.
+1. ~~**T-065 separuh data**~~ — **selesai 2026-09-04.** Kontraknya di
+   `docs/ai/PROKER_CONTRACT.md`.
+2. ~~**T-066**~~ — **selesai 2026-09-04**, dan menemukan satu cacat nyata. Lihat §4.5.
 3. **T-050, T-047, T-048** — periode dan manajemen user; campuran, perlu dibelah.
+
+Yang paling membuka jalan berikutnya adalah **separuh ui T-065** — empat route
+handler tipis di atas service yang sudah ada. Tanpa itu, T-067 sampai T-071
+tidak punya endpoint untuk dipanggil.
 
 ---
 
@@ -129,12 +138,43 @@ Baca env di dalam fungsi, bukan di tingkat modul.
 
 ---
 
+### 4.5 Beban BESAR justru bukan yang menyingkap race condition
+
+T-066 menjalankan dua skenario: dua approval bersamaan, dan sepuluh approval
+bersamaan. Yang **sepuluh selalu lulus**; yang **dua gagal pada dua dari tiga
+jalan** dengan deadlock (40P01).
+
+Sebabnya masuk akal setelah dilihat: pada sepuluh pesaing, satu menyisipkan
+lebih dulu dan sembilan sisanya mengantre di belakang SATU baris — tidak ada
+siklus. Pada dua pesaing, keduanya menyisipkan hampir bersamaan dan saling
+menunggu.
+
+Pelajarannya berlaku umum di project ini: **menaikkan jumlah pesaing tidak
+membuat uji konkurensi lebih tajam.** Kasus dua — yang paling mungkin terjadi
+di organisasi berisi enam departemen — justru yang paling mudah terlewat.
+
+Sudah diperbaiki lewat migrasi `019_setujui_proker_serial.sql` (ADR-022).
+`supabase/tests/021_konflik_konkuren.sql` menguji keberadaan advisory lock-nya
+langsung lewat `pg_locks`, bukan hanya akibatnya — tanpa itu, menghapus kunci
+tersebut tidak membuat satu pun test merah.
+
+### 4.6 `db:reset` menghapus fixture E2E
+
+`db:reset` menjalankan seluruh migrasi dari nol, dan periode "Periode Uji E2E"
+beserta tiga akunnya ikut hilang. Gate login akan gagal seluruhnya sesudahnya,
+dengan pesan yang menunjuk halaman login.
+
+Jalankan `npm run seed:e2e-auth` setiap kali sesudah `db:reset`.
+
+---
+
 ## 5. Yang masih menunggu manusia
 
 | # | Hal | Catatan |
 |---|---|---|
 | 1 | Rotasi publishable key Supabase | Nilainya pernah masuk commit di GitHub. Wajib sebelum data pengurus sungguhan masuk. |
 | 2 | ADR-021 masih berstatus **Usulan** | Sebelas template sudah memakainya. Perlu diterima atau ditolak. |
+| 2b | ADR-022 masih berstatus **Usulan** | Sudah diimplementasikan migrasi 019 dan dituntut PRD F-5.2 Acceptance Criteria. Diangkat karena T-066 menyatakan **Ubah: —** sementara perbaikannya menambah migrasi. Perlu diterima atau ditolak. |
 | 3 | Temuan 10 `TEMPLATE_MAPPING.md` | LPJ tidak punya tabel keuangan sama sekali padahal PRD F-12.1 menuntut empat bagiannya. Menambahkannya = membuat template baru, bukan membedah — pekerjaan T-093. |
 | 4 | Buka sebelas template di Word | Memastikan tidak ada peringatan korupsi, dan membandingkan kop surat hasil generate dengan aslinya. |
 
