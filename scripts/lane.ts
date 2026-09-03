@@ -70,7 +70,30 @@ const MILIK: Record<Lane, string[]> = {
     'lib/lpj/**',
     'lib/backup/**',
     'lib/realtime/**',
+
+    // Ditambahkan setelah audit kepemilikan pada sync S3. Seluruhnya mengikuti
+    // pola yang sudah ada: namespace lib/<domain>/** yang berisi service,
+    // schema, dan aturan bisnis dimiliki lane data; lane ui memakainya lewat
+    // impor, tidak menyuntingnya. Sebelum ini, dua puluh berkas di bawah tidak
+    // dimiliki siapa pun dan guard menolaknya dengan "milik TIDAK TERDAFTAR" —
+    // baru ketahuan setelah agent selesai menulis kodenya.
+    'lib/proker/**',
+    'lib/kepanitiaan/**',
+    'lib/tor/**',
+    'lib/proposal/**',
+    'lib/cron/**',
+    'lib/deadline.ts',
+    'lib/import/**',
+    'lib/security/**',
     'lib/README.md',
+
+    // middleware.ts menegakkan autentikasi untuk seluruh rute (dashboard);
+    // ia sepasang dengan lib/auth/** dan bukan berkas tampilan.
+    'middleware.ts',
+
+    // vercel.json mendaftarkan Vercel Cron (ADR-009) dan sepasang dengan
+    // next.config.ts yang sudah dimiliki lane ini.
+    'vercel.json',
     'scripts/**',
     'templates/**',
     'e2e/**',
@@ -88,6 +111,21 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/RLS_TEST_MATRIX.md',
     'docs/ai/PROVISIONING_CHECKLIST.md',
     'docs/ai/ENV_SETUP.md',
+
+    // Laporan yang isinya tentang kode lane ini.
+    'docs/ai/TEMPLATE_MAPPING.md',
+    'docs/ai/SECURITY_AUDIT.md',
+
+    // README menjelaskan cara menyiapkan dan menjalankan proyek — env,
+    // migrasi, skrip — seluruhnya wilayah lane ini. Dikeluarkan dari BEKU
+    // karena T-116 memang menuntut perubahannya.
+    'README.md',
+
+    // ADR-010 menetapkan strategi PDF, dan T-062 yang mengimplementasikannya
+    // perlu memperbarui statusnya. Satu-satunya ADR di rentang 001-019 yang
+    // dilepas dari BEKU, dan hanya karena ada task yang menuntutnya.
+    'docs/adr/ADR-010*.md',
+
     // Rentang ADR lane data: 020-039
     'docs/adr/ADR-02*.md',
     'docs/adr/ADR-03*.md',
@@ -104,6 +142,21 @@ const MILIK: Record<Lane, string[]> = {
     'postcss.config.mjs',
     'components.json',
     'docs/ai/lanes/state-ui.json',
+
+    // Laporan dan panduan yang isinya tentang apa yang dilihat pengguna.
+    // Penugasan fase 8-9 ini bersifat sementara: protokol menyebut rencana
+    // lane disusun ulang setelah S3, dan pembagian di bawah hanya menutup
+    // celah supaya guard tidak menolak sesuatu yang memang harus dikerjakan.
+    'docs/ai/A11Y_REPORT.md',
+    'docs/ai/PERFORMANCE_REPORT.md',
+    'docs/ai/BACKLOG.md',
+    'docs/ai/UAT_SKENARIO.md',
+    'docs/ai/UAT_HASIL.md',
+    // T-099 menghasilkan endpoint unduh dan komponen NotaImage bersama laporan
+    // uji cetaknya; ketiganya dibiarkan di satu lane agar task tidak terbelah.
+    'docs/ai/UJI_CETAK.md',
+    'docs/panduan/**',
+
     // Rentang ADR lane ui: 040-059
     'docs/adr/ADR-04*.md',
     'docs/adr/ADR-05*.md',
@@ -125,11 +178,23 @@ const BEKU: string[] = [
   'docs/ai/lanes/LANE-UI.md',
   'docs/adr/README.md',
   // ADR 001-019 dibuat sebelum kerja paralel dan tidak dimiliki lane mana pun.
+  //
+  // ADR-010 SENGAJA TIDAK ADA di daftar ini: T-062 mengimplementasikan
+  // strategi PDF yang ditetapkannya dan perlu memperbarui statusnya. Karena
+  // pemilik() memeriksa BEKU LEBIH DULU daripada MILIK, satu-satunya cara
+  // memberikannya kepada sebuah lane adalah mengeluarkannya dari sini.
   'docs/adr/ADR-00*.md',
-  'docs/adr/ADR-01*.md',
+  'docs/adr/ADR-011*.md',
+  'docs/adr/ADR-012*.md',
+  'docs/adr/ADR-013*.md',
+  'docs/adr/ADR-014*.md',
+  'docs/adr/ADR-015*.md',
+  'docs/adr/ADR-016*.md',
+  'docs/adr/ADR-017*.md',
+  'docs/adr/ADR-018*.md',
+  'docs/adr/ADR-019*.md',
   'CLAUDE.md',
   'AGENTS.md',
-  'README.md',
   '.gitignore',
   'Design/**',
   'Template/**',
