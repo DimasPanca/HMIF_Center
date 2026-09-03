@@ -157,11 +157,23 @@
   --gradient-blue:    linear-gradient(135deg, #0066A9, #1E90FF);
   --gradient-teal:    linear-gradient(135deg, #00B4D8, #1E90FF);
 
-  /* Alias yang digunakan komponen Gantt T-073 dari token DESIGN_SYSTEM §10.3. */
-  --gantt-grid:   rgba(17, 28, 68, 0.06);
+  /* Gantt — DESIGN_SYSTEM §10.3. */
+  --gantt-bg: var(--bg-panel);
+  --gantt-grid-line: rgba(17, 28, 68, 0.06);
+  --gantt-grid-month: rgba(17, 28, 68, 0.12);
+  --gantt-header-bg: var(--bg-subtle);
+  --gantt-today-line: var(--brand-tech);
+  --gantt-today-bg: rgba(30, 144, 255, 0.04);
   --gantt-hari-h: #FFFFFF;
-  --gantt-today:  #1E90FF;
-  --gantt-bar-bg: var(--bg-panel);
+  --gantt-hari-h-ring: rgba(255, 255, 255, 0.9);
+  --gantt-connector: rgba(17, 28, 68, 0.25);
+  --gantt-bar-opacity: 0.85;
+  --gantt-progress-opacity: 1;
+
+  /* Alias kompatibilitas untuk pemakai token scaffold sebelum T-073. */
+  --gantt-grid: var(--gantt-grid-line);
+  --gantt-today: var(--gantt-today-line);
+  --gantt-bar-bg: var(--gantt-bg);
 
   /* Brand mentah */
   --brand-navy:  #111C44;
@@ -224,10 +236,18 @@
 }
 
 [data-theme="dark"] {
-  --gantt-grid:   rgba(255, 255, 255, 0.06);
+  --gantt-bg: #111C44;
+  --gantt-grid-line: rgba(255, 255, 255, 0.06);
+  --gantt-grid-month: rgba(255, 255, 255, 0.12);
+  --gantt-header-bg: #0D1631;
+  --gantt-today-line: var(--brand-tech);
+  --gantt-today-bg: rgba(30, 144, 255, 0.08);
   --gantt-hari-h: #FFFFFF;
-  --gantt-today:  #1E90FF;
-  --gantt-bar-bg: #111C44;
+  --gantt-hari-h-ring: rgba(255, 255, 255, 0.9);
+  --gantt-connector: rgba(255, 255, 255, 0.25);
+  --gantt-grid: var(--gantt-grid-line);
+  --gantt-today: var(--gantt-today-line);
+  --gantt-bar-bg: var(--gantt-bg);
   --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -268,6 +288,77 @@
   .border-default { border-color: var(--border-default); }
   .border-strong { border-color: var(--border-strong); }
   .border-focus { border-color: var(--border-focus); }
+}
+
+@layer components {
+  .hmif-gantt {
+    --gantt-label-width: 200px;
+    --gantt-scroll-x: 0px;
+  }
+
+  .hmif-gantt-grid {
+    display: grid;
+    grid-template-columns: var(--gantt-label-width) minmax(0, 1fr);
+  }
+
+  .hmif-gantt-track {
+    transform: translate3d(var(--gantt-scroll-x), 0, 0);
+    transform-origin: left top;
+    will-change: transform;
+  }
+
+  .hmif-gantt-body {
+    transition: height var(--duration-normal) ease-out;
+  }
+
+  .hmif-gantt-bar {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .hmif-gantt-bar .hmif-gantt-bar-body,
+  .hmif-gantt-bar .hmif-gantt-bar-focus {
+    transition:
+      opacity var(--duration-fast) ease-out,
+      stroke var(--duration-fast) ease-out,
+      stroke-width var(--duration-fast) ease-out;
+  }
+
+  .hmif-gantt-bar:hover .hmif-gantt-bar-body {
+    opacity: 1;
+  }
+
+  .hmif-gantt-bar:hover .hmif-gantt-bar-focus {
+    stroke: var(--gantt-hari-h-ring);
+    stroke-width: 1;
+  }
+
+  .hmif-gantt-bar:focus-visible .hmif-gantt-bar-focus,
+  .hmif-gantt-bar[data-active="true"] .hmif-gantt-bar-focus {
+    stroke: var(--border-focus);
+    stroke-width: 2;
+  }
+
+  .hmif-gantt-group-toggle {
+    transition:
+      background-color var(--duration-fast) ease-out,
+      color var(--duration-fast) ease-out,
+      box-shadow var(--duration-fast) ease-out;
+  }
+
+  .hmif-gantt-group-toggle > [aria-hidden="true"] {
+    transition: transform var(--duration-normal) ease-out;
+  }
+
+  .hmif-gantt-group-toggle[aria-expanded="false"] > [aria-hidden="true"] {
+    transform: rotate(-90deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .hmif-gantt {
+    --gantt-label-width: 140px;
+  }
 }
 
 .tabular {
