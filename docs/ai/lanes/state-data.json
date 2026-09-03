@@ -357,9 +357,8 @@
       "depends_on": [
         "T-043"
       ],
-      "status": "BLOCKED",
-      "completed_at": null,
-      "blocked_reason": "Separuh UI belum ada dan belum pernah masuk daftar task lane ui: app/(auth)/login/page.tsx, app/api/auth/login/route.ts, app/api/auth/logout/route.ts. Kontraknya sudah siap di docs/ai/AUTH_CONTRACT.md. Separuh data (lib/auth/session.ts, rate-limit.ts, middleware.ts) selesai dan berteshijau."
+      "status": "DONE",
+      "completed_at": "2026-09-03"
     },
     {
       "id": "T-086",

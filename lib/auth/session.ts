@@ -186,6 +186,16 @@ export async function sesiSaatIni(): Promise<Sesi | null> {
 
 const PESAN_KREDENSIAL = 'Email atau password salah';
 
+/**
+ * Berapa lama pengguna diminta menunggu saat PENYEDIA yang membatasi.
+ *
+ * Supabase tidak memberi tahu sisa waktunya lewat klien JS, jadi angka ini
+ * tebakan — dan sengaja dibuat pendek. Menebak terlalu panjang menyuruh orang
+ * menunggu tanpa alasan; menebak pendek paling buruk membuatnya mencoba sekali
+ * lagi dan menerima jawaban yang sama.
+ */
+const DETIK_TUNDA_PENYEDIA = 60;
+
 export async function login(p: ParamLogin): Promise<HasilLogin> {
   const email = normalkanEmail(p.email);
   const password = p.password ?? '';
@@ -214,6 +224,54 @@ export async function login(p: ParamLogin): Promise<HasilLogin> {
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
   if (error || !data.user) {
+    // ====================================================================
+    // RATE LIMIT PENYEDIA AUTH BUKAN KREDENSIAL SALAH
+    // ====================================================================
+    // Supabase membatasi jumlah permintaan ke endpoint sign-in-nya sendiri,
+    // terpisah dari pembatas di rate-limit.ts. Bila batas itu tercapai, ia
+    // menjawab 429 — bukan "password salah".
+    //
+    // Semula seluruh galat di sini dipetakan menjadi KREDENSIAL_SALAH, dan
+    // akibatnya berlapis:
+    //
+    //   1. Pengguna yang passwordnya BENAR diberi tahu passwordnya salah,
+    //      sehingga ia mencoba lagi — dan memperburuk keadaan.
+    //   2. Barisnya tercatat sebagai LOGIN_GAGAL, sehingga satu gangguan di
+    //      pihak penyedia ikut menghabiskan lima jatah percobaan miliknya.
+    //   3. Saat menelusuri kegagalan, jejaknya menunjuk ke kredensial —
+    //      tempat yang salah. Terjadi pada gate E2E T-045 dan sempat
+    //      menuduh halaman login lane ui.
+    //
+    // `aksi` sengaja BUKAN 'LOGIN_GAGAL': `periksaBatas` hanya menghitung
+    // baris ber-aksi itu, jadi memakai nama lain membuat gangguan penyedia
+    // tercatat lengkap di audit tanpa dihitung sebagai kesalahan pengguna.
+    //
+    // Membedakan pesan ini tidak melanggar PRD F-1.1: yang tidak boleh
+    // terbedakan adalah "password salah" dan "email tidak terdaftar", dan
+    // jawaban ini tidak menyinggung keduanya — ia soal volume permintaan,
+    // bukan soal identitas.
+    const status = (error as { status?: number } | null)?.status;
+    const kode = (error as { code?: string } | null)?.code;
+
+    if (status === 429 || kode === 'over_request_rate_limit') {
+      await catatAudit({
+        aksi: 'LOGIN_TERTUNDA',
+        email,
+        userId: null,
+        ip: p.ip,
+        userAgent: p.userAgent,
+        keterangan: 'rate limit penyedia auth',
+      });
+      return {
+        ok: false,
+        kode: 'TERLALU_BANYAK_PERCOBAAN',
+        pesan:
+          `Terlalu banyak percobaan masuk dari jaringan ini. ` +
+          `Coba lagi dalam ${kalimatTunggu(DETIK_TUNDA_PENYEDIA)}.`,
+        sisaDetik: DETIK_TUNDA_PENYEDIA,
+      };
+    }
+
     await catatAudit({
       aksi: 'LOGIN_GAGAL',
       email,
@@ -352,7 +410,13 @@ export function tujuanAman(next: string | null | undefined): string {
 }
 
 interface ParamAudit {
-  aksi: 'LOGIN' | 'LOGIN_GAGAL';
+  /**
+   * `LOGIN_TERTUNDA` dipisahkan dari `LOGIN_GAGAL` dengan sengaja:
+   * `periksaBatas` hanya menghitung yang kedua, sehingga gangguan di pihak
+   * penyedia auth tercatat lengkap tanpa menghabiskan jatah percobaan
+   * pengguna.
+   */
+  aksi: 'LOGIN' | 'LOGIN_GAGAL' | 'LOGIN_TERTUNDA';
   email: string;
   userId: string | null;
   ip: string | null;
