@@ -10,6 +10,7 @@ Kolom **Lane** menunjukkan agent mana yang boleh menulis di sana selama kerja pa
 | `db/` | data | Prisma client singleton, `withAuditContext()`, koneksi | T-043 |
 | `storage/` | data | `StorageAdapter` dan implementasinya, helper `keys.ts` | T-044 |
 | `images/` | data | Pipeline klien 3 turunan, deteksi tipe konten, validasi server | T-097, T-098 |
+| `proker/` | data | Skema Zod 3 kategori, transisi status, service & anti-bentrok | T-065, T-071 |
 | `rab/` | data | `parse-jumlah`, kalkulasi, export & import Excel, realisasi | T-086 … T-091 |
 | `surat/` | data | Skema field, penomoran, registry template, batch | T-054 … T-056 |
 | `documents/` | data | DocumentEngine DOCX, data mapper, image module, konversi PDF | T-061, T-062 |

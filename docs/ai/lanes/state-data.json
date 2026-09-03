@@ -390,6 +390,29 @@
       ],
       "status": "DONE",
       "completed_at": "2026-09-04"
+    },
+    {
+      "id": "T-065",
+      "fase": 3,
+      "judul": "Service proker & API",
+      "depends_on": [
+        "T-046",
+        "T-033"
+      ],
+      "status": "DONE",
+      "butuh_manusia": false,
+      "completed_at": "2026-09-03"
+    },
+    {
+      "id": "T-066",
+      "fase": 3,
+      "judul": "Uji konkurensi anti-bentrok",
+      "depends_on": [
+        "T-065"
+      ],
+      "status": "READY",
+      "butuh_manusia": false,
+      "completed_at": null
     }
   ]
 }
