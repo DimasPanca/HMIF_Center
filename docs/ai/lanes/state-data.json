@@ -63,17 +63,6 @@
       "completed_at": "2026-09-02"
     },
     {
-      "id": "T-097",
-      "fase": 7,
-      "judul": "Pipeline gambar sisi klien",
-      "depends_on": [
-        "T-009"
-      ],
-      "status": "DONE",
-      "butuh_manusia": false,
-      "completed_at": "2026-09-02"
-    },
-    {
       "id": "T-019",
       "fase": 1,
       "judul": "Koneksi database & harness migrasi",
@@ -356,6 +345,37 @@
       "judul": "Storage Adapter",
       "depends_on": [
         "T-043"
+      ],
+      "status": "DONE",
+      "butuh_manusia": false,
+      "completed_at": "2026-09-02"
+    },
+    {
+      "id": "T-045",
+      "fase": 1,
+      "judul": "Autentikasi",
+      "depends_on": [
+        "T-043"
+      ],
+      "status": "READY",
+      "completed_at": null
+    },
+    {
+      "id": "T-086",
+      "fase": 5,
+      "judul": "Parser kolom jumlah",
+      "depends_on": [
+        "T-015"
+      ],
+      "status": "READY",
+      "completed_at": null
+    },
+    {
+      "id": "T-097",
+      "fase": 7,
+      "judul": "Pipeline gambar sisi klien",
+      "depends_on": [
+        "T-009"
       ],
       "status": "DONE",
       "butuh_manusia": false,

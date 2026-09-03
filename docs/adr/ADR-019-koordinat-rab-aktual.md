@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | **Usulan** — menunggu keputusan pemilik produk |
+| **Status** | **Diterima** — dikonfirmasi pemilik produk, 2026-09-03 |
 | **Tanggal** | 2026-09-02 |
 | **Ditemukan oleh** | T-007 saat membedah `Template/RAB_Template.xlsx` |
 | **Memblokir** | T-090 (export Excel), T-103 (RAB aktual otomatis) |
@@ -38,7 +38,7 @@ Gerbang **G4** mensyaratkan hasil export identik struktur dengan template asli. 
 
 Satu-satunya perbedaan nyata antara `RAB` dan `RAB AKTUAL` adalah **posisi vertikal blok ringkasan**: header di baris 3 pada `RAB`, baris 2 pada `RAB AKTUAL`.
 
-## Keputusan yang diusulkan
+## Keputusan
 
 Exporter mengikuti **koordinat berkas template**, bukan angka pada SYSTEM_DESIGN §11.3:
 
@@ -48,7 +48,7 @@ Exporter mengikuti **koordinat berkas template**, bukan angka pada SYSTEM_DESIGN
 
 Angka pada SYSTEM_DESIGN §11.3 dianggap keliru tulis, bukan desain yang disengaja.
 
-## Alasan usulan ini layak diterima
+## Alasan
 
 Berkas template adalah **bukti fisik** yang bisa diperiksa siapa pun, sedangkan SYSTEM_DESIGN adalah dokumen turunan yang ditulis dari pembacaan template itu. Ketika keduanya berbeda soal isi berkas, berkasnya yang benar.
 
@@ -60,8 +60,10 @@ Selain itu, RAB Aktual memang dirancang untuk dibaca **berdampingan** dengan RAB
 - `RAB_MAP.RAB_AKTUAL` memakai `barisHeader: 2`, sementara `RAB_MAP.RAB` memakai `barisHeader: 3`. Perbedaan satu baris ini nyata dan harus dipertahankan.
 - SYSTEM_DESIGN §11.3 **tidak diedit** — ADR ini yang berlaku, sesuai hierarki AGENT_RULES §0.
 
-## Yang dibutuhkan dari pemilik produk
+## Konfirmasi pemilik produk
 
-Konfirmasi satu kalimat bahwa exporter boleh mengikuti struktur berkas template. Tidak ada pilihan lain yang masuk akal secara teknis; ADR ini dibuat karena AGENT_RULES §0 melarang agent memutuskan sendiri saat menemukan pertentangan antar-sumber.
+Diberikan pada 2026-09-03: **"ikuti berkas nyata"**.
 
-**Tidak memblokir pekerjaan sekarang** — T-090 baru dikerjakan pada fase P5.
+ADR ini dibuat karena AGENT_RULES §0 melarang agent memutuskan sendiri saat menemukan pertentangan antar-sumber. Dengan konfirmasi itu, pertentangannya selesai dan T-090 serta T-103 tidak lagi menunggu.
+
+SYSTEM_DESIGN §11.3 sengaja **tidak diedit** — dokumen produk beku, dan hierarki AGENT_RULES §0 menempatkan ADR di atasnya untuk hal yang diputuskan belakangan. Siapa pun yang membaca §11.3 dan menemukan C:G harus sampai ke ADR ini lewat rujukan pada `docs/ai/RAB_CELL_MAP.md`.
