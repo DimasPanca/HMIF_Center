@@ -1,40 +1,61 @@
 # TEMPLATE_MAPPING.md — Peta pembedahan template DOCX
 
-**Task:** T-006 · **Status:** `BLOCKED` — menunggu pengeditan di Microsoft Word
+**Task:** T-006 · **Status:** selesai — 11 template dibangun dan lulus dry run
 **Sumber:** SYSTEM_DESIGN §8.2, §8.3, §17 · PRD F-4.2, F-10.1, F-10.2, F-12.1 · ADR-021
 
 ---
 
-## 0. Apa yang sudah selesai dan apa yang tersisa
+## 0. Status
 
-| Bagian T-006 | Pemilik | Status |
-|---|---|---|
-| Peta teks asli → placeholder → sumber data | AI | ✅ dokumen ini |
-| `scripts/template-dryrun.ts` | AI | ✅ ada, jalan, dan **gagal** selama `templates/` kosong |
-| `templates/*.docx` — 11 berkas ber-placeholder | **Manusia + Word** | ⛔ belum |
+| Bagian T-006 | Status |
+|---|---|
+| Peta teks asli → placeholder → sumber data | ✅ dokumen ini |
+| `scripts/template-dryrun.ts` | ✅ `LULUS — 11 berkas, nol placeholder tak terisi` |
+| `templates/*.docx` — 11 berkas ber-placeholder | ✅ dibangun `scripts/build-templates.ts` |
 
-Bagian ketiga tidak dapat dikerjakan agent. Mengubah `.docx` lewat kode berarti membongkar `word/document.xml` lalu menuliskannya kembali; satu tag `<w:rPr>` yang salah letak membuat Word menolak berkas dengan peringatan korupsi — dan kop surat HMIF, yang kontraknya melarang disentuh, justru bagian yang paling rapuh terhadap pembongkaran semacam itu.
+Pembedahannya **tidak dikerjakan di Word.** Semula bagian ini ditandai butuh
+manusia, dengan alasan bahwa menyunting `.docx` lewat kode berarti membongkar
+`word/document.xml` dan berisiko merusaknya. Alasan itu berlaku untuk
+pembongkaran struktur — dan tidak berlaku untuk apa yang sebenarnya dibutuhkan
+di sini.
 
-Yang tersisa untuk manusia karena itu bukan **memikirkan** peta, melainkan **menerapkan** peta di bawah ini: buka berkas, ganti teks, simpan.
+Yang dibutuhkan hampir seluruhnya penggantian **teks**: `05/379/...` menjadi
+`{nomor_lengkap}`, satu baris tabel dibungkus `{#items}`, satu bagian contoh
+diganti satu placeholder. `scripts/docx-surgery.ts` hanya menyentuh isi `<w:t>`
+dan menyalin `<w:p>` yang sudah ada. Tag struktur — `<w:pPr>`, `<w:rPr>`,
+`<w:tblPr>`, relasi gambar — tidak pernah dibaca, apalagi ditulis. Kop surat,
+margin, font, penomoran, dan tata letak tabel karena itu tetap persis seperti
+aslinya.
+
+Hasilnya juga bisa diulang. Berkas contoh di `Template/` boleh diperbarui kapan
+pun; jalankan ulang skripnya dan kesebelas template ikut terbarui, tanpa ada
+yang perlu mengingat langkah apa saja yang dulu dikerjakan.
 
 ---
 
-## 1. Cara memakai dokumen ini
-
-Untuk setiap berkas:
-
-1. Salin berkas asli dari `Template/` ke `templates/` dengan nama baru — judul tiap sub-bagian §5 adalah nama berkas keluarannya, dan baris **Sumber** di bawahnya menyebut berkas asalnya. Berkas asli di `Template/` **tidak boleh diubah** — ia arsip pembanding.
-2. Di Word, buka salinan yang baru.
-3. Kerjakan tabel **Peta** berkas itu dari atas ke bawah: cari teks di kolom *Teks asli*, ganti dengan isi kolom *Placeholder*.
-4. Kerjakan bagian **Loop** dan **Tanda tangan** berkas itu.
-5. Simpan (`Ctrl+S`), pastikan formatnya tetap `.docx`.
-6. Setelah semua berkas selesai:
+## 1. Cara membangun ulang
 
 ```bash
+npx tsx scripts/build-templates.ts
 npx tsx scripts/template-dryrun.ts
 ```
 
-Dry run mencetak, per berkas, placeholder yang ditemukan dan yang tidak terisi. Selama masih ada yang bertanda ✗, berkas itu belum siap.
+Perintah pertama membaca berkas contoh di `Template/`, menerapkan resep di
+`scripts/build-templates.ts`, dan menulis hasilnya ke `templates/`. Perintah
+kedua menjalankan kesebelasnya dengan data dummy lengkap dan gagal bila ada
+satu placeholder pun yang tidak menemukan datanya.
+
+Tambahkan `--teks` pada perintah kedua untuk mencetak hasil render sebagai teks
+biasa. Itu satu-satunya cara memeriksa hal yang lolos dry run tetapi salah
+dibaca manusia — judul notulensi yang menjadi "Rapat Rapat Kerja", atau seluruh
+butir daftar yang berdempet jadi satu baris.
+
+**Yang berubah harus resepnya, bukan berkas `.docx`-nya.** Menyunting hasil di
+Word akan tertimpa pada `build-templates.ts` berikutnya, dan alasan perubahannya
+hilang tanpa jejak. Setiap operasi di resep wajib mengenai sasarannya; yang
+meleset menghentikan skrip, karena penggantian yang diam-diam gagal
+menghasilkan template yang **kehilangan** satu placeholder — dan `dryrun` tidak
+akan menangkapnya, sebab ia hanya memeriksa tag yang ada.
 
 ---
 
@@ -42,7 +63,7 @@ Dry run mencetak, per berkas, placeholder yang ditemukan dan yang tidak terisi. 
 
 ### 2.1 Kop surat tidak boleh disentuh
 
-Kop surat adalah gambar (`<a:blip>`), bukan teks. Ia tidak muncul di satu pun tabel peta di bawah. Bila di Word Anda tergoda mengklik logo untuk "merapikan", jangan — posisinya sudah benar, dan menggesernya satu milimeter akan terlihat pada setiap surat yang dicetak sesudahnya.
+Kop surat adalah gambar (`<a:blip>`), bukan teks, dan tidak muncul di satu pun tabel peta di bawah. `docx-surgery.ts` tidak punya operasi yang dapat menyentuhnya: seluruh operasinya bekerja pada isi `<w:t>` atau pada salinan `<w:p>`. Kop surat aman bukan karena dijaga, melainkan karena tidak terjangkau.
 
 ### 2.2 Yang aman, dan yang benar-benar berbahaya
 
@@ -64,7 +85,7 @@ r2 (4 sel): "Muhammad Zidan Heiqmatyar | NIM. 33372300 | 84"
 | D | `{na` di satu paragraf, `ma}` di paragraf berikutnya | `Halo Dimas` |
 | J | `{na` di satu sel tabel, `ma}` di sel sebelahnya | `Dimas` |
 
-Jadi tidak perlu berhati-hati berlebihan saat mengetik. Ketik seperti biasa.
+Itu sebabnya resep di `build-templates.ts` boleh mencari kalimat utuh seperti `"Kelengkapan Persyaratan Administrasi Beasiswa."` tanpa peduli Word memecahnya menjadi berapa potong. `docx-surgery.ts` menggabungkan seluruh `<w:t>` satu paragraf sebelum mencari, lalu mengembalikan hasilnya ke potongan semula — sehingga format bagian yang TIDAK diganti tetap utuh.
 
 **Yang berbahaya justru hal lain: salah ketik nama placeholder tidak menimbulkan galat apa pun.**
 
@@ -94,7 +115,7 @@ Pola `(Nama Rapat)`, `(Tanggal)`, `(...........)` pada `Template Notulensi.docx`
 
 ### 2.4 Yang tidak boleh berubah
 
-Margin, font, ukuran huruf, spasi baris, jumlah kolom tabel, dan urutan bagian. Placeholder mengganti **nilai**, bukan struktur. Pengecualiannya hanya tiga, semuanya tercatat sebagai temuan di §7 dengan alasan tertulis.
+Margin, font, ukuran huruf, spasi baris, jumlah kolom tabel, dan urutan bagian. Placeholder mengganti **nilai**, bukan struktur. Setiap penyimpangan tercatat sebagai temuan di §7 dengan alasan tertulis.
 
 ---
 
@@ -453,29 +474,59 @@ Berkas ini sudah berupa formulir kosong, bukan surat terisi. Pekerjaannya paling
 
 **Sumber:** `Template/TOR_KT1_2025.docx` — 922 paragraf · 8 tabel · 1 gambar
 
-Berkas ini terlalu besar untuk dipetakan per paragraf tanpa membukanya di Word. Yang dipetakan di sini adalah **keempat belas bagian PRD F-10.1** beserta nama placeholder yang harus dipakai; letak persisnya ditentukan saat pengeditan, karena judul-judul bagiannya sudah tercetak jelas di dalam dokumen.
+Keempat belas bagian PRD F-10.1, dengan placeholder yang benar-benar dipakai:
 
-| # | Bagian (PRD F-10.1) | Placeholder | Sumber |
+| # | Bagian | Placeholder | Sumber |
 |---|---|---|---|
-| — | sampul | `{nama_kegiatan}` `{tema_kegiatan}` `{tahun}` | `proker`, `periode` |
+| — | sampul | `{nama_kegiatan}` `{tahun}` | `proker`, `periode` |
 | 1 | Nama Kegiatan | `{nama_kegiatan}` | `proker.nama` |
 | 2 | Tema Kegiatan | `{tema_kegiatan}` | `tor.data.tema` |
 | 3 | Gambaran Umum | `{gambaran_umum}` | `tor.data.gambaran_umum` |
 | 4 | Tujuan Kegiatan | `{#tujuan}{teks}{/tujuan}` | `tor.data.tujuan[]` |
-| 5 | Bentuk Acara | `{bentuk_acara}` | `tor.data.bentuk_acara` |
-| 6 | Waktu & Tempat | `{#sesi}{nama_sesi}` `{hari_tanggal}` `{waktu}` `{tempat}{/sesi}` | `tor.data.sesi[]` |
-| 7 | Sasaran Peserta | `{sasaran_peserta}` `{jumlah_peserta}` `{jumlah_kelompok}` | `tor.data` |
-| 8 | Kondisi Pelaksanaan | `{#kondisi}{sesi}{ketentuan}{/kondisi}` | `tor.data.kondisi[]` |
-| 9 | Parameter Kelulusan | `{#parameter}{kriteria}{bobot}{kkm}{/parameter}` | `tor.data.parameter[]` |
+| 5 | Bentuk Acara | `{bentuk_acara}` · `{#bentuk}{judul}{uraian}{/bentuk}` | `tor.data` |
+| 6 | Waktu & Tempat | `{#sesi}{nama_sesi}{hari_tanggal}{waktu}{tempat}{/sesi}` | `tor.data.sesi[]` |
+| 7 | Sasaran Peserta | `{sasaran_peserta}` | `tor.data` |
+| 8 | Kondisi Pelaksanaan | `{#kondisi}{nama_sesi}: {ketentuan}{/kondisi}` | `tor.data.kondisi[]` |
+| 9 | Parameter Kelulusan | `{#parameter}{kriteria} (bobot {bobot}){/parameter}` · `{kkm}` | `tor.data.parameter[]` |
 | 10 | Rangkaian Acara | `{#rangkaian}{nama}{uraian}{/rangkaian}` | `tor.data.rangkaian[]` |
-| 11 | Susunan Acara | `{#rundown}{hari_tanggal}{waktu}{acara}{keterangan}{/rundown}` | `tor.data.rundown[]` |
-| 12 | Anggaran | `{#rab_divisi}{no}{divisi}{besaran}{/rab_divisi}` `{rab_total}` | **RAB, ditarik saat generate** |
+| 11 | Susunan Acara | lihat Lampiran II di bawah | `tor.data.sesi_rundown[]` |
+| 12 | Anggaran | `{#rab_divisi}{no}{divisi}{besaran}{/rab_divisi}` · `{rab_total}` | **RAB, ditarik saat generate** |
 | 13 | Penutup | `{penutup}` | `tor.data.penutup` |
-| 14 | Penandatangan | `{#kiri}` / `{#kanan}` sesuai §4.2 | `kepanitiaan` |
+| 14 | Penandatangan | `{#kanan}` sesuai §4.2 | `kepanitiaan` |
 
-**Bagian 12 tidak disimpan di `tor.data`.** Migrasi `012_dokumen_acara.sql` menyatakannya eksplisit: angka anggaran selalu ditarik ulang dari RAB saat generate, supaya perubahan RAB langsung tercermin dan angkanya tidak pernah bercabang antara dua tempat.
+**Bagian 12 tidak disimpan di `tor.data`.** Migrasi `012_dokumen_acara.sql`
+menyatakannya eksplisit: angka anggaran selalu ditarik ulang dari RAB saat
+generate, supaya perubahan RAB langsung tercermin dan angkanya tidak pernah
+bercabang antara dua tempat.
 
-**Lampiran I** pada berkas asli adalah tabel `No. · Divisi · Besaran Biaya` dengan baris `Total` di bawahnya — itulah `{#rab_divisi}` dan `{rab_total}`. **Lampiran II** adalah rundown empat kolom, sama bentuknya dengan §5.4, jadi memakai `{#rundown}` yang sama.
+**Bagian 10 mengikuti PRD, bukan berkas contoh.** Berkas contoh merinci setiap
+sesi sampai tingkat butir arahan pemateri — 125 paragraf untuk satu kegiatan.
+PRD F-10.1 §10 menetapkan bentuk yang jauh lebih ringkas, "Repeatable per sesi:
+Nama + Uraian", dan itu yang dipakai: template harus melayani kegiatan apa pun,
+bukan mengabadikan susunan SYNCHRONIZE 2025.
+
+**Lampiran II — loop bersarang.** Berkas contoh memakai **lima tabel terpisah**,
+satu per sesi. Kelimanya diringkas menjadi satu tabel dengan dua tingkat loop:
+
+```
+{#sesi_rundown}{nama_sesi}          ← baris judul sesi
+  (dua baris kepala tabel)          ← ikut terulang tiap sesi
+  {#rundown}{hari_tanggal} {mulai} {selesai} {durasi} {acara} {pj}{/rundown}
+  Total Waktu {total_durasi} {rentang_waktu}
+{/sesi_rundown}
+```
+
+Bentuk tabelnya — enam kolom dengan kepala bertingkat — tidak berubah sama
+sekali; yang berubah hanya jumlah tabelnya, dari lima menjadi satu yang
+mengulang dirinya. Lihat Temuan 11.
+
+**Kolom rundown TOR berbeda dari rundown surat undangan**, dan itu disengaja:
+larik `rundown` yang sama membawa enam field, dan tiap template mencetak yang
+tersedia di tabelnya. Surat memakai `{waktu}` dan `{keterangan}`; TOR memakai
+`{mulai}`, `{selesai}`, `{durasi}`, `{pj}`. Datanya satu, penyajiannya dua —
+itulah yang membuat kriteria PRD "rundown yang sama muncul konsisten di TOR,
+Proposal, dan Surat Undangan" dapat dipenuhi tanpa memaksa ketiganya berbentuk
+sama.
 
 ---
 
@@ -485,16 +536,36 @@ Berkas ini terlalu besar untuk dipetakan per paragraf tanpa membukanya di Word. 
 
 | # | Bagian (PRD F-10.2) | Placeholder | Sumber |
 |---|---|---|---|
-| 1 | Halaman Sampul | `{nama_kegiatan}` `{tema_kegiatan}` `{tahun}` | `proker`, `periode` |
-| 2 | Lembar Pengesahan | `{#kiri}` / `{#kanan}` sesuai §4.2 | `kepanitiaan` |
-| 3 | Pendahuluan | `{latar_belakang}` `{landasan_kegiatan}` `{asas_pelaksanaan}` `{#tujuan}{teks}{/tujuan}` | `proposal.data` |
-| 4 | Realisasi Kegiatan | `{sasaran}` `{bentuk_acara}` `{#sesi}...{/sesi}` `{#pengisi}{nama}{materi}{/pengisi}` `{gambaran_umum}` `{#rangkaian}{nama}{uraian}{/rangkaian}` | `proposal.data`, terisi otomatis dari `tor.data` |
-| 5 | Susunan Kepanitiaan | `{#panitia}{divisi}{jabatan}{nama}{nim}{/panitia}` | **`kepanitiaan_member`, ditarik saat generate** |
-| 6 | Anggaran | `{#rab_divisi}{no}{divisi}{besaran}{/rab_divisi}` `{rab_total}` | **RAB, ditarik saat generate** |
+| 1 | Halaman Sampul | `{nama_kegiatan}` `{tahun}` | `proker`, `periode` |
+| 2 | Lembar Pengesahan | enam penandatangan bernama — lihat di bawah | `kepanitiaan`, `app_config` |
+| 3 | Pendahuluan | `{latar_belakang}` `{landasan_kegiatan}` · `{#asas}{teks}{/asas}` · `{#tujuan}{teks}{/tujuan}` | `proposal.data` |
+| 4 | Realisasi Kegiatan | `{sasaran}` `{bentuk_acara}` `{gambaran_umum}` · `{#sesi}` · `{#pengisi}{peran}{nama}{/pengisi}` · `{#rangkaian}{nama}{uraian}{/rangkaian}` | `proposal.data`, terisi otomatis dari `tor.data` |
+| 5 | Susunan Kepanitiaan | `{#divisi_panitia}{nama_divisi}` · `{#anggota}{jabatan}: {nama}{/anggota}{/divisi_panitia}` | **`kepanitiaan_member`, ditarik saat generate** |
+| 6 | Anggaran | `{#rab_divisi}{no}{divisi}{besaran}{/rab_divisi}` · `{rab_total}` | **RAB, ditarik saat generate** |
 | 7 | Penutup | `{penutup}` | `proposal.data.penutup` |
-| 8 | Lampiran | `{#rundown}...{/rundown}` · `{#rab_rinci}{no}{divisi}{item}{jumlah}{satuan}{harga}{total}{/rab_rinci}` | rundown + RAB |
+| 8 | Lampiran | `{#sesi_rundown}`/`{#rundown}` · `{#rincian}{divisi}` + `{#item}{no}{jenis_barang}{jumlah}{harga_satuan}{total}{/item}{/rincian}` | rundown + RAB |
 
-Bagian 3 dan 4 memakai nama placeholder yang **sama persis** dengan `tor.docx` bila artinya sama (`{gambaran_umum}`, `{#tujuan}`, `{#sesi}`, `{#rangkaian}`, `{#rundown}`, `{#rab_divisi}`). Itu yang membuat kriteria PRD "membuat Proposal setelah TOR mengisi otomatis ≥ 60% field" dapat dipenuhi tanpa tabel penerjemah antara dua dokumen.
+Bagian 3 dan 4 memakai nama placeholder yang **sama persis** dengan `tor.docx`
+bila artinya sama (`{gambaran_umum}`, `{#tujuan}`, `{#sesi}`, `{#rangkaian}`,
+`{#rab_divisi}`, `{#sesi_rundown}`). Itu yang membuat kriteria PRD "membuat
+Proposal setelah TOR mengisi otomatis ≥ 60% field" dapat dipenuhi tanpa tabel
+penerjemah antara dua dokumen.
+
+**Lembar pengesahan memakai enam penandatangan**, empat di antaranya bukan
+pengguna sistem:
+
+```
+{ketupel_nama} {ketupel_nim}                 {sekretaris_nama} {sekretaris_nim}
+{ketua_bem_nama} {ketua_bem_nim}             {ketua_himpunan_nama} {ketua_himpunan_nim}
+{wd3_nama} {wd3_nip}                         {kaprodi_nama} {kaprodi_nip}
+```
+
+Model `{#kiri}`/`{#kanan}` tidak cukup di sini; lihat Temuan 4.
+
+**Baris sub-kelompok pada tabel rincian RAB tidak dipertahankan.** Berkas contoh
+menyelipkan baris berjudul di tengah item — "KOMSUMSI PANITIA", "KOMSUMSI
+PESERTA", "KEBUTUHAN DIVISI". Pengelompokan itu tidak ada di model data RAB, dan
+menirunya berarti mengarang struktur yang tidak dapat diisi sistem.
 
 ---
 
@@ -502,38 +573,52 @@ Bagian 3 dan 4 memakai nama placeholder yang **sama persis** dengan `tor.docx` b
 
 **Sumber:** `Template/Template LPJ HMIF.docx` — 623 paragraf · 10 tabel · 20 gambar
 
-> ⚠ **Bersihkan dulu.** Berkas ini masih memuat halaman kerja dan formulir yang bukan bagian LPJ. Lihat Temuan 2. Hapus lebih dulu:
-> - halaman berisi `CONTOH LPJ di sini`, `Note Check:`, dan daftar berkas yang diakhiri `HAPUS HALAMAN INI JIKA SUDAH SEMUA` — instruksi kerja untuk manusia, bukan isi dokumen;
-> - `FORM DAFTAR PENGAJUAN ANGGARAN KEMAHASISWAAN TAHUN 2024` beserta tabel ceklisnya — formulir milik fakultas, bukan bagian LPJ HMIF, dan tahunnya sudah lewat.
-
 | Bagian (PRD F-12.1) | Placeholder | Sumber |
 |---|---|---|
-| Sampul | `{nama_kegiatan}` `{tahun}` | `proker`, `periode` |
-| Lembar Pengesahan | `{kota}, {tanggal_format}` · lihat catatan di bawah | `lpj`, `app_config` |
-| Identitas Kegiatan | `{nama_kegiatan}` `{hari_tanggal}` `{tempat}` | `proker`, `kepanitiaan` |
-| Pendahuluan & Tujuan | `{latar_belakang}` `{#tujuan}{teks}{/tujuan}` | `tor.data` / `proposal.data` |
-| Susunan Kepanitiaan | `{#panitia}{divisi}{jabatan}{nama}{nim}{/panitia}` | `kepanitiaan_member` |
-| Realisasi Kegiatan | `{realisasi_kegiatan}` | `lpj.data_manual` |
-| Rincian Pemasukan | `{#pemasukan}{no}{sumber}{nominal}{/pemasukan}` `{total_pemasukan}` | `lpj.analisis` |
-| Rincian Pengeluaran | `{#pengeluaran}{no}{divisi}{item}{nominal}{/pengeluaran}` `{total_pengeluaran}` | `lpj.analisis` |
-| RAB vs Aktual | `{#perbandingan}{item}{rencana}{aktual}{selisih}{/perbandingan}` | `lpj.analisis` |
-| Sisa Dana | `{sisa_dana}` | `lpj.analisis` |
-| Lampiran Nota | `{#nota}{divisi}{%gambar}{keterangan}{/nota}` | nota master image |
-| Dokumentasi | `{#dokumentasi}{%foto}{caption}{/dokumentasi}` | unggahan foto kegiatan |
-| Evaluasi & Saran | `{#evaluasi}{teks}{/evaluasi}` `{#saran}{teks}{/saran}` | `lpj.data_manual` |
+| Sampul & Lembar Pengesahan | `{nama_kegiatan}` `{tahun}` `{kota}, {tanggal_format}` | `proker`, `periode` |
+| Penandatangan pengesahan | `{ketupel_*}` `{ketua_himpunan_*}` `{kaprodi_*}` `{wd3_*}` | `kepanitiaan`, `app_config` |
+| Pendahuluan | `{pendahuluan}` | `lpj.data_manual` |
+| Nama & Tema | `{nama_kegiatan}` `{tema_kegiatan}` | `proker`, `tor.data` |
+| Maksud & Tujuan | `{#tujuan}{teks}{/tujuan}` | `tor.data` / `proposal.data` |
+| Target Peserta | `{target_peserta}` | `tor.data` |
+| Waktu Pelaksanaan | `{hari_tanggal}` `{waktu}` `{tempat}` | `proker` |
+| Panitia Pelaksana | `{#divisi_panitia}{nama_divisi}` · `{#anggota}{jabatan}: {nama}{/anggota}{/divisi_panitia}` | `kepanitiaan_member` |
+| Proses Perencanaan | `{proses_perencanaan}` | `lpj.data_manual` |
+| Pelaksanaan Kegiatan | `{pelaksanaan_kegiatan}` | `lpj.data_manual` |
+| Output | `{output}` | `lpj.data_manual` |
+| Penutup | `{penutup}` | `lpj.data_manual` |
+| Narasi per divisi | `{#divisi_narasi}` … `{/divisi_narasi}` — lihat di bawah | `lpj.data_manual` |
+| Lampiran Materi | `{catatan_materi}` · `{#materi}{judul}{pengisi}{tautan}{/materi}` | `lpj.data_manual` |
+| Lampiran RAB | `{rab_ringkasan}` — lihat Temuan 10 | `lpj.analisis` |
+| Lampiran Susunan Acara | `{#rundown}{hari_tanggal}{waktu}{acara}{pj}{/rundown}` | rundown |
+| Lampiran Daftar Hadir | `{daftar_hadir}` | `lpj.data_manual` |
+| Lampiran Dokumentasi | `{#dokumentasi}{caption}{/dokumentasi}` | unggahan foto kegiatan |
 
-**Lembar Pengesahan LPJ memakai empat penandatangan, bukan dua** — Ketua Pelaksana, Ketua Himpunan, Ketua Program Studi, dan Wakil Dekan Bidang III. Dua yang terakhir pihak fakultas ber-NIP, bukan NIM, dan tidak punya akun di sistem. Model `{#kiri}`/`{#kanan}` tidak cukup; berkas ini memakai placeholder bernama sendiri:
+**Narasi per divisi** memakai satu blok berulang, dengan tabel koordinator ikut
+di dalamnya:
 
 ```
-{ketupel_nama}          {ketupel_nim}
-{ketua_himpunan_nama}   {ketua_himpunan_nim}
-{kaprodi_nama}          {kaprodi_nip}
-{wd3_nama}              {wd3_nip}
+{#divisi_narasi}{nama_divisi}
+  Koordinator : {koordinator}
+  Anggota     : {#anggota}{nama}{/anggota}
+  Narasi              {narasi}
+  Perencanaan         {perencanaan}
+  Pelaksanaan         {pelaksanaan}
+  Faktor Pendukung    {pendukung}
+  Faktor Penghambat   {penghambat}
+  Saran dan Rekomendasi  {saran}
+{/divisi_narasi}
 ```
 
-Nama dan NIP Kaprodi serta WD III berasal dari `app_config`, bukan `app_user` — keduanya bukan pengguna sistem dan tidak boleh dipaksa punya baris di tabel pengguna. Lihat Temuan 4.
+Nama loop-nya `divisi_narasi`, **bukan** `narasi`, karena tiap itemnya sendiri
+punya field `narasi`. Loop dan field yang senama membuat pencarian docxtemplater
+bergantung pada letak tag, bukan pada maksudnya — jenis kesalahan yang tidak
+akan terlihat sampai satu dokumen tercetak salah.
 
-**`{%gambar}` pada `{#nota}` wajib memakai turunan MASTER**, bukan turunan tampilan. PRD F-11.2 menyatakannya sebagai prinsip: tampilan website memakai berkas ringan, unduhan selalu memakai MASTER berkualitas cetak. LPJ adalah dokumen pertanggungjawaban resmi yang dicetak; nota yang tidak terbaca membuatnya tidak berguna.
+**Narasi Badan Pengurus Harian dibuang seluruhnya.** Bentuknya berbeda dari
+narasi divisi — dua jabatan per blok, bukan koordinator ditambah anggota — dan
+BPH sudah tercakup sebagai salah satu divisi pada data kepanitiaan.
+
 
 ---
 
@@ -611,36 +696,48 @@ Setiap varian juga membawa `label_kanan` (default `Mengetahui,`) pada surat yang
 
 | # | Temuan | Akibat | Tindakan |
 |---|---|---|---|
-| 1 | `Contoh Surat Undangan Pemateri.docx` memuat **dua dokumen**: surat (paragraf 1–21) dan TOR lengkap (22–349) beserta dua lampirannya. | Bila dipakai apa adanya, setiap surat undangan pemateri ikut mencetak 328 paragraf TOR kegiatan lain. | Pangkas ke paragraf 1–21 saat menyalin ke `templates/`. Isi TOR sudah punya berkas sendiri. |
-| 2 | `Template LPJ HMIF.docx` memuat halaman kerja (`HAPUS HALAMAN INI JIKA SUDAH SEMUA`) dan `FORM DAFTAR PENGAJUAN ANGGARAN KEMAHASISWAAN TAHUN 2024` milik fakultas. | LPJ hasil generate memuat instruksi internal dan formulir tahun lampau. | Hapus kedua bagian sebelum memetakan. |
+| 1 | `Contoh Surat Undangan Pemateri.docx` memuat **dua dokumen**: surat (paragraf 1–21) dan TOR lengkap (22–349) beserta dua lampirannya. | Bila dipakai apa adanya, setiap surat undangan pemateri ikut mencetak 328 paragraf TOR kegiatan lain. | Dipangkas: `{ hapus: ['KERANGKA ACUAN KERJA'] }` dijalankan PALING AWAL, sebelum operasi lain, karena "Ketua Pelaksana" dan "Cilegon, 07 Agustus 2025" muncul lagi di dalam TOR itu. |
+| 2 | `Template LPJ HMIF.docx` memuat halaman kerja (`HAPUS HALAMAN INI JIKA SUDAH SEMUA`) dan `FORM DAFTAR PENGAJUAN ANGGARAN KEMAHASISWAAN TAHUN 2024` milik fakultas. | LPJ hasil generate memuat instruksi internal dan formulir tahun lampau. | Dihapus sekaligus lewat `{ hapusHingga: ['SOP LPJ yang sesuai ketentuan', 'PENDAHULUAN'] }`. |
 | 3 | Ada **dua** berkas LPJ: `Template LPJ HMIF.docx` dan `Template LPJ_Departemen.docx`. Kontrak hanya menyebut satu keluaran, `lpj.docx`. | Ambigu berkas mana yang menjadi template. | Dipilih `Template LPJ HMIF.docx`: tabel `lpj` bertaut ke `kepanitiaan_id`, jadi LPJ dalam sistem adalah LPJ kegiatan. LPJ departemen tidak punya tabel dan berada di luar cakupan MVP. |
 | 4 | Lembar Pengesahan LPJ punya **empat** penandatangan; dua di antaranya pihak fakultas ber-NIP dan tanpa akun. | Model `{#kiri}`/`{#kanan}` (ADR-021) tidak cukup untuk berkas ini. | LPJ memakai placeholder bernama sendiri; nama dan NIP Kaprodi/WD III dari `app_config`. Bila T-093 menyentuh alur ini, usulkan ADR tersendiri. |
 | 5 | `{label_atas}` dan `{label}` tidak punya kolom di `surat_signer`. | Teks `Panitia AKSARA IF` dan `Mengetahui,` tidak punya rumah yang jelas. | Sementara masuk `surat.data_dinamis`. Menambah kolom ke `surat_signer` lebih rapi tetapi butuh migrasi baru; ditunda sampai T-062 membuktikan perlunya. |
 | 6 | `Contoh Surat Permohonan Kerja Sama.docx` menulis `NIM. 33372300036` (11 digit); berkas lain menulis `3337230036` (10 digit) untuk orang yang sama. | Tidak ada — bukti berkas ini surat sungguhan, bukan contoh yang dirapikan. | Hilang dengan sendirinya begitu menjadi `{nim}`. |
 | 7 | Kontrak menyebut 11 berkas keluaran; `Template/` memuat 13 `.docx`. | Dua berkas tanpa tujuan yang jelas. | `Template Haluan Kerja Dasar Departemen.docx` pasca-MVP (ADR-017) dan `Template LPJ_Departemen.docx` (lihat Temuan 3) berada di luar cakupan T-006. |
 | 8 | Kontrak butir 4 meminta `{#signers}`; struktur tabel tanda tangan membuatnya mustahil tanpa mengubah tata letak — yang dilarang klausa **Jangan** pada kontrak yang sama. | Dua kalimat kontrak saling bertentangan. | [ADR-021](../adr/ADR-021-blok-tanda-tangan-bukan-loop.md), status Usulan. Dipakai `{#kiri}`/`{#kanan}`. |
+| 10 | `Template LPJ HMIF.docx` TIDAK punya tabel apa pun di bawah judul "Lampiran Rancangan Anggaran Biaya (RAB)", padahal PRD F-12.1 menuntut rincian pemasukan, pengeluaran, perbandingan RAB vs aktual, dan sisa dana. | Empat bagian keuangan wajib tidak punya tempat di template. | Sementara diisi satu blok teks `{rab_ringkasan}`. Menambah tabelnya berarti mengarang struktur baru, bukan membedah yang ada — pekerjaan T-093, dan template naik versi (`surat_template.versi`). |
+| 11 | Lampiran susunan acara pada TOR dan Proposal memakai **lima tabel terpisah**, satu per sesi. | Tidak dapat dijadikan loop: docxtemplater mengulang baris, bukan tabel, dan paragraf pemisah antar tabel kosong tanpa `<w:t>` sehingga tidak dapat menampung tag. | Diringkas menjadi satu tabel dengan loop bersarang `{#sesi_rundown}` + `{#rundown}`. Bentuk tabelnya tidak berubah; yang berubah jumlahnya, dari lima menjadi satu yang mengulang dirinya. |
+| 12 | Lembar pengesahan Proposal punya **enam** penandatangan, empat di antaranya bukan pengguna sistem (Ketua BEM, Wakil Dekan III, Ketua Program Studi, Sekretaris Prodi). | Sama seperti Temuan 4 untuk LPJ: `{#kiri}`/`{#kanan}` tidak cukup. | Placeholder bernama sendiri per posisi. Nama pihak fakultas dari `app_config`, bukan `app_user`. |
+| 13 | `setSel` semula MENGOSONGKAN paragraf berlebih alih-alih menghapusnya. | Sel anggota panitia berisi tujuh nama contoh; menulis tiga untai menyisakan empat baris kosong menganga di setiap dokumen. | Paragraf berlebih kini dihapus. Paragraf yang memang kosong sejak semula — ruang tanda tangan — tetap tidak disentuh, karena tidak punya `<w:t>` dan sudah tersaring lebih dulu. |
 | 9 | Kontrak butir 5 menamai penanda gambar menurut jabatan (`{%ttd_ketua}`, `{%ttd_sekum}`), padahal penandatangan berubah tiap surat. | Penanda bernama jabatan memaksa template mengetahui siapa yang menandatangani. | `{%ttd}` dan `{%stempel}` di dalam blok posisi, mengikuti `pakai_ttd`/`pakai_stempel`. Tercatat di ADR-021. |
 
 ---
 
-## 8. Ceklis pengeditan
+## 8. Hasil
 
-Satu baris per berkas. Centang setelah `npx tsx scripts/template-dryrun.ts` melaporkan berkas itu ✓.
+```
+DRY RUN TEMPLATE — 11 dari 11 berkas ada
 
-- [ ] `templates/surat-02-keterangan-aktif.docx`
-- [ ] `templates/surat-03-aspirasi.docx`
-- [ ] `templates/surat-04-undangan-pemateri.docx` — pangkas dulu (Temuan 1)
-- [ ] `templates/surat-04-undangan-sambutan.docx`
-- [ ] `templates/surat-05-peminjaman-barang.docx`
-- [ ] `templates/surat-05-peminjaman-ruangan.docx`
-- [ ] `templates/surat-08-kerja-sama.docx`
-- [ ] `templates/tor.docx`
-- [ ] `templates/proposal.docx`
-- [ ] `templates/lpj.docx` — bersihkan dulu (Temuan 2)
-- [ ] `templates/notulensi.docx`
+  ✓ lpj.docx                          56 tag
+  ✓ notulensi.docx                    15 tag
+  ✓ proposal.docx                     71 tag
+  ✓ surat-02-keterangan-aktif.docx    14 tag
+  ✓ surat-03-aspirasi.docx            22 tag
+  ✓ surat-04-undangan-pemateri.docx   25 tag
+  ✓ surat-04-undangan-sambutan.docx   26 tag
+  ✓ surat-05-peminjaman-barang.docx   28 tag
+  ✓ surat-05-peminjaman-ruangan.docx  25 tag
+  ✓ surat-08-kerja-sama.docx          23 tag
+  ✓ tor.docx                          56 tag
 
-Setelah semuanya ✓:
+  LULUS — 11 berkas, nol placeholder tak terisi.
+```
 
-- [ ] Buka tiap berkas di Word 2016+ — tidak ada peringatan korupsi
-- [ ] Bandingkan kop surat hasil generate dengan berkas asli di `Template/` — harus identik
-- [ ] T-006 ditutup, 18 task yang menunggunya terbuka
+Yang masih menunggu manusia:
+
+- [ ] Buka kesebelas berkas di Word 2016+ dan pastikan tidak ada peringatan
+      korupsi. Struktur XML-nya tidak pernah ditulis ulang, jadi ini
+      pemeriksaan konfirmasi — bukan perbaikan yang diperkirakan perlu.
+- [ ] Bandingkan kop surat satu berkas hasil generate dengan aslinya di
+      `Template/`, cetak berdampingan.
+- [ ] Putuskan Temuan 10: apakah tabel keuangan LPJ ditambahkan di T-093, dan
+      dalam bentuk apa.

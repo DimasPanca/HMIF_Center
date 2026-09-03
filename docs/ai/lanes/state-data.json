@@ -357,8 +357,8 @@
       "depends_on": [
         "T-043"
       ],
-      "status": "IN_PROGRESS",
-      "completed_at": null
+      "status": "DONE",
+      "completed_at": "2026-09-03"
     },
     {
       "id": "T-086",
@@ -380,6 +380,16 @@
       "status": "DONE",
       "butuh_manusia": false,
       "completed_at": "2026-09-02"
+    },
+    {
+      "id": "T-046",
+      "fase": 1,
+      "judul": "Lapisan permission aplikasi",
+      "depends_on": [
+        "T-045"
+      ],
+      "status": "DONE",
+      "completed_at": "2026-09-04"
     }
   ]
 }

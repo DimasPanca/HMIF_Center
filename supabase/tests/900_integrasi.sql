@@ -263,7 +263,19 @@ BEGIN
 
   -- Semua tercatat tanpa pelaku karena test berjalan tanpa JWT. Itu keadaan
   -- yang sama dengan cron harian, dan memang harus tetap tercatat.
-  SELECT count(*)::INT INTO v_jumlah FROM audit_log WHERE user_id IS NOT NULL;
+  --
+  -- DIBATASI pada periode milik test ini. Versi sebelumnya menghitung SELURUH
+  -- audit_log dan lulus hanya selama database belum pernah melihat lalu lintas
+  -- sungguhan. Begitu gate login E2E berjalan, baris LOGIN yang sah — memang
+  -- ber-user_id, memang seharusnya begitu — membuat test ini merah dengan
+  -- pesan yang menuduh trigger audit.
+  --
+  -- Yang hendak dibuktikan sejak awal memang bukan "audit_log kosong dari
+  -- pelaku", melainkan "mutasi yang DILAKUKAN TANPA JWT tercatat tanpa
+  -- pelaku". Batas periode menyatakan maksud itu apa adanya.
+  SELECT count(*)::INT INTO v_jumlah
+  FROM audit_log
+  WHERE user_id IS NOT NULL AND periode_id = v_periode;
   ASSERT v_jumlah = 0, 'Ada baris audit dengan pelaku padahal tidak ada JWT';
 
   RAISE NOTICE 'OK 900_integrasi - proker terkunci lalu dilepas, surat bernomor tanpa daur ulang, alokasi nota terjaga';

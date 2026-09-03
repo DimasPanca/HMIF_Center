@@ -35,6 +35,26 @@
  * Akunnya disiapkan sekali dengan `npm run seed:e2e-auth`, lalu menetap di
  * proyek Supabase pengembangan. Perlu diulang setelah `npm run db:reset`.
  *
+ * ===========================================================================
+ * ADA DUA PEMBATAS PERCOBAAN, DAN YANG SATU DI LUAR KENDALI KITA
+ * ===========================================================================
+ * Supabase membatasi jumlah permintaan sign-in per proyek, terpisah dari
+ * pembatas aplikasi di lib/auth/rate-limit.ts. Gate ini melakukan puluhan
+ * sign-in tiap jalan, jadi menjalankannya berulang-ulang dalam waktu singkat
+ * akan menabrak pembatas Supabase lebih dulu — dan login dengan password yang
+ * BENAR pun ditolak.
+ *
+ * Gejalanya menyesatkan: test yang gagal berpindah-pindah, dan yang tertuduh
+ * biasanya halaman login. Dua hal dikerjakan supaya itu tidak terulang:
+ *
+ *   1. `login()` kini membedakan 429 dari penyedia dan tidak lagi menyebutnya
+ *      "Email atau password salah" (lib/auth/session.ts).
+ *   2. Pembatas aplikasi hanya diuji di proyek desktop, dan tiap jalan memakai
+ *      IP sintetis sendiri (playwright.config.ts).
+ *
+ * Bila gate ini merah dan pesannya menyebut "dari jaringan ini", tunggu
+ * beberapa menit sebelum menyalahkan kode.
+ *
  * Sumber: docs/ai/tasks/P1-fondasi.md T-045 · PRD F-1.1 · USER_FLOW §2.3
  *         · docs/ai/AUTH_CONTRACT.md
  */
@@ -104,8 +124,17 @@ test.describe('login berhasil', () => {
     await expect(page.getByTestId('app-shell')).toBeVisible({ timeout: 10_000 });
 
     await page.goto(HALAMAN);
-    await expect(page).toHaveURL(/\/$|\/(?!login)/, { timeout: 10_000 });
-    await expect(page.getByTestId('app-shell')).toBeVisible();
+
+    // `not.toHaveURL(/\/login/)`, BUKAN `toHaveURL(/\/$|\/(?!login)/)`.
+    //
+    // Pola kedua itu sempat dipakai di sini dan tidak menguji apa pun: pada
+    // "http://localhost:3000/login", garis miring kedua pada "http://" sudah
+    // memenuhi `\/(?!login)` — sehingga URL halaman login sendiri dinyatakan
+    // lolos. Diukur: keduanya `true`. Kegagalan sesungguhnya baru muncul satu
+    // baris di bawah, sebagai "app-shell tidak ditemukan", yang menunjuk ke
+    // tempat yang salah.
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 10_000 });
+    await expect(page.getByTestId('app-shell')).toBeVisible({ timeout: 10_000 });
   });
 
   test('keluar mengakhiri sesi', async ({ page }) => {
@@ -180,6 +209,14 @@ test.describe('pesan gagal tidak membocorkan apa pun', () => {
 
 test.describe('pembatas percobaan', () => {
   test('percobaan keenam ditolak dengan sisa waktu tunggu', async ({ page }, info) => {
+    // Hanya di desktop. Pembatas percobaan bekerja di server dan tidak punya
+    // dimensi lebar layar sama sekali, jadi menjalankannya dua kali tidak
+    // membuktikan apa pun — tetapi menambah dua belas permintaan sign-in ke
+    // Supabase setiap jalan, dan Supabase punya pembatasnya sendiri di depan
+    // pembatas kita. Beban itulah yang membuat gate ini gagal berpindah-pindah
+    // saat dijalankan berulang.
+    test.skip(info.project.name !== 'desktop', 'Perilaku server, tidak bergantung viewport.');
+
     // Email dibuat unik per jalan DAN per proyek. Pembatas mengunci pasangan
     // email + IP selama 15 menit; memakai email tetap akan meracuni test lain
     // dan membuat jalan berikutnya gagal karena sisa kunci dari jalan

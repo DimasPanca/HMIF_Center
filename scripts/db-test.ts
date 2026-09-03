@@ -95,6 +95,24 @@ async function main(): Promise<void> {
       const mulai = Date.now();
       try {
         await sql.begin(async (tx) => {
+          // ==============================================================
+          // KEADAAN AWAL YANG SAMA, APA PUN ISI DATABASENYA
+          // ==============================================================
+          // `periode_hanya_satu_aktif` mengizinkan paling banyak satu periode
+          // berstatus AKTIF di seluruh database. Test yang butuh periode aktif
+          // membuatnya sendiri — dan gagal bila sudah ada satu di luar sana.
+          //
+          // Fixture E2E memang meninggalkan satu: `seed:e2e-auth` menyiapkan
+          // "Periode Uji E2E" supaya login dapat diuji, dan periode itu harus
+          // tetap aktif. Akibatnya kedua gate saling meniadakan — diukur, 18
+          // dari 22 berkas gagal dengan pesan yang menyebut constraint itu,
+          // dan tidak satu pun menyebut fixture yang sebenarnya menjadi sebab.
+          //
+          // Pengarsipan di bawah ikut di-ROLLBACK bersama seluruh transaksi,
+          // jadi fixture E2E tetap utuh sesudahnya. Yang berubah hanya keadaan
+          // awal yang dilihat test: kosong, seperti yang memang diasumsikannya.
+          await tx.unsafe(`UPDATE periode SET status = 'ARSIP' WHERE status = 'AKTIF'`);
+
           // NOTICE dari RAISE NOTICE dikumpulkan supaya pesan test terlihat.
           await tx.unsafe(isi);
           // Selalu batalkan: test tidak boleh meninggalkan jejak apa pun.
