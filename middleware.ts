@@ -40,6 +40,45 @@ import { NextResponse, type NextRequest } from 'next/server';
 const RUTE_PUBLIK = ['/login', '/api/auth/login', '/api/auth/logout'];
 
 /**
+ * Prefix halaman harness E2E, terbuka HANYA di luar produksi.
+ *
+ * Ditemukan lane ui: middleware ini menjaga `/qa/gantt` sehingga gate T-073
+ * menerima 307 ke `/login` alih-alih halamannya. Harness itu memang sengaja
+ * tidak berautentikasi — ia merender komponen dengan data tetap, tanpa
+ * database dan tanpa sesi, supaya yang diuji benar-benar komponennya.
+ *
+ * Dua lapis menjaganya tetap tidak dapat dicapai di produksi:
+ *
+ *   1. Pengecualian di bawah hanya berlaku saat NODE_ENV !== 'production'.
+ *   2. Halaman harness-nya sendiri memanggil notFound() di produksi.
+ *
+ * Satu lapis akan cukup; dua dipakai karena keduanya murah dan salah satunya
+ * bisa saja terlupakan saat harness baru ditambahkan.
+ */
+const PREFIX_HARNESS = '/qa/';
+
+/**
+ * Jalur kesiapan untuk Playwright, hanya hidup di luar produksi.
+ *
+ * Playwright menunggu satu URL menjawab sebelum menjalankan test. Sejak
+ * middleware ini ada, TIDAK ADA satu pun URL yang menjawab 200 tanpa sesi:
+ * beranda dialihkan ke `/login`, dan `/login` sendiri milik lane lain yang
+ * urutan pengerjaannya tidak boleh mengikat gate lane ini.
+ *
+ * Dicoba dan gagal sebelum sampai ke sini:
+ *   url: '/'          307 lalu 404 — tidak pernah dianggap siap
+ *   port: 3000        soket terbuka sebelum Next siap; navigasi pertama
+ *                     gagal dengan ERR_ABORTED
+ *   url: '/api/...'   401 dari middleware; berhasil hanya bila server sudah
+ *                     hangat dari jalan sebelumnya
+ *
+ * Jawaban 200 dari middleware sendiri tidak bergantung pada halaman atau
+ * route mana pun, dan datang segera setelah middleware selesai dikompilasi —
+ * yaitu tepat saat server benar-benar siap melayani.
+ */
+const JALUR_SIAP = '/api/e2e-siap';
+
+/**
  * Rute yang dilewati sepenuhnya — tidak diperiksa, tidak diperpanjang.
  * Aset statis tidak membawa cookie sesi dan memeriksanya hanya menambah
  * latensi pada setiap gambar.
@@ -61,6 +100,22 @@ function publik(pathname: string): boolean {
 }
 
 export async function middleware(req: NextRequest) {
+  // Harness diperiksa PALING AWAL, sebelum klien Supabase dibuat.
+  //
+  // Bukan sekadar demi kecepatan: harness harus dapat dibuka pada mesin yang
+  // tidak memegang kredensial Supabase sama sekali — persis keadaan worktree
+  // lane ui. Membuat kliennya lebih dulu akan menggagalkan permintaan itu
+  // dengan galat yang tidak ada hubungannya dengan yang sedang diuji.
+  const bukanProduksi = process.env.NODE_ENV !== 'production';
+
+  if (bukanProduksi && req.nextUrl.pathname === JALUR_SIAP) {
+    return NextResponse.json({ siap: true }, { status: 200 });
+  }
+
+  if (bukanProduksi && req.nextUrl.pathname.startsWith(PREFIX_HARNESS)) {
+    return NextResponse.next({ request: req });
+  }
+
   // Respons dibuat lebih dulu supaya Supabase punya tempat menulis cookie
   // yang diperbarui. Sesi 7 hari diperpanjang lewat cookie ini setiap kali
   // pengguna aktif (PRD F-1.1) — itulah yang membuat "diperpanjang otomatis"
