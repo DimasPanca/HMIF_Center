@@ -1,0 +1,88 @@
+/**
+ * Akun uji untuk gate E2E login.
+ *
+ * Dipakai bersama oleh `scripts/seed-e2e-auth.ts` yang membuatnya dan
+ * `e2e/login.spec.ts` yang memakainya. Satu berkas supaya keduanya tidak
+ * pernah berbeda — email yang meleset satu huruf menghasilkan kegagalan
+ * yang terbaca seperti bug autentikasi.
+ *
+ * ===========================================================================
+ * KENAPA AKUNNYA DISIAPKAN TERPISAH, BUKAN DIBUAT OLEH TEST
+ * ===========================================================================
+ * Membuat akun Supabase Auth menuntut SUPABASE_SECRET_KEY, dan worktree lane
+ * ui sengaja tidak memilikinya (hak minimum). Kalau test yang membuatnya,
+ * gate ini hanya dapat dijalankan di mesin yang memegang kunci penuh — dan
+ * lane yang justru menulis halaman loginnya tidak akan pernah bisa
+ * menjalankannya.
+ *
+ * Karena itu akunnya disiapkan sekali lewat `npm run seed:e2e-auth` oleh
+ * pemegang kunci, lalu menetap di proyek Supabase pengembangan. Test hanya
+ * memakainya, dan cukup berbekal NEXT_PUBLIC_* untuk berjalan.
+ *
+ * Domain `.test` dipesan RFC 2606 untuk pengujian dan tidak pernah dapat
+ * diresolusi ke internet — tidak ada risiko surat nyasar ke alamat orang.
+ *
+ * Sumber: docs/ai/tasks/P1-fondasi.md T-045 · PRD F-1.1 · USER_FLOW §2.3
+ */
+
+/**
+ * Password akun uji. Sengaja terlihat jelas sebagai kredensial uji.
+ *
+ * Memenuhi aturan PRD F-1.1 (minimal 8 karakter, mengandung huruf dan angka)
+ * supaya yang diuji benar-benar alur loginnya, bukan penolakan format.
+ */
+export const PASSWORD_UJI = 'UjiE2E2026';
+
+/** Password yang pasti salah, untuk skenario kegagalan. */
+export const PASSWORD_SALAH = 'JelasSalah9999';
+
+export interface AkunUji {
+  email: string;
+  namaLengkap: string;
+  nim: string;
+  /** false berarti `app_user.is_active = false`. */
+  aktif: boolean;
+  /** null berarti akun Supabase Auth dibuat TANPA baris `app_user`. */
+  role: 'KETUA' | 'ANGGOTA' | null;
+}
+
+export const AKUN: Record<'aktif' | 'nonaktif' | 'tanpaProfil', AkunUji> = {
+  /** Jalur bahagia: masuk, punya peran, punya periode aktif. */
+  aktif: {
+    email: 'e2e-aktif@uji.test',
+    namaLengkap: 'Uji E2E Aktif',
+    nim: '3337229001',
+    aktif: true,
+    role: 'KETUA',
+  },
+
+  /** Password benar, tetapi `is_active = false` (PRD F-1.1 kriteria 4). */
+  nonaktif: {
+    email: 'e2e-nonaktif@uji.test',
+    namaLengkap: 'Uji E2E Nonaktif',
+    nim: '3337229002',
+    aktif: false,
+    role: 'ANGGOTA',
+  },
+
+  /**
+   * Punya akun Supabase Auth tetapi tidak punya baris `app_user`.
+   *
+   * Keadaan nyata: undangan yang belum tuntas. Dari sisi pengguna harus tidak
+   * dapat dibedakan dari kredensial salah — menyebutkannya membocorkan
+   * keadaan internal sistem.
+   */
+  tanpaProfil: {
+    email: 'e2e-tanpa-profil@uji.test',
+    namaLengkap: 'Uji E2E Tanpa Profil',
+    nim: '3337229003',
+    aktif: true,
+    role: null,
+  },
+};
+
+/** Email yang dijamin tidak pernah terdaftar. */
+export const EMAIL_TIDAK_TERDAFTAR = 'e2e-tidak-ada@uji.test';
+
+/** Nama periode yang disiapkan seed, supaya dapat dibersihkan kembali. */
+export const NAMA_PERIODE_UJI = 'Periode Uji E2E';

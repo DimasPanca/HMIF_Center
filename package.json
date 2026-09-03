@@ -24,6 +24,7 @@
     "postinstall": "prisma generate",
     "rls:coverage": "tsx scripts/rls-coverage.ts",
     "seed": "tsx prisma/seed.ts",
+    "seed:e2e-auth": "tsx scripts/seed-e2e-auth.ts",
     "start": "next start",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",

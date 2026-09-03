@@ -67,6 +67,22 @@ test.beforeEach(async ({ page }) => {
         `lihat daftar data-testid di kepala berkas ini.`,
     );
   }
+
+  // Bila middleware mengalihkan, status akhirnya 200 — halaman LOGIN, bukan
+  // 404 — dan `waitForSelector` di bawah akan timeout 30 detik dengan pesan
+  // "gantt-root tidak ditemukan" yang sama sekali tidak menyebut sebabnya.
+  //
+  // Ini pernah terjadi: middleware T-045 menjaga seluruh rute dan /qa/ belum
+  // dikecualikan. Pemeriksaan di bawah mengubah kegagalan yang membingungkan
+  // itu menjadi kalimat yang langsung menunjuk berkas yang salah.
+  const tujuan = new URL(page.url()).pathname;
+  if (tujuan !== HARNESS) {
+    throw new Error(
+      `${HARNESS} dialihkan ke ${tujuan}. Harness E2E harus dapat dibuka tanpa sesi; ` +
+        `periksa PREFIX_HARNESS di middleware.ts (lane data).`,
+    );
+  }
+
   await page.waitForSelector('[data-testid="gantt-root"]');
 });
 
