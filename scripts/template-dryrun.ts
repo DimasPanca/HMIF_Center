@@ -241,6 +241,11 @@ interface Hasil {
   galat: string[];
 }
 
+/** Jumlah tabel di sebuah `word/document.xml`. */
+function jumlahTabel(xml: string): number {
+  return (xml.match(/<w:tbl>/g) ?? []).length;
+}
+
 /**
  * Membaca tag yang TERTULIS di dokumen, tanpa melibatkan docxtemplater.
  *
@@ -294,6 +299,41 @@ function periksa(berkas: string): Hasil {
       .map((x) => x.properties?.explanation)
       .filter((x): x is string => Boolean(x));
     hasil.galat.push(...(rinci.length > 0 ? rinci : [err.message]));
+  }
+
+  // =========================================================================
+  // JEBAKAN ADR-021: blok tanda tangan yang tag-nya membentang antar BARIS
+  // =========================================================================
+  // Bila `{#kiri}` dibuka di baris jabatan dan ditutup di baris nama,
+  // docxtemplater memperlakukan kedua baris itu sebagai loop baris. Untuk surat
+  // dua penandatangan hasilnya kebetulan benar, sehingga kesalahan ini LULUS
+  // seluruh pemeriksaan di atas — dan baru muncul pada surat pertama yang cuma
+  // punya satu penandatangan, yang tanda tangan satu-satunya justru ikut
+  // terhapus bersama seluruh barisnya.
+  //
+  // Satu-satunya cara menangkapnya adalah merender ulang tanpa penandatangan
+  // dan menghitung tabel yang tersisa. Diukur: bentuk yang salah menyisakan
+  // NOL tabel, bentuk yang benar menyisakan jumlah yang sama seperti template.
+  const tabelTemplate = jumlahTabel(zip.file('word/document.xml')?.asText() ?? '');
+  if (tabelTemplate > 0 && hasil.galat.length === 0) {
+    try {
+      const kosong = new Docxtemplater(new PizZip(fs.readFileSync(berkas)), {
+        paragraphLoop: true,
+        linebreaks: true,
+        errorLogging: false,
+        nullGetter: () => '',
+      });
+      kosong.render({ ...DUMMY, kiri: null, kanan: null });
+      const sisa = jumlahTabel(kosong.getZip().file('word/document.xml')?.asText() ?? '');
+      if (sisa < tabelTemplate) {
+        hasil.galat.push(
+          `Tanpa penandatangan, ${tabelTemplate - sisa} dari ${tabelTemplate} tabel ikut hilang. ` +
+            `Pasangan {#kiri}/{#kanan} membentang antar baris tabel — lihat ADR-021.`,
+        );
+      }
+    } catch (e) {
+      hasil.galat.push(`gagal saat diuji tanpa penandatangan: ${(e as Error).message}`);
+    }
   }
 
   hasil.hilang = [...hilang].sort();
