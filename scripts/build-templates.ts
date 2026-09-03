@@ -54,10 +54,16 @@ type Op =
   | { sisip: [string, string] }
   /** Hapus blok dari paragraf X sampai paragraf Y; tanpa Y berarti sampai akhir. */
   | { hapus: [string] | [string, string] }
+  /** Hapus blok dari paragraf X sampai TEPAT SEBELUM paragraf Y. */
+  | { hapusHingga: [string, string] }
+  /** Hapus tabel-tabel utuh berdasarkan indeksnya (mulai 0). */
+  | { hapusTabel: number[] }
   /** Hapus baris-baris tabel; indeks mulai 0. */
   | { hapusBaris: [number, number[]] }
   /** Tulis isi sel tabel, satu untai per paragraf. */
-  | { sel: [number, number, number, string[]] };
+  | { sel: [number, number, number, string[]] }
+  /** Isi sebuah bagian: [judul, judul berikutnya, teks pengganti]. */
+  | { isiBagian: [string, string, string] };
 
 interface Resep {
   keluaran: string;
@@ -97,6 +103,19 @@ function ttdKanan(tabel: number, barisJabatan: number, barisNama: number): Op[] 
     { sel: [tabel, barisNama, 2, ['{#kanan}{%ttd}{%stempel}', '{nama}', 'NIM. {nim}{/kanan}']] },
   ];
 }
+
+/**
+ * Baris tabel rincian RAB yang dibuang: baris sub-kelompok (indeks 2) dan
+ * seluruh baris item contoh kecuali yang pertama. Yang disisakan hanya indeks
+ * 0 (nama divisi), 1 (kepala tabel), dan 3 (satu baris item sebagai badan loop).
+ */
+const BARIS_RINCIAN: number[] = [2, ...Array.from({ length: 63 }, (_, i) => i + 4)];
+
+/**
+ * Baris tabel susunan acara pada LPJ yang dibuang: seluruh baris isi contoh
+ * kecuali yang pertama. Tabelnya 22 baris — satu kepala dan 21 baris isi.
+ */
+const BARIS_RUNDOWN_LPJ: number[] = Array.from({ length: 20 }, (_, i) => i + 2);
 
 const RESEP: Resep[] = [
   // =========================================================================
@@ -302,6 +321,387 @@ const RESEP: Resep[] = [
     ],
   },
 
+
+  // =========================================================================
+  {
+    keluaran: 'tor.docx',
+    sumber: 'TOR_KT1_2025.docx',
+    ops: [
+      // --- sampul
+      { paragraf: ['SYNCHRONIZE', '{nama_kegiatan}'] },
+      { paragraf: ['TAHUN 2025', 'TAHUN {tahun}'] },
+
+      // --- bagian 1-3: nama, tema, gambaran umum (PRD F-10.1)
+      { paragraf: ['Nama kegiatan', 'Nama kegiatan    : {nama_kegiatan}'] },
+      { paragraf: ['Tema kegiatan', 'Tema kegiatan                 : {tema_kegiatan}'] },
+
+      // Gambaran umum di berkas contoh dua paragraf. Cukup satu placeholder:
+      // `linebreaks: true` mengubah baris baru pada teks menjadi <w:br/>, jadi
+      // isi berapa paragraf pun tetap tercetak dengan pemisah yang benar.
+      { paragraf: ['Kegiatan dimulai dengan Technical Meeting', '{gambaran_umum}'] },
+      { hapusHingga: ['Pelaksanaan Hari H berlangsung 2 hari', 'Tujuan Kegiatan'] },
+
+      // --- bagian 4: tujuan kegiatan (daftar berulang)
+      { sisip: ['Meningkatkan rasa kepemilikan', '{#tujuan}'] },
+      { paragraf: ['Meningkatkan rasa kepemilikan', '{teks}'] },
+      { sisip: ['Menumbuhkan rasa kekeluargaan', '{/tujuan}'] },
+      { hapusHingga: ['Menumbuhkan rasa kekeluargaan', 'Bentuk Acara'] },
+
+      // --- bagian 5: bentuk acara (teks + sub-bagian berulang)
+      { paragraf: ['Kegiatan SYNCHRONIZE dilaksanakan dalam bentuk', '{bentuk_acara}'] },
+      { sisip: ['1. Technical Meeting (Online)', '{#bentuk}'] },
+      { paragraf: ['1. Technical Meeting (Online)', '{judul}'] },
+      { paragraf: ['Pada kegiatan Technical Meeting (TM) di tanggal', '{uraian}'] },
+      { sisip: ['2. Pra 1, Pra 2, dan Pra 3 (Offline)', '{/bentuk}'] },
+      { hapusHingga: ['2. Pra 1, Pra 2, dan Pra 3 (Offline)', 'Waktu dan Tempat Pelaksanaan'] },
+
+      // --- bagian 6: waktu & tempat, berulang per sesi
+      { sisip: ['Technical Meeting', '{#sesi}'] },
+      { paragraf: ['Technical Meeting', '{nama_sesi}'] },
+      { paragraf: ['Hari, Tanggal:', 'Hari, Tanggal: {hari_tanggal}'] },
+      { paragraf: ['Waktu:', 'Waktu: {waktu}'] },
+      { paragraf: ['Tempat:', 'Tempat: {tempat}'] },
+      { sisip: ['Pra 1', '{/sesi}'] },
+      { hapusHingga: ['Pra 1', 'Sasaran Peserta'] },
+
+      // --- bagian 7: sasaran peserta
+      { paragraf: ['Peserta SYNCHRONIZE merupakan', '{sasaran_peserta}'] },
+
+      // --- bagian 8: kondisi pelaksanaan
+      { sisip: ['Technical Meeting: Peserta mengikuti', '{#kondisi}'] },
+      { paragraf: ['Technical Meeting: Peserta mengikuti', '{nama_sesi}: {ketentuan}'] },
+      { sisip: ['Pra 1-3: Peserta mengikuti', '{/kondisi}'] },
+      { hapusHingga: ['Pra 1-3: Peserta mengikuti', 'Parameter Kelulusan:'] },
+
+      // --- bagian 9: parameter kelulusan
+      { sisip: ['Kehadiran minimal 80%', '{#parameter}'] },
+      { paragraf: ['Kehadiran minimal 80%', '{kriteria} (bobot {bobot})'] },
+      { sisip: ['Penugasan (bobot 20%)', '{/parameter}'] },
+      { hapusHingga: ['Penugasan (bobot 20%)', 'KKM:'] },
+      { paragraf: ['KKM:', 'KKM: {kkm}'] },
+
+      // --- bagian 10: rangkaian acara, berulang per sesi
+      //
+      // Berkas contoh merinci tiap sesi sampai tingkat butir arahan pemateri —
+      // 125 paragraf untuk satu kegiatan. PRD F-10.1 §10 menetapkan bentuk yang
+      // jauh lebih ringkas: "Repeatable per sesi: Nama + Uraian". Yang diikuti
+      // PRD, karena template harus melayani kegiatan apa pun, bukan
+      // mengabadikan susunan SYNCHRONIZE 2025.
+      { sisip: ['Technical Meeting', '{#rangkaian}'] },
+      { paragraf: ['Technical Meeting', '{nama}'] },
+      { paragraf: ['Pada kegiatan Technical Meeting (TM) di tanggal', '{uraian}'] },
+      { sisip: ['Pra 1', '{/rangkaian}'] },
+      { hapusHingga: ['Pra 1', 'Rancangan Anggaran Biaya'] },
+
+      // --- bagian 11 & 12: rujukan ke lampiran
+      { ganti: ['Rencana anggaran biaya SYNCHRONIZE terlampir I.', 'Rencana anggaran biaya {nama_kegiatan} terlampir I.'] },
+      { ganti: ['Susunan acara SYNCHRONIZE terlampir II.', 'Susunan acara {nama_kegiatan} terlampir II.'] },
+
+      // --- bagian 13: penutup
+      { paragraf: ['Demikian kerangka acuan atau TOR ini dibuat', '{penutup}'] },
+
+      // --- bagian 14: tanda tangan (satu penandatangan, seluruhnya satu sel)
+      { sel: [0, 0, 2, ['{kota}, {tanggal_format}', '{#kanan}{jabatan}', '{%ttd}{%stempel}', '{nama}', 'NIM. {nim}{/kanan}']] },
+
+      // --- Lampiran I: ringkasan RAB per divisi.
+      // Baris Total diisi LEBIH DULU karena hapusBaris di bawah menggeser
+      // indeksnya.
+      { sel: [1, 10, 1, ['{rab_total}']] },
+      { sel: [1, 1, 0, ['{#rab_divisi}{no}']] },
+      { sel: [1, 1, 1, ['{divisi}']] },
+      { sel: [1, 1, 2, ['{besaran}{/rab_divisi}']] },
+      { hapusBaris: [1, [2, 3, 4, 5, 6, 7, 8, 9]] },
+
+      // --- Lampiran II: susunan acara.
+      //
+      // Berkas contoh memakai LIMA tabel terpisah, satu per sesi. Dijadikan satu
+      // tabel dengan loop bersarang: {#sesi_rundown} mengulang seluruh kelompok
+      // baris — nama sesi, dua baris kepala, isi, total — sekali per sesi, dan
+      // {#rundown} di dalamnya mengulang baris isinya. Bentuk tabelnya, enam
+      // kolom dengan kepala bertingkat, tidak berubah sama sekali.
+      { sel: [3, 0, 0, ['{#sesi_rundown}{nama_sesi}']] },
+      { sel: [3, 3, 0, ['{#rundown}{hari_tanggal}']] },
+      { sel: [3, 3, 1, ['{mulai}']] },
+      { sel: [3, 3, 2, ['{selesai}']] },
+      { sel: [3, 3, 3, ['{durasi}']] },
+      { sel: [3, 3, 4, ['{acara}']] },
+      { sel: [3, 3, 5, ['{pj}{/rundown}']] },
+      { sel: [3, 11, 2, ['{total_durasi}']] },
+      { sel: [3, 11, 3, ['{rentang_waktu}{/sesi_rundown}']] },
+      { hapusBaris: [3, [4, 5, 6, 7, 8, 9, 10]] },
+
+      // Empat tabel sesi sisanya dihapus SEBELUM tabel rincian di bawah, supaya
+      // indeks yang dipakai di sini masih indeks berkas aslinya.
+      { hapusTabel: [4, 5, 6, 7] },
+
+      // Rincian RAB per item adalah milik Proposal (PRD F-10.2 §8), bukan TOR:
+      // PRD F-10.1 §12 hanya meminta ringkasan per divisi beserta totalnya.
+      { hapusHingga: ['Dengan Rincian:', 'Lampiran II. Susunan Kegiatan'] },
+    ],
+  },
+
+  // =========================================================================
+  {
+    keluaran: 'proposal.docx',
+    sumber: 'Proposal KT1 IF25.docx',
+    ops: [
+      // --- bagian 1: halaman sampul
+      { paragraf: ['SYNCHRONIZE', '{nama_kegiatan}'] },
+      { paragraf: ['TAHUN 2025', 'TAHUN {tahun}'] },
+      { paragraf: ['KEGIATAN SYNCHRONIZE', 'KEGIATAN {nama_kegiatan}'] },
+
+      // --- bagian 2: lembar pengesahan — ENAM penandatangan.
+      //
+      // Empat di antaranya bukan pengguna sistem: Ketua BEM, Wakil Dekan III,
+      // dan Ketua Program Studi. Dua yang terakhir ber-NIP, bukan NIM. Model
+      // {#kiri}/{#kanan} (ADR-021) tidak cukup di sini, jadi tiap posisi memakai
+      // placeholder bernama sendiri. Lihat Temuan 4 di TEMPLATE_MAPPING.md.
+      { sel: [0, 1, 0, ['Ketua pelaksana ', '{ketupel_nama}', 'NIM. {ketupel_nim}']] },
+      { sel: [0, 1, 2, [' Sekretaris', '{sekretaris_nama}', 'NIM. {sekretaris_nim}']] },
+      { sel: [0, 2, 0, ['Ketua BEM FT. UNTIRTA', '{ketua_bem_nama}', 'NIM. {ketua_bem_nim}']] },
+      { sel: [0, 2, 2, ['Ketua HMIF', '{ketua_himpunan_nama}', 'NIM. {ketua_himpunan_nim}']] },
+      { sel: [0, 3, 0, ['Wakil Dekan Bidang III ', 'FT. UNTIRTA', '{wd3_nama}', 'NIP. {wd3_nip}']] },
+      { sel: [0, 3, 2, ['Ketua Program Studi Informatika', 'FT. UNTIRTA', '{kaprodi_nama}', 'NIP. {kaprodi_nip}']] },
+
+      // --- bagian 3: pendahuluan
+      { paragraf: ['Himpunan Mahasiswa Informatika (HMIF) merupakan wadah', '{latar_belakang}'] },
+      { hapusHingga: ['SYNCHRONIZE menjadi tahap awal pembinaan', 'Landasan Kegiatan'] },
+      { paragraf: ['Program kerja Himpunan Mahasiswa Informatika', '{landasan_kegiatan}'] },
+
+      { ganti: ['Asas Pelaksanaan kegiatan SYNCHRONIZE terdiri dari:', 'Asas Pelaksanaan kegiatan {nama_kegiatan} terdiri dari:'] },
+      { sisip: ['Asas keterbukaan', '{#asas}'] },
+      { paragraf: ['Asas keterbukaan', '{teks}'] },
+      { sisip: ['Asas demokratis', '{/asas}'] },
+      { hapusHingga: ['Asas demokratis', 'Tujuan Kegiatan'] },
+
+      { ganti: ['Kegiatan SYNCHRONIZE diselenggarakan dengan tujuan sebagai berikut:', 'Kegiatan {nama_kegiatan} diselenggarakan dengan tujuan sebagai berikut:'] },
+      { sisip: ['Meningkatkan rasa kepemilikan', '{#tujuan}'] },
+      { paragraf: ['Meningkatkan rasa kepemilikan', '{teks}'] },
+      { sisip: ['Menumbuhkan rasa kekeluargaan', '{/tujuan}'] },
+      { hapusHingga: ['Menumbuhkan rasa kekeluargaan', 'REALISASI KEGIATAN'] },
+
+      // --- bagian 4: realisasi kegiatan
+      { paragraf: ['Peserta SYNCHRONIZE merupakan', '{sasaran}'] },
+      { paragraf: ['Kegiatan SYNCHRONIZE dilaksanakan dalam bentuk', '{bentuk_acara}'] },
+      { ganti: ['Adapun waktu dan tempat pelaksanaan SYNCHRONIZE:', 'Adapun waktu dan tempat pelaksanaan {nama_kegiatan}:'] },
+
+      { sisip: ['Technical Meeting', '{#sesi}'] },
+      { paragraf: ['Technical Meeting', '{nama_sesi}'] },
+      // Awalan "Waktu" saja akan mengenai judul "Waktu dan Tempat Pelaksanaan"
+      // yang berada di atasnya. Spasi perataan berkas asli dipertahankan pada
+      // teks penggantinya supaya kolom titik dua tetap lurus.
+      { paragraf: ['Hari, tanggal ', 'Hari, tanggal       : {hari_tanggal}'] },
+      { paragraf: ['Waktu    ', 'Waktu                 : {waktu}'] },
+      { paragraf: ['Tempat   ', 'Tempat                : {tempat}'] },
+      { sisip: ['Pra 1', '{/sesi}'] },
+      { hapusHingga: ['Pra 1', 'Pengisi Acara'] },
+
+      // Pengisi acara: tabel tiga kolom "peran : nama".
+      { sel: [1, 0, 0, ['{#pengisi}{peran}']] },
+      { sel: [1, 0, 1, [':']] },
+      { sel: [1, 0, 2, ['{nama}{/pengisi}']] },
+      { hapusBaris: [1, [1, 2]] },
+
+      { paragraf: ['Kegiatan dimulai dengan Technical Meeting', '{gambaran_umum}'] },
+      { hapusHingga: ['Pelaksanaan Hari H berlangsung 2 hari', 'Rangkaian Acara'] },
+
+      { sisip: ['Technical Meeting', '{#rangkaian}'] },
+      { paragraf: ['Technical Meeting', '{nama}'] },
+      { paragraf: ['Pada kegiatan Technical Meeting (TM) di tanggal', '{uraian}'] },
+      { sisip: ['Pra 1', '{/rangkaian}'] },
+      { hapusHingga: ['Pra 1', 'Rencana Anggaran Biaya'] },
+
+      // --- rujukan ketiga lampiran
+      { ganti: ['Rencana Anggaran Biaya SYNCHRONIZE Terlampir I.', 'Rencana Anggaran Biaya {nama_kegiatan} Terlampir I.'] },
+      { ganti: ['Struktur kepanitiaan acara SYNCHRONIZE Terlampir II.', 'Struktur kepanitiaan acara {nama_kegiatan} Terlampir II.'] },
+      { ganti: ['Susunan Kegiatan SYNCHRONIZE Terlampir III.', 'Susunan Kegiatan {nama_kegiatan} Terlampir III.'] },
+
+      // --- bagian 7: penutup
+      { paragraf: ['Demikian proposal kegiatan SYNCHRONIZE ini disusun', '{penutup}'] },
+      { hapus: ['Kami menyadari bahwa pelaksanaan kegiatan ini', 'Kami menyadari bahwa pelaksanaan kegiatan ini'] },
+
+      // --- tanda tangan penutup
+      { sel: [2, 0, 2, ['{kota}, {tanggal_format}', 'Ketua Pelaksana', '{ketupel_nama}', 'NIM. {ketupel_nim}']] },
+
+      // --- Lampiran I: ringkasan RAB per divisi
+      { sel: [3, 10, 1, ['{rab_total}']] },
+      { sel: [3, 1, 0, ['{#rab_divisi}{no}']] },
+      { sel: [3, 1, 1, ['{divisi}']] },
+      { sel: [3, 1, 2, ['{besaran}{/rab_divisi}']] },
+      { hapusBaris: [3, [2, 3, 4, 5, 6, 7, 8, 9]] },
+
+      // --- Lampiran I lanjutan: rincian RAB per item.
+      //
+      // Berbeda dari TOR, rincian ini MEMANG milik Proposal (PRD F-10.2 §8).
+      // Bentuknya dua tingkat: satu kelompok baris per divisi, dan di dalamnya
+      // satu baris per item. Baris sub-kelompok berjudul ("KOMSUMSI PANITIA",
+      // "KEBUTUHAN DIVISI") tidak dipertahankan — pengelompokannya tidak ada di
+      // model data RAB, dan menirunya berarti mengarang struktur yang tidak
+      // dapat diisi sistem.
+      { sel: [4, 0, 0, ['{#rincian}{divisi}']] },
+      { sel: [4, 3, 0, ['{#item}{no}']] },
+      { sel: [4, 3, 1, ['{jenis_barang}']] },
+      { sel: [4, 3, 2, ['{jumlah}']] },
+      { sel: [4, 3, 3, ['{harga_satuan}']] },
+      { sel: [4, 3, 4, ['{total}{/item}{/rincian}']] },
+      { hapusBaris: [4, BARIS_RINCIAN] },
+
+      // --- Lampiran II: struktur kepanitiaan, dua tingkat
+      { sisip: ['Penasihat', '{#divisi_panitia}'] },
+      { paragraf: ['Penasihat', '{nama_divisi}'] },
+      { sisip: ['Ketua Program Studi:', '{#anggota}'] },
+      { paragraf: ['Ketua Program Studi:', '{jabatan}: {nama}'] },
+      { sisip: ['Sekretaris Program Studi:', '{/anggota}'] },
+      { sisip: ['Sekretaris Program Studi:', '{/divisi_panitia}'] },
+      { hapusHingga: ['Sekretaris Program Studi:', 'Lampiran III. Susunan Kegiatan'] },
+
+      // --- Lampiran III: susunan acara, sama bentuknya dengan TOR
+      { sel: [5, 0, 0, ['{#sesi_rundown}{nama_sesi}']] },
+      { sel: [5, 3, 0, ['{#rundown}{hari_tanggal}']] },
+      { sel: [5, 3, 1, ['{mulai}']] },
+      { sel: [5, 3, 2, ['{selesai}']] },
+      { sel: [5, 3, 3, ['{durasi}']] },
+      { sel: [5, 3, 4, ['{acara}']] },
+      { sel: [5, 3, 5, ['{pj}{/rundown}']] },
+      { sel: [5, 11, 2, ['{total_durasi}']] },
+      { sel: [5, 11, 3, ['{rentang_waktu}{/sesi_rundown}']] },
+      { hapusBaris: [5, [4, 5, 6, 7, 8, 9, 10]] },
+      { hapusTabel: [6, 7, 8, 9] },
+    ],
+  },
+
+  // =========================================================================
+  {
+    keluaran: 'lpj.docx',
+    sumber: 'Template LPJ HMIF.docx',
+    ops: [
+      // =====================================================================
+      // OPERASI TABEL LEBIH DULU
+      // =====================================================================
+      // Penghapusan di bawah membuang lima tabel koordinator divisi dan satu
+      // formulir fakultas. Indeks tabel di sini karena itu masih indeks berkas
+      // asli — dan wajib tetap begitu.
+
+      // Lembar pengesahan: empat penandatangan, dua di antaranya pihak fakultas
+      // ber-NIP yang tidak punya akun di sistem (Temuan 4).
+      { sel: [0, 1, 0, ['Ketua pelaksana ', '{ketupel_nama}', 'NIM. {ketupel_nim}']] },
+      { sel: [0, 1, 2, [' Ketua Himpunan', '{ketua_himpunan_nama}', 'NIM. {ketua_himpunan_nim}']] },
+      { sel: [0, 3, 0, ['Ketua Program Studi Informatika', '{kaprodi_nama}', 'NIP. {kaprodi_nip}']] },
+      { sel: [0, 3, 2, ['Wakil Dekan Bidang III ', 'FT UNTIRTA', '{wd3_nama}', 'NIP. {wd3_nip}']] },
+
+      // Tabel koordinator divisi, badan loop {#divisi_narasi}.
+      { sel: [2, 0, 1, [': {koordinator}']] },
+      { sel: [2, 1, 1, [': {#anggota}', '{nama}', '{/anggota}']] },
+
+      // Lampiran materi kegiatan.
+      { sel: [8, 1, 0, ['{#materi}{judul}']] },
+      { sel: [8, 1, 1, ['{pengisi}']] },
+      { sel: [8, 1, 2, ['{tautan}{/materi}']] },
+      { hapusBaris: [8, [2, 3, 4]] },
+
+      // Lampiran susunan acara.
+      { sel: [9, 1, 0, ['{#rundown}{hari_tanggal}']] },
+      { sel: [9, 1, 1, ['{waktu}']] },
+      { sel: [9, 1, 2, ['{acara}']] },
+      { sel: [9, 1, 3, ['{pj}{/rundown}']] },
+      { hapusBaris: [9, BARIS_RUNDOWN_LPJ] },
+
+      // =====================================================================
+      // SAMPUL DAN LEMBAR PENGESAHAN
+      // =====================================================================
+      { paragraf: ['(nama kegiatan)', '{nama_kegiatan}'] },
+      { paragraf: ['TAHUN 2025', 'TAHUN {tahun}'] },
+      { paragraf: ['(NAMA KEGIATAN)', '{nama_kegiatan}'] },
+      { paragraf: ['TAHUN 2025', 'TAHUN {tahun}'] },
+      { paragraf: ['Cilegon, (Tanggal)', '{kota}, {tanggal_format}'] },
+
+      // =====================================================================
+      // TEMUAN 2 — halaman kerja yang bukan bagian LPJ
+      // =====================================================================
+      // Dua hal dibuang sekaligus di sini: catatan kerja untuk manusia yang
+      // diakhiri "HAPUS HALAMAN INI JIKA SUDAH SEMUA", dan "FORM DAFTAR
+      // PENGAJUAN ANGGARAN KEMAHASISWAAN TAHUN 2024" beserta tabel ceklisnya —
+      // formulir milik fakultas, bukan bagian LPJ HMIF, dan tahunnya sudah
+      // lewat. Dibiarkan, keduanya ikut tercetak pada setiap LPJ yang terbit.
+      { hapusHingga: ['SOP LPJ yang sesuai ketentuan', 'PENDAHULUAN'] },
+
+      // =====================================================================
+      // ISI LAPORAN
+      // =====================================================================
+      { paragraf: ['pendahuluan', '{pendahuluan}'] },
+      { paragraf: ['Nama Kegiatan :', 'Nama Kegiatan : {nama_kegiatan}'] },
+      { paragraf: ['Tema Kegiatan:', 'Tema Kegiatan: {tema_kegiatan}'] },
+
+      { sisip: ['xxx', '{#tujuan}'] },
+      { paragraf: ['xxx', '{teks}'] },
+      { sisip: ['xxx', '{/tujuan}'] },
+      { hapus: ['xxx', 'xxx'] },
+
+      // "TARGET PESERTA" hanya berupa judul tanpa isi contoh, jadi paragrafnya
+      // disalin dari judul bagian berikutnya.
+      { sisip: ['WAKTU PELAKSANAAN KEGIATAN', '{target_peserta}'] },
+
+      { paragraf: ['Hari, tanggal:', 'Hari, tanggal: {hari_tanggal}'] },
+      { paragraf: ['Waktu :', 'Waktu : {waktu}'] },
+      { paragraf: ['Tempat:', 'Tempat: {tempat}'] },
+
+      // Susunan kepanitiaan: dua tingkat, divisi lalu anggotanya. Enam paragraf
+      // dibutuhkan dan berkas asli hanya menyediakan satu, jadi lima disalin.
+      { sisip: ['Masukkan susunan kepanitiaan', '{#divisi_panitia}'] },
+      { sisip: ['Masukkan susunan kepanitiaan', '{nama_divisi}'] },
+      { sisip: ['Masukkan susunan kepanitiaan', '{#anggota}'] },
+      { paragraf: ['Masukkan susunan kepanitiaan', '{jabatan}: {nama}'] },
+      { sisip: ['PROSES PERENCANAAN', '{/anggota}'] },
+      { sisip: ['PROSES PERENCANAAN', '{/divisi_panitia}'] },
+
+      { paragraf: ['xxx', '{proses_perencanaan}'] },
+      { hapus: ['boleh juga diisi langkah-langkah', 'boleh juga diisi langkah-langkah'] },
+      { paragraf: ['TBA', '{pelaksanaan_kegiatan}'] },
+      { paragraf: ['kalau berupa produk jadi boleh linknya', '{output}'] },
+      { sisip: ['NARASI KEGIATAN', '{penutup}'] },
+
+      // =====================================================================
+      // NARASI PER DIVISI
+      // =====================================================================
+      // Contoh berisi tujuh divisi VOIF 2023 lengkap dengan narasinya — 360
+      // paragraf. Satu blok disisakan sebagai badan loop {#divisi_narasi}; sisanya
+      // dibuang. Tabel koordinator ikut terulang karena berada di antara tag
+      // pembuka dan penutup yang keduanya berdiri sendiri di paragrafnya.
+      //
+      // Narasi Badan Pengurus Harian dibuang seluruhnya: bentuknya berbeda dari
+      // narasi divisi (dua jabatan per blok, bukan koordinator + anggota), dan
+      // BPH sudah tercakup sebagai salah satu divisi pada data kepanitiaan.
+      { hapusHingga: ['BADAN PENGURUS HARIAN', 'NARASI KEGIATAN DIVISI-DIVISI'] },
+
+      { sisip: ['Divisi Acara', '{#divisi_narasi}'] },
+      { paragraf: ['Divisi Acara', '{nama_divisi}'] },
+      { isiBagian: ['Narasi', 'Perencanaan', '{narasi}'] },
+      { isiBagian: ['Perencanaan', 'Pelaksanaan', '{perencanaan}'] },
+      { isiBagian: ['Pelaksanaan', 'Faktor Pendukung', '{pelaksanaan}'] },
+      { isiBagian: ['Faktor Pendukung', 'Faktor Penghambat', '{pendukung}'] },
+      { isiBagian: ['Faktor Penghambat', 'Saran dan Rekomendasi', '{penghambat}'] },
+      { isiBagian: ['Saran dan Rekomendasi', 'Divisi Mentor dan Asisten Mentor', '{saran}'] },
+      { sisip: ['Divisi Mentor dan Asisten Mentor', '{/divisi_narasi}'] },
+      { hapusHingga: ['Divisi Mentor dan Asisten Mentor', 'Lampiran'] },
+
+      // =====================================================================
+      // LAMPIRAN
+      // =====================================================================
+      { hapus: ['DISESUAIKAN LAGI', 'DISESUAIKAN LAGI'] },
+      { paragraf: ['Materi yang disampaikan kepada peserta', '{catatan_materi}'] },
+
+      // "Lampiran Rancangan Anggaran Biaya (RAB)" pada berkas contoh hanya
+      // berupa judul tanpa tabel apa pun — lihat Temuan 10. Sampai T-093
+      // menambahkan tabelnya, ringkasan keuangan masuk sebagai satu blok teks.
+      { sisip: ['Lampiran Susunan Acara', '{rab_ringkasan}'] },
+      { sisip: ['Lampiran Foto/Dokumentasi', '{daftar_hadir}'] },
+
+      { sisip: ['Dokumentasi Instagram', '{#dokumentasi}'] },
+      { paragraf: ['Dokumentasi Instagram', '{caption}'] },
+      { sisip: ['Pra Voyage of Informatic', '{/dokumentasi}'] },
+      { hapus: ['Pra Voyage of Informatic'] },
+    ],
+  },
   // =========================================================================
   {
     keluaran: 'notulensi.docx',
@@ -378,11 +778,28 @@ function jalankan(resep: Resep): { ok: boolean; pesan: string[] } {
       const [dari, sampai] = op.hapus;
       const n = dok.hapusBlok(dari, sampai);
       if (n === 0) pesan.push(`hapus dari ${JSON.stringify(dari)} tidak mengenai apa pun`);
+    } else if ('hapusHingga' in op) {
+      const [dari, sebelum] = op.hapusHingga;
+      if (dok.hapusHingga(dari, sebelum) === 0) {
+        pesan.push(
+          `hapusHingga ${JSON.stringify(dari)} -> ${JSON.stringify(sebelum)} tidak mengenai apa pun`,
+        );
+      }
+    } else if ('hapusTabel' in op) {
+      const n = dok.hapusTabel(op.hapusTabel);
+      if (n !== op.hapusTabel.length) {
+        pesan.push(`hapusTabel - diharapkan ${op.hapusTabel.length}, dapat ${n}`);
+      }
     } else if ('hapusBaris' in op) {
       const [tabel, indeks] = op.hapusBaris;
       const n = dok.hapusBarisTabel(tabel, indeks);
       if (n !== indeks.length) {
         pesan.push(`hapusBaris tabel ${tabel} — diharapkan ${indeks.length}, dapat ${n}`);
+      }
+    } else if ('isiBagian' in op) {
+      const [judul, berikut, teks] = op.isiBagian;
+      if (!dok.isiBagian(judul, berikut, teks)) {
+        pesan.push(`isiBagian ${JSON.stringify(judul)} -> ${JSON.stringify(berikut)} gagal`);
       }
     } else {
       const [tabel, baris, sel, isi] = op.sel;

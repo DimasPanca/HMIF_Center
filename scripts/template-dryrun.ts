@@ -46,7 +46,19 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 
 const AKAR = path.resolve(import.meta.dirname, '..');
-const DIR = path.resolve(AKAR, process.argv[2] ?? 'templates');
+const ARG = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+
+/**
+ * `--teks` mencetak hasil render tiap berkas sebagai teks biasa.
+ *
+ * Lulus dry run hanya membuktikan setiap tag menemukan datanya — bukan bahwa
+ * dokumennya terbaca benar. Dua cacat yang tidak akan pernah tertangkap tanpa
+ * membaca hasilnya: judul notulensi menjadi "Rapat Rapat Kerja" karena kata
+ * "Rapat" tertinggal di luar placeholder, dan seluruh butir daftar berdempet
+ * jadi satu baris karena tag loop-nya sebaris.
+ */
+const TEKS = process.argv.includes('--teks');
+const DIR = path.resolve(AKAR, ARG[0] ?? 'templates');
 
 /** Daftar wajib hanya ditegakkan pada direktori sungguhan, bukan saat menguji. */
 const RESMI = DIR === path.join(AKAR, 'templates');
@@ -145,8 +157,10 @@ const DUMMY: Record<string, unknown> = {
     { no: '2.', kebutuhan: 'Tabung Oksigen', banyaknya: '1 unit' },
   ],
   rundown: [
-    { hari_tanggal: 'Senin, 06 Oktober 2025', waktu: '16.00-16.30', acara: 'Absensi', keterangan: 'Acara' },
-    { hari_tanggal: '', waktu: '16.30-16.40', acara: 'Pembukaan', keterangan: 'Acara' },
+    { hari_tanggal: 'Senin, 06 Oktober 2025', waktu: '16.00-16.30', acara: 'Absensi', keterangan: 'Acara',
+      mulai: '16:00', selesai: '16:30', durasi: '30 Menit', pj: 'Acara' },
+    { hari_tanggal: '', waktu: '16.30-16.40', acara: 'Pembukaan', keterangan: 'Acara',
+      mulai: '16:30', selesai: '16:40', durasi: '10 Menit', pj: 'Acara' },
   ],
   poin: [
     { judul: 'Penyesuaian Timeline PDKT Teknik 2026', paragraf: teks(3) },
@@ -165,12 +179,39 @@ const DUMMY: Record<string, unknown> = {
   sasaran_peserta: 'Mahasiswa Informatika angkatan 2024.',
   jumlah_peserta: 120,
   jumlah_kelompok: 8,
-  kondisi: [{ sesi: 'Hari H', ketentuan: 'Hadir tepat waktu, toleransi 15 menit.' }],
+  kondisi: [{ nama_sesi: 'Hari H', ketentuan: 'Hadir tepat waktu, toleransi 15 menit.' }],
   parameter: [
     { kriteria: 'Kehadiran', bobot: '40%', kkm: '75%' },
     { kriteria: 'Penugasan', bobot: '40%', kkm: '75%' },
   ],
   rangkaian: [{ nama: 'Sharing Session', uraian: 'Perkenalan tupoksi tiap departemen.' }],
+  bentuk: [
+    { judul: '1. Technical Meeting (Online)', uraian: 'Penjelasan menyeluruh sebelum rangkaian dimulai.' },
+    { judul: '2. Puncak Acara (Outdoor)', uraian: 'Dua hari satu malam di lokasi kegiatan.' },
+  ],
+  kkm: '60 (akumulasi total)',
+
+  // Susunan acara TOR: loop bersarang. {#sesi_rundown} mengulang kelompok baris
+  // per sesi, {#rundown} di dalamnya mengulang baris isinya.
+  sesi_rundown: [
+    {
+      nama_sesi: 'Technical Meeting',
+      total_durasi: '80 Menit',
+      rentang_waktu: '19:00 - 20:20 Selesai',
+      rundown: [
+        { hari_tanggal: 'Rabu, 26 November 2025', mulai: '19:00', selesai: '19:05', durasi: '5 Menit', acara: 'Pembukaan', pj: 'MC' },
+        { hari_tanggal: '', mulai: '19:05', selesai: '19:10', durasi: '5 Menit', acara: 'Sambutan', pj: 'Ketuplak' },
+      ],
+    },
+    {
+      nama_sesi: 'PRA-1',
+      total_durasi: '240 Menit',
+      rentang_waktu: '15:40 - 19:40 Selesai',
+      rundown: [
+        { hari_tanggal: 'Kamis, 27 November 2025', mulai: '15:40', selesai: '16:00', durasi: '20 Menit', acara: 'Absensi', pj: 'Komdis' },
+      ],
+    },
+  ],
   penutup: 'Demikian kerangka acuan ini dibuat.',
 
   // --- anggaran: selalu ditarik dari RAB saat generate ---
@@ -188,7 +229,46 @@ const DUMMY: Record<string, unknown> = {
   landasan_kegiatan: 'AD/ART HMIF FT UNTIRTA.',
   asas_pelaksanaan: 'Kekeluargaan dan profesionalitas.',
   sasaran: 'Mahasiswa Informatika angkatan 2024.',
-  pengisi: [{ nama: 'Nur Ali Arfan', materi: 'Kepemimpinan' }],
+  // Tabel "Pengisi Acara" pada Proposal berbentuk "peran : nama".
+  pengisi: [
+    { peran: 'Pembawa Acara', nama: 'Layyinnida Indah Ramadhan' },
+    { peran: 'Pemateri', nama: 'Nur Ali Arfan' },
+  ],
+  asas: teks(3),
+  ketua_bem_nama: 'Dylan Arsyi Fahrizi',
+  ketua_bem_nim: '3336220084',
+  sekretaris_nama: 'Amelia Putri Aqiilah',
+  sekretaris_nim: '3337240049',
+
+  // Susunan kepanitiaan dua tingkat: divisi, lalu anggotanya.
+  divisi_panitia: [
+    {
+      nama_divisi: 'Penasihat',
+      anggota: [
+        { jabatan: 'Ketua Program Studi', nama: 'Nanang Krisdianto, S.T., M.Kom' },
+        { jabatan: 'Sekretaris Program Studi', nama: 'Royan Habibie Sukarna, S.Kom., M.Kom' },
+      ],
+    },
+    {
+      nama_divisi: 'Acara',
+      anggota: [{ jabatan: 'Koordinator', nama: 'Dimas Panca Pamungkas' }],
+    },
+  ],
+
+  // Rincian RAB dua tingkat: divisi, lalu itemnya.
+  rincian: [
+    {
+      divisi: 'DIVISI KONSUMSI',
+      item: [
+        { no: 1, jenis_barang: 'Galon', jumlah: '10', harga_satuan: 'Rp5.000', total: 'Rp50.000' },
+        { no: 2, jenis_barang: 'Snack', jumlah: '120', harga_satuan: 'Rp5.000', total: 'Rp600.000' },
+      ],
+    },
+    {
+      divisi: 'DIVISI PDD',
+      item: [{ no: 1, jenis_barang: 'Cetak Banner', jumlah: '2', harga_satuan: 'Rp75.000', total: 'Rp150.000' }],
+    },
+  ],
   panitia: [
     { divisi: 'Inti', jabatan: 'Ketua Pelaksana', nama: 'Muhammad Imam Faturrohman', nim: '3337230036' },
     { divisi: 'Acara', jabatan: 'Koordinator', nama: 'Alya Fauziah A.', nim: '3337230011' },
@@ -223,6 +303,48 @@ const DUMMY: Record<string, unknown> = {
   hadir: '18 dari 21 pengurus',
   agenda: teks(3),
   hasil: teks(3),
+
+  // --- LPJ: isi laporan ---
+  pendahuluan: 'Pendahuluan laporan pertanggungjawaban.',
+  target_peserta: 'Mahasiswa Informatika angkatan 2024.',
+  proses_perencanaan: 'Tahapan persiapan kegiatan.',
+  pelaksanaan_kegiatan: 'Kegiatan terlaksana sesuai rencana.',
+  output: 'Peserta memahami struktur organisasi HMIF.',
+  catatan_materi: 'Materi diarsipkan di Google Drive.',
+  rab_ringkasan: 'Total pemasukan Rp2.000.000, pengeluaran Rp1.957.000.',
+  daftar_hadir: 'Daftar hadir panitia dan peserta terlampir.',
+  materi: [
+    { judul: 'Pengenalan Program Studi', pengisi: 'Nanang Krisdianto, S.T., M.Kom', tautan: 'bit.ly/materi1' },
+    { judul: 'Etika Berorganisasi', pengisi: 'Shindu Nata Wijaya', tautan: 'bit.ly/materi2' },
+  ],
+
+  // Narasi per divisi. Namanya `divisi_narasi`, bukan `narasi`, karena tiap
+  // itemnya SENDIRI punya field `narasi` — loop dan field yang senama membuat
+  // pencarian docxtemplater bergantung pada letak tag, bukan pada maksudnya.
+  divisi_narasi: [
+    {
+      nama_divisi: 'Divisi Acara',
+      koordinator: 'Rifqi Fahrezi',
+      anggota: [{ nama: 'Elga Syahira' }, { nama: 'Rijal Fauzi' }],
+      narasi: 'Divisi Acara mengurus rangkaian acara dari persiapan sampai pelaksanaan.',
+      perencanaan: 'Menyusun konsep acara dan rundown.',
+      pelaksanaan: 'Memandu jalannya acara pada hari H.',
+      pendukung: 'Koordinasi antar divisi berjalan baik.',
+      penghambat: 'Beberapa komponen pembukaan belum siap tepat waktu.',
+      saran: 'Perhatikan waktu mulai acara.',
+    },
+    {
+      nama_divisi: 'Divisi Konsumsi',
+      koordinator: 'Puja Widyasti',
+      anggota: [{ nama: 'Isabella' }],
+      narasi: 'Divisi Konsumsi mengurus konsumsi peserta dan panitia.',
+      perencanaan: 'Mendata kebutuhan konsumsi per sesi.',
+      pelaksanaan: 'Mendistribusikan konsumsi sesuai jadwal.',
+      pendukung: 'Vendor responsif.',
+      penghambat: 'Perubahan jumlah peserta mendadak.',
+      saran: 'Kunci jumlah peserta H-3.',
+    },
+  ],
 
   // --- penanda gambar tingkat atas ---
   '%ttd': '[ttd]',
@@ -315,7 +437,12 @@ function periksa(berkas: string): Hasil {
   // dan menghitung tabel yang tersisa. Diukur: bentuk yang salah menyisakan
   // NOL tabel, bentuk yang benar menyisakan jumlah yang sama seperti template.
   const tabelTemplate = jumlahTabel(zip.file('word/document.xml')?.asText() ?? '');
-  if (tabelTemplate > 0 && hasil.galat.length === 0) {
+  //
+  // Hanya dijalankan bila tidak ada tag yang kosong. Loop baris yang datanya
+  // tidak ada juga mengosongkan tabelnya — benar, tetapi bukan pelanggaran
+  // ADR-021, dan pesannya akan menuduh hal yang salah. Kekosongan data sudah
+  // dilaporkan sendiri di atas.
+  if (tabelTemplate > 0 && hasil.galat.length === 0 && hilang.size === 0) {
     try {
       const kosong = new Docxtemplater(new PizZip(fs.readFileSync(berkas)), {
         paragraphLoop: true,
@@ -338,6 +465,29 @@ function periksa(berkas: string): Hasil {
 
   hasil.hilang = [...hilang].sort();
   return hasil;
+}
+
+/** Mencetak hasil render sebuah template sebagai teks biasa. */
+function cetakTeks(berkas: string): void {
+  const doc = new Docxtemplater(new PizZip(fs.readFileSync(berkas)), {
+    paragraphLoop: true,
+    linebreaks: true,
+    errorLogging: false,
+    nullGetter: (part: { value: string }) => `<<${part.value} KOSONG>>`,
+  });
+  doc.render(DUMMY);
+  const xml = doc.getZip().file('word/document.xml')?.asText() ?? '';
+  for (const m of xml.matchAll(/<w:p\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/w:p>)/g)) {
+    const t = [...m[0].matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)]
+      .map((x) => x[1] ?? '')
+      .join('')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (t) tulis(`      ${t}`);
+  }
 }
 
 function main(): void {
@@ -377,6 +527,7 @@ function main(): void {
 
     for (const g of h.galat) tulis(`      GALAT    ${g}`);
     for (const t of h.hilang) tulis(`      KOSONG   {${t}} tidak menemukan data`);
+    if (TEKS && h.galat.length === 0) cetakTeks(path.join(DIR, h.berkas));
     tulis('');
   }
 

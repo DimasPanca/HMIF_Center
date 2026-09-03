@@ -314,6 +314,89 @@ export class Dokumen {
   }
 
   /**
+   * Menghapus blok dari paragraf yang diawali `dari` sampai TEPAT SEBELUM
+   * paragraf yang diawali `sebelum`.
+   *
+   * Bentuk eksklusif ini yang dipakai untuk membuang isi contoh sebuah bagian:
+   * penandanya adalah judul bagian BERIKUTNYA, yang selalu unik dan tidak ikut
+   * terhapus. Bentuk inklusif `hapusBlok` menuntut penanda akhir yang tepat,
+   * padahal kalimat terakhir sebuah bagian sering berulang di bagian lain —
+   * "Tempat: Baduy Outbound" muncul dua kali di TOR, dan penghapusan berhenti
+   * di kemunculan pertama tanpa memberi tanda.
+   */
+  hapusHingga(dari: string, sebelum: string): number {
+    const blok = this.blok();
+    const cocok = (b: { xml: string }, awalan: string): boolean =>
+      b.xml.startsWith('<w:p') ? teksParagraf(b.xml).trimStart().startsWith(awalan) : false;
+
+    const i = blok.findIndex((b) => cocok(b, dari));
+    if (i === -1) return 0;
+    const j = blok.findIndex((b, k) => k > i && cocok(b, sebelum));
+    if (j === -1) return 0;
+
+    this.xml = this.xml.slice(0, blok[i]!.awal) + this.xml.slice(blok[j]!.awal);
+    return j - i;
+  }
+
+  /**
+   * Mengisi sebuah bagian: paragraf berteks PERTAMA sesudah judul `judul`
+   * diganti dengan `teks`, dan seluruh blok sisanya sampai `judulBerikut`
+   * dibuang.
+   *
+   * Pola ini berulang di hampir setiap bagian TOR, Proposal, dan LPJ: sebuah
+   * judul, lalu beberapa paragraf contoh yang seluruhnya harus menjadi satu
+   * placeholder. Menuliskannya sebagai `paragraf` + `hapusHingga` menuntut
+   * penulis resep mengetahui kalimat pertama DAN kalimat kedua tiap bagian —
+   * dua puluh kalimat yang harus disalin persis dan tidak berguna bagi siapa
+   * pun yang membacanya nanti. Di sini cukup nama kedua judulnya.
+   */
+  isiBagian(judul: string, judulBerikut: string, teks: string): boolean {
+    const blok = this.blok();
+    const paragrafBerteks = (b: { xml: string }): boolean =>
+      b.xml.startsWith('<w:p') && /<w:t(?:\s[^>]*)?>/.test(b.xml);
+    const cocok = (b: { xml: string }, awalan: string): boolean =>
+      b.xml.startsWith('<w:p') ? teksParagraf(b.xml).trimStart().startsWith(awalan) : false;
+
+    const i = blok.findIndex((b) => cocok(b, judul));
+    if (i === -1) return false;
+    const j = blok.findIndex((b, k) => k > i && cocok(b, judulBerikut));
+    if (j === -1) return false;
+
+    const isi = blok.findIndex((b, k) => k > i && k < j && paragrafBerteks(b));
+    if (isi === -1) return false;
+
+    // Dari belakang: penghapusan lebih dulu, penggantian sesudahnya, supaya
+    // indeks XML paragraf isi tidak bergeser.
+    if (j > isi + 1) {
+      this.xml = this.xml.slice(0, blok[isi + 1]!.awal) + this.xml.slice(blok[j]!.awal);
+    }
+    const pr = blok[isi]!;
+    const baru = terapkan(pr.xml, [[0, teksParagraf(pr.xml).length, teks]]);
+    this.xml = this.xml.slice(0, pr.awal) + baru + this.xml.slice(pr.akhir);
+    return true;
+  }
+
+  /**
+   * Menghapus tabel-tabel utuh berdasarkan indeksnya (mulai 0).
+   *
+   * Sebagian tabel contoh tidak punya paragraf berteks di sekitarnya yang bisa
+   * dijadikan penanda — di TOR, kelima tabel susunan acara hanya dipisahkan
+   * paragraf kosong. Menghapusnya lewat koordinat adalah satu-satunya cara yang
+   * tidak menebak.
+   */
+  hapusTabel(indeks: number[]): number {
+    let terhapus = 0;
+    // Dari belakang: indeks tabel di depannya tetap sah.
+    for (const i of [...indeks].sort((a, b) => b - a)) {
+      const t = [...this.xml.matchAll(/<w:tbl>[\s\S]*?<\/w:tbl>/g)][i];
+      if (!t) continue;
+      this.xml = this.xml.slice(0, t.index) + this.xml.slice(t.index + t[0].length);
+      terhapus++;
+    }
+    return terhapus;
+  }
+
+  /**
    * Menghapus baris ke-`indeks` (mulai 0) dari tabel ke-`tabel` (mulai 0).
    * Dipakai untuk menyisakan satu baris contoh sebagai badan loop.
    */
@@ -393,11 +476,19 @@ export class Dokumen {
       selBaru = selBaru.slice(0, sisip) + tambahan + selBaru.slice(sisip);
     }
 
-    // Paragraf yang sudah ada ditulis dari belakang supaya indeksnya tetap sah.
+    // Ditulis dari belakang supaya indeks paragraf di depannya tetap sah.
+    //
+    // Paragraf berlebih DIHAPUS, bukan dikosongkan. Mengosongkannya menyisakan
+    // baris kosong tepat di tempat teks contoh tadi berada — pada sel anggota
+    // panitia yang memuat tujuh nama, itu berarti enam baris kosong menganga di
+    // setiap dokumen yang dihasilkan.
     for (let i = paragrafan.length - 1; i >= 0; i--) {
       const pr = paragrafan[i]!;
-      const teks = isi[i] ?? '';
-      const baru = terapkan(pr[0], [[0, teksParagraf(pr[0]).length, teks]]);
+      if (i >= isi.length) {
+        selBaru = selBaru.slice(0, pr.index) + selBaru.slice(pr.index + pr[0].length);
+        continue;
+      }
+      const baru = terapkan(pr[0], [[0, teksParagraf(pr[0]).length, isi[i]!]]);
       selBaru = selBaru.slice(0, pr.index) + baru + selBaru.slice(pr.index + pr[0].length);
     }
 
