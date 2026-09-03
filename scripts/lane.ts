@@ -513,6 +513,17 @@ function cmdInit(): number {
       'T-027', 'T-028', 'T-029', 'T-030', 'T-031', 'T-032', 'T-033', 'T-034',
       'T-035', 'T-036', 'T-037', 'T-038', 'T-039', 'T-040', 'T-041', 'T-042',
       'T-043', 'T-044',
+
+      // Gelombang kedua. PEMBAGIAN di atas hanya pernah menutup fase 0-2
+      // fondasi; 73 task sisanya belum pernah dibagi ke lane mana pun.
+      //
+      // T-045 dan T-046 masuk lebih dulu karena keduanya murni backend —
+      // seluruh berkas yang dibuatnya ada di lib/auth/. Sisa task fase 1 ke
+      // atas sebagian besar CAMPUR: satu task membuat service di lib/ dan
+      // halaman di app/ sekaligus, sehingga harus dibelah di dalam task
+      // seperti T-045, bukan diberikan utuh ke satu lane. Pembelahannya
+      // keputusan manusia di sync point, bukan keputusan agent.
+      'T-045', 'T-046',
     ],
     ui: [
       'T-012', 'T-013', 'T-014', 'T-015', 'T-016', 'T-017', 'T-018',
