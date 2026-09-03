@@ -116,6 +116,11 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/TEMPLATE_MAPPING.md',
     'docs/ai/SECURITY_AUDIT.md',
 
+    // Kontrak antar-lane untuk T-045: tanda tangan fungsi yang dipanggil
+    // route handler milik lane ui. Ditulis lane data karena lane inilah yang
+    // memiliki fungsinya; lane ui membacanya, tidak menyuntingnya.
+    'docs/ai/AUTH_CONTRACT.md',
+
     // README menjelaskan cara menyiapkan dan menjalankan proyek — env,
     // migrasi, skrip — seluruhnya wilayah lane ini. Dikeluarkan dari BEKU
     // karena T-116 memang menuntut perubahannya.
