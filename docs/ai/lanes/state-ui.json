@@ -126,7 +126,7 @@
       "depends_on": [
         "T-073"
       ],
-      "status": "READY",
+      "status": "IN_PROGRESS",
       "butuh_manusia": false,
       "completed_at": null
     },
