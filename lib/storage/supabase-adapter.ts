@@ -32,27 +32,55 @@ function wajib(nama: string): string {
 }
 
 export class SupabaseStorageAdapter implements StorageAdapter {
-  private readonly klien: SupabaseClient;
-  private readonly bucket: Record<NamaBucket, string>;
-  private readonly urlDasar: string;
+  private readonly disuntik: SupabaseClient | undefined;
+  private siap: { klien: SupabaseClient; bucket: Record<NamaBucket, string>; urlDasar: string } | null =
+    null;
 
+  /**
+   * Constructor sengaja TIDAK membaca environment variable.
+   *
+   * Ditemukan lane ui: `npm run verify` di worktree mereka gagal pada
+   * "SUPABASE_SECRET_KEY belum diisi" — padahal test yang gagal hanya
+   * memeriksa `buatAdapter('supabase').constructor.name`. Worktree itu
+   * memang sengaja diberi .env.local tanpa secret key (hak minimum), dan
+   * sekadar MEMILIH driver seharusnya tidak menuntut kredensial.
+   *
+   * Akibatnya bukan hanya di test. `next build` mengevaluasi modul yang
+   * diimpor; satu halaman yang mengimpor tipe dari sini akan menggagalkan
+   * build Vercel bila env-nya belum lengkap, dengan pesan yang menunjuk ke
+   * dalam node_modules.
+   *
+   * Env dibaca saat method pertama dipanggil. Kegagalannya tetap keras dan
+   * tetap menyebut nama variabelnya — hanya terjadi pada saat yang benar.
+   */
   constructor(klien?: SupabaseClient) {
-    this.urlDasar = wajib('NEXT_PUBLIC_SUPABASE_URL').replace(/\/+$/, '');
-    this.klien =
-      klien ??
-      createClient(this.urlDasar, wajib('SUPABASE_SECRET_KEY'), {
+    this.disuntik = klien;
+  }
+
+  private konteks(): { klien: SupabaseClient; bucket: Record<NamaBucket, string>; urlDasar: string } {
+    if (this.siap) return this.siap;
+
+    const urlDasar = wajib('NEXT_PUBLIC_SUPABASE_URL').replace(/\/+$/, '');
+    const klien =
+      this.disuntik ??
+      createClient(urlDasar, wajib('SUPABASE_SECRET_KEY'), {
         auth: { persistSession: false, autoRefreshToken: false },
       });
 
-    this.bucket = {
-      private: process.env.STORAGE_BUCKET_PRIVATE ?? 'private',
-      public: process.env.STORAGE_BUCKET_PUBLIC ?? 'public',
+    this.siap = {
+      klien,
+      urlDasar,
+      bucket: {
+        private: process.env.STORAGE_BUCKET_PRIVATE ?? 'private',
+        public: process.env.STORAGE_BUCKET_PUBLIC ?? 'public',
+      },
     };
+    return this.siap;
   }
 
   /** Nama bucket sesungguhnya untuk sebuah key. */
   private bucketNyata(key: string): string {
-    return this.bucket[bucketUntuk(key)];
+    return this.konteks().bucket[bucketUntuk(key)];
   }
 
   async put(
@@ -65,7 +93,7 @@ export class SupabaseStorageAdapter implements StorageAdapter {
     // Lihat alasannya di keys.pastikanBucketCocok().
     const jenis = pastikanBucketCocok(key, opts?.public);
 
-    const { error } = await this.klien.storage.from(this.bucket[jenis]).upload(key, data, {
+    const { error } = await this.konteks().klien.storage.from(this.konteks().bucket[jenis]).upload(key, data, {
       contentType,
       upsert: opts?.upsert ?? false,
     });
@@ -75,7 +103,7 @@ export class SupabaseStorageAdapter implements StorageAdapter {
   }
 
   async get(key: string): Promise<Buffer> {
-    const { data, error } = await this.klien.storage.from(this.bucketNyata(key)).download(key);
+    const { data, error } = await this.konteks().klien.storage.from(this.bucketNyata(key)).download(key);
     if (error || !data) {
       throw new Error(`Gagal mengambil "${key}": ${error?.message ?? 'objek kosong'}`);
     }
@@ -94,8 +122,8 @@ export class SupabaseStorageAdapter implements StorageAdapter {
       );
     }
 
-    const { data, error } = await this.klien.storage
-      .from(this.bucketNyata(key))
+    const { data, error } = await this.konteks()
+      .klien.storage.from(this.bucketNyata(key))
       .createSignedUrl(key, Math.trunc(expiresInSeconds));
 
     if (error || !data) {
@@ -115,11 +143,12 @@ export class SupabaseStorageAdapter implements StorageAdapter {
           `Pakai getSignedUrl(key, DETIK_SIGNED_URL).`,
       );
     }
-    return `${this.urlDasar}/storage/v1/object/public/${this.bucket.public}/${key}`;
+    const { urlDasar, bucket } = this.konteks();
+    return `${urlDasar}/storage/v1/object/public/${bucket.public}/${key}`;
   }
 
   async delete(key: string): Promise<void> {
-    const { error } = await this.klien.storage.from(this.bucketNyata(key)).remove([key]);
+    const { error } = await this.konteks().klien.storage.from(this.bucketNyata(key)).remove([key]);
     if (error) throw new Error(`Gagal menghapus "${key}": ${error.message}`);
   }
 
@@ -134,14 +163,14 @@ export class SupabaseStorageAdapter implements StorageAdapter {
    */
   async list(prefix: string): Promise<StorageObject[]> {
     const jenis = bucketUntuk(prefix || 'nota/master/');
-    return this.telusuri(this.bucket[jenis], prefix);
+    return this.telusuri(this.konteks().bucket[jenis], prefix);
   }
 
   private async telusuri(bucket: string, prefix: string): Promise<StorageObject[]> {
     const hasil: StorageObject[] = [];
     const jalur = prefix.replace(/\/+$/, '');
 
-    const { data, error } = await this.klien.storage.from(bucket).list(jalur, { limit: 1000 });
+    const { data, error } = await this.konteks().klien.storage.from(bucket).list(jalur, { limit: 1000 });
     if (error) throw new Error(`Gagal mendaftar "${prefix}": ${error.message}`);
     if (!data) return hasil;
 
@@ -170,8 +199,8 @@ export class SupabaseStorageAdapter implements StorageAdapter {
     const folder = potong === -1 ? '' : key.slice(0, potong);
     const nama = potong === -1 ? key : key.slice(potong + 1);
 
-    const { data, error } = await this.klien.storage
-      .from(this.bucketNyata(key))
+    const { data, error } = await this.konteks()
+      .klien.storage.from(this.bucketNyata(key))
       .list(folder, { limit: 1, search: nama });
 
     if (error) throw new Error(`Gagal memeriksa "${key}": ${error.message}`);

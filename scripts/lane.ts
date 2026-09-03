@@ -116,15 +116,22 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/TEMPLATE_MAPPING.md',
     'docs/ai/SECURITY_AUDIT.md',
 
+    // Kontrak antar-lane untuk T-045: tanda tangan fungsi yang dipanggil
+    // route handler milik lane ui. Ditulis lane data karena lane inilah yang
+    // memiliki fungsinya; lane ui membacanya, tidak menyuntingnya.
+    'docs/ai/AUTH_CONTRACT.md',
+
     // README menjelaskan cara menyiapkan dan menjalankan proyek — env,
     // migrasi, skrip — seluruhnya wilayah lane ini. Dikeluarkan dari BEKU
     // karena T-116 memang menuntut perubahannya.
     'README.md',
 
-    // ADR-010 menetapkan strategi PDF, dan T-062 yang mengimplementasikannya
-    // perlu memperbarui statusnya. Satu-satunya ADR di rentang 001-019 yang
-    // dilepas dari BEKU, dan hanya karena ada task yang menuntutnya.
+    // Dua ADR di rentang 001-019 yang dilepas dari BEKU, keduanya karena ada
+    // task atau keputusan yang menuntut statusnya diperbarui:
+    //   ADR-010  strategi PDF, diimplementasikan T-062
+    //   ADR-019  koordinat RAB AKTUAL, diputuskan pemilik produk pada sync S3
     'docs/adr/ADR-010*.md',
+    'docs/adr/ADR-019*.md',
 
     // Rentang ADR lane data: 020-039
     'docs/adr/ADR-02*.md',
@@ -192,7 +199,6 @@ const BEKU: string[] = [
   'docs/adr/ADR-016*.md',
   'docs/adr/ADR-017*.md',
   'docs/adr/ADR-018*.md',
-  'docs/adr/ADR-019*.md',
   'CLAUDE.md',
   'AGENTS.md',
   '.gitignore',
