@@ -297,7 +297,7 @@ menabrak tembok T-074/T-078 tiga belas kali lagi (§8.1).
 | `gantt-editor.spec.ts` | T-078 | ✅ ada — 13 test |
 | `gantt-render.spec.ts` | T-073 | ✅ ada |
 | `login.spec.ts` | T-045 | ✅ ada — hijau |
-| `kalender-ketersediaan.spec.ts` | T-067 | ⬜ **belum** |
+| `kalender-ketersediaan.spec.ts` | T-067 | ✅ ada — 10 test |
 | `wizard-proker-4-6.spec.ts` | T-069 | ⬜ **belum** |
 | `master-gantt.spec.ts` | T-075 | ⬜ **belum** |
 | `dashboard-role.spec.ts` + `scripts/bench-dashboard.ts` | T-077 | ⬜ **belum** |
@@ -311,8 +311,8 @@ menabrak tembok T-074/T-078 tiga belas kali lagi (§8.1).
 T-109 tidak butuh gate — verifikasinya `grep -rin "haluan" app components lib`.
 
 **Urutan menulisnya mengikuti jalur kritis §3**, bukan urutan nomor. Yang paling
-mendesak berikutnya `kalender-ketersediaan` (T-067), karena ia memulai rantai
-proker yang menahan tujuh task sesudahnya.
+mendesak berikutnya `master-gantt` (T-075) dan `wizard-proker-4-6` (T-069),
+keduanya di rantai proker yang menjadi prioritas pemilik produk.
 
 ### Tiga pola yang sudah terbukti, pakai ulang
 
