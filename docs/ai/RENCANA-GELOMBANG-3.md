@@ -279,3 +279,67 @@ yang mematikan gate yang kelak merah karena sebab sungguhan.
 **Yang tidak boleh dilupakan:** harness `/qa/*` tidak dapat dicapai di produksi,
 dan itu disengaja. Jangan melonggarkannya demi mengukur performa; usulan
 penggantinya ada di ADR-023.
+
+---
+
+## 10. Antrean gate E2E — status per 2026-09-04
+
+Setiap task ui gelombang ini diverifikasi lewat `e2e/*.spec.ts`, dan **seluruh
+`e2e/**` milik lane data.** Tanpa gate-nya ditulis lebih dulu, lane ui akan
+menabrak tembok T-074/T-078 tiga belas kali lagi (§8.1).
+
+| Gate | Untuk | Status |
+|---|---|---|
+| `undangan.spec.ts` | T-047-UI | ✅ ada — 13 test |
+| `periode.spec.ts` | T-050 | ✅ ada — 13 test |
+| `sidebar-role.spec.ts` | T-051 | ✅ ada — 15 test |
+| `gantt-perf.spec.ts` | T-074 | ✅ ada |
+| `gantt-editor.spec.ts` | T-078 | ✅ ada — 13 test |
+| `gantt-render.spec.ts` | T-073 | ✅ ada |
+| `login.spec.ts` | T-045 | ✅ ada — hijau |
+| `kalender-ketersediaan.spec.ts` | T-067 | ⬜ **belum** |
+| `wizard-proker-4-6.spec.ts` | T-069 | ⬜ **belum** |
+| `master-gantt.spec.ts` | T-075 | ⬜ **belum** |
+| `dashboard-role.spec.ts` + `scripts/bench-dashboard.ts` | T-077 | ⬜ **belum** |
+| `kanban.spec.ts` | T-080 | ⬜ **belum** |
+| `checklist.spec.ts` | T-081 | ⬜ **belum** |
+| `kendala.spec.ts` | T-082 | ⬜ **belum** |
+| `notulensi.spec.ts` | T-106 | ⬜ **belum** |
+| `data-pengurus.spec.ts` | T-107 | ⬜ **belum** |
+| `peminjaman-ruangan.spec.ts` | T-108 | ⬜ **belum** |
+
+T-109 tidak butuh gate — verifikasinya `grep -rin "haluan" app components lib`.
+
+**Urutan menulisnya mengikuti jalur kritis §3**, bukan urutan nomor. Yang paling
+mendesak berikutnya `kalender-ketersediaan` (T-067), karena ia memulai rantai
+proker yang menahan tujuh task sesudahnya.
+
+### Tiga pola yang sudah terbukti, pakai ulang
+
+**Harness `/qa/<fitur>?<varian>`** untuk apa pun yang dapat diuji tanpa sesi.
+Menguji komponen lewat halaman sungguhan menyeret autentikasi, periode aktif,
+seed, dan RLS — satu di antaranya berubah dan gate gagal karena hal yang tidak
+ada hubungannya. Sudah dipakai `/qa/gantt`, dikontrakkan untuk `/qa/gantt-editor`
+dan `/qa/sidebar`.
+
+**Masuk lewat `POST /api/auth/login` sekali per worker**, bukan lewat form, untuk
+gate yang butuh sesi. Tiap sign-in membebani dua pembatas sekaligus, dan gate
+login sudah memakai puluhan tiap jalan.
+
+**Keberadaan route diperiksa MEMAKAI SESI.** Middleware menolak seluruh `/api/*`
+tanpa sesi dengan 401 sebelum routing terjadi — permintaan tanpa sesi menjawab
+401 bahkan untuk route yang belum pernah dibuat. Gate yang menyimpulkan
+keberadaan route dari sana akan hijau tanpa menguji apa pun; itu sudah terjadi
+sekali di `gantt-editor.spec.ts` dan tertangkap sebelum commit.
+
+### Satu bahaya yang harus diingat penulis gate berikutnya
+
+**Jangan mengaktifkan periode di dalam gate.** Aktivasi mengarsipkan periode
+lama, dan yang aktif sekarang adalah "Periode Uji E2E" milik `seed:e2e-auth`.
+Mengarsipkannya membuat `konteksSaatIni()` mengembalikan `TIDAK_ADA_PERIODE`,
+dan gate login beserta gate undangan gagal seluruhnya dengan pesan yang menuduh
+halaman login.
+
+`periode.spec.ts` sengaja tidak mengaktifkan apa pun, dan memuat satu test
+penjaga: **tepat satu periode AKTIF, dan namanya bukan periode uji.** Bila
+seseorang kelak menambahkan aktivasi, test itu yang merah lebih dulu.
