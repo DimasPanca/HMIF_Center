@@ -171,9 +171,10 @@
       "depends_on": [
         "T-046"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Route [id] tidak tercakup, shape gate bertentangan dengan K-02, dan service periode belum menyediakan jalur RLS plus audit yang aman (ADR-050)."
     },
     {
       "id": "T-051",
