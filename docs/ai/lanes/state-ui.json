@@ -219,9 +219,10 @@
       "depends_on": [
         "T-065"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Gate mewajibkan app/qa/kalender/page.tsx di luar daftar Buat/Ubah T-067, sedangkan skenario halaman nyata membutuhkan DB lintas-lane yang sengaja tidak tersedia (ADR-051)."
     },
     {
       "id": "T-069",
