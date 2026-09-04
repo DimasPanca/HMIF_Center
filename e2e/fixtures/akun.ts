@@ -43,10 +43,10 @@ export interface AkunUji {
   /** false berarti `app_user.is_active = false`. */
   aktif: boolean;
   /** null berarti akun Supabase Auth dibuat TANPA baris `app_user`. */
-  role: 'KETUA' | 'ANGGOTA' | null;
+  role: 'KETUA' | 'ANGGOTA' | 'BPH' | null;
 }
 
-export const AKUN: Record<'aktif' | 'nonaktif' | 'tanpaProfil', AkunUji> = {
+export const AKUN: Record<'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja', AkunUji> = {
   /** Jalur bahagia: masuk, punya peran, punya periode aktif. */
   aktif: {
     email: 'e2e-aktif@uji.test',
@@ -78,6 +78,30 @@ export const AKUN: Record<'aktif' | 'nonaktif' | 'tanpaProfil', AkunUji> = {
     nim: '3337229003',
     aktif: true,
     role: null,
+  },
+  /**
+   * Dapat masuk, tetapi TIDAK berhak menulis apa pun.
+   *
+   * Ditambahkan untuk T-078: kontraknya menuntut dibuktikan bahwa pengguna
+   * tanpa izin tidak dapat menggeser bar Gantt — tombolnya mati DAN API-nya
+   * menolak. Tanpa akun seperti ini, separuh kedua tuntutan itu tidak dapat
+   * diuji siapa pun: ketiga akun di atas entah tidak dapat masuk sama sekali,
+   * entah masuk sebagai KETUA yang justru berhak penuh atas Gantt.
+   *
+   * BPH dipilih karena sifatnya read-only mutlak dan itu INVARIANT, bukan
+   * kebetulan konfigurasi (INV-03, PRD §5.1). Akun uji yang haknya kebetulan
+   * kosong bisa berubah diam-diam saat matriks permission disunting; akun BPH
+   * tidak, karena barisnya di PRD memang tidak pernah memuat C, U, atau D.
+   *
+   * Tidak berdepartemen: BPH mengawasi seluruh organisasi, bukan satu
+   * departemen (seed mengisi `departemen_id` hanya untuk ANGGOTA).
+   */
+  bacaSaja: {
+    email: 'e2e-bph@uji.test',
+    namaLengkap: 'Uji E2E BPH',
+    nim: '3337229004',
+    aktif: true,
+    role: 'BPH',
   },
 };
 
