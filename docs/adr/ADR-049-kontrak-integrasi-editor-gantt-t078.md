@@ -2,7 +2,7 @@
 
 |                    |                                                           |
 | ------------------ | --------------------------------------------------------- |
-| **Status**         | **Usulan**                                                |
+| **Status**         | **Diterima**                                              |
 | **Tanggal**        | 2026-09-04                                                |
 | **Ditemukan oleh** | T-078 setelah gate lintas-lane `gantt-editor` tersedia    |
 | **Task terkait**   | T-078                                                     |
@@ -74,3 +74,7 @@ T-078 diusulkan menjadi task integrasi lintas-lane dengan kontrak eksplisit:
   halaman harness tercantum resmi dalam cakupan T-078.
 - Diperlukan sync tak terjadwal sebelum implementasi dilanjutkan; sampai saat
   itu hanya ADR ini dan status task yang berubah.
+
+Keputusan ini diterima melalui instruksi eksplisit pemilik produk pada
+2026-09-04. Status T-078 tetap `BLOCKED` sampai prasyarat lintas-lane pada
+bagian Keputusan tersedia.

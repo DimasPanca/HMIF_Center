@@ -2,7 +2,7 @@
 
 |                    |                                                        |
 | ------------------ | ------------------------------------------------------ |
-| **Status**         | **Usulan**                                             |
+| **Status**         | **Diterima**                                           |
 | **Tanggal**        | 2026-09-04                                             |
 | **Ditemukan oleh** | T-050 setelah gate lintas-lane `periode` tersedia      |
 | **Task terkait**   | T-050, T-051                                           |
@@ -70,3 +70,7 @@ T-050 diusulkan dibelah menjadi kontrak data dan adapter UI:
 - Gate API berautentikasi dijalankan lane `data` setelah hasil kedua lane
   digabung; lane `ui` tetap menjalankan typecheck, lint, unit test, build, dan
   pengujian tampilan yang tidak memerlukan database.
+
+Keputusan ini diterima melalui instruksi eksplisit pemilik produk pada
+2026-09-04. Status T-050 tetap `BLOCKED` sampai service dan kontrak periode
+milik lane `data` tersedia.
