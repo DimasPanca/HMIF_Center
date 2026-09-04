@@ -312,9 +312,10 @@
       "depends_on": [
         "T-048"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Service/kontrak pengurus dan gate data-pengurus belum ada; target Ubah surat/massal juga belum dibuat karena T-064 bukan dependency T-107 (ADR-052)."
     },
     {
       "id": "T-108",
