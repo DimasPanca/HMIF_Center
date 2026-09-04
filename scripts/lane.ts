@@ -132,6 +132,10 @@ const MILIK: Record<Lane, string[]> = {
     // memegang scripts/lane.ts tempat pembagiannya ditegakkan.
     'docs/ai/RENCANA-GELOMBANG-3.md',
 
+    // Kontrak antar-lane untuk T-047: tanda tangan lib/auth/invitation.ts yang
+    // dipanggil route handler T-047-UI.
+    'docs/ai/UNDANGAN_CONTRACT.md',
+
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
     // app/api/proker/**. Tanpa berkas ini pembelahan T-065 hanya hidup di

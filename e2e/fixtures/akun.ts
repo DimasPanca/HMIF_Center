@@ -43,10 +43,13 @@ export interface AkunUji {
   /** false berarti `app_user.is_active = false`. */
   aktif: boolean;
   /** null berarti akun Supabase Auth dibuat TANPA baris `app_user`. */
-  role: 'KETUA' | 'ANGGOTA' | 'BPH' | null;
+  role: 'KETUA' | 'ANGGOTA' | 'BPH' | 'ADMIN' | null;
 }
 
-export const AKUN: Record<'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja', AkunUji> = {
+export const AKUN: Record<
+  'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja' | 'admin',
+  AkunUji
+> = {
   /** Jalur bahagia: masuk, punya peran, punya periode aktif. */
   aktif: {
     email: 'e2e-aktif@uji.test',
@@ -102,6 +105,25 @@ export const AKUN: Record<'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja', Aku
     nim: '3337229004',
     aktif: true,
     role: 'BPH',
+  },
+  /**
+   * Satu-satunya akun uji yang berhak mengundang pengurus.
+   *
+   * Ditambahkan untuk T-047. Matriks PRD §5.1 memberi `user: CRUD` HANYA kepada
+   * ADMIN; KETUA, WAKIL, SEKUM, BENDUM, dan BPH seluruhnya `R`. Tanpa akun ini,
+   * gate `undangan` tidak dapat menguji satu pun alur undangan — `e2e-aktif`
+   * berperan KETUA dan hanya bisa membaca daftar pengguna.
+   *
+   * ADMIN bersifat teknis dan berada DI LUAR struktur organisasi (migrasi 002),
+   * jadi ia tidak berdepartemen — seed mengisi `departemen_id` hanya untuk
+   * ANGGOTA.
+   */
+  admin: {
+    email: 'e2e-admin@uji.test',
+    namaLengkap: 'Uji E2E Admin',
+    nim: '3337229005',
+    aktif: true,
+    role: 'ADMIN',
   },
 };
 
