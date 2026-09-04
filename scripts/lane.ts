@@ -127,6 +127,11 @@ const MILIK: Record<Lane, string[]> = {
     // memiliki fungsinya; lane ui membacanya, tidak menyuntingnya.
     'docs/ai/AUTH_CONTRACT.md',
 
+    // Rencana gelombang ketiga: pembelahan ke-26 task, nomor migrasi berikutnya,
+    // dan konvensi kontrak antar-lane. Ditulis lane ini karena lane ini yang
+    // memegang scripts/lane.ts tempat pembagiannya ditegakkan.
+    'docs/ai/RENCANA-GELOMBANG-3.md',
+
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
     // app/api/proker/**. Tanpa berkas ini pembelahan T-065 hanya hidup di
@@ -517,6 +522,101 @@ function cmdSync(): number {
   return konflik.length ? 1 : 0;
 }
 
+// ---------------------------------------------------------------------------
+// Task turunan — separuh sebuah task yang dikerjakan lane lain
+// ---------------------------------------------------------------------------
+
+/**
+ * Sebagian task di `tasks.json` CAMPUR: satu task membuat service di `lib/`
+ * dan halaman di `app/` sekaligus. Yang begitu dibelah, dan separuh keduanya
+ * perlu punya identitas sendiri.
+ *
+ * Kenapa tidak menambah entri ke `tasks.json` saja: berkas itu BEKU selama
+ * kerja paralel dan tidak boleh disunting lane mana pun. Karena itu separuh
+ * yang dikerjakan belakangan didaftarkan di sini sebagai task turunan dengan
+ * akhiran `-UI` atau `-DATA`, dan `depends_on`-nya menunjuk task induknya.
+ *
+ * Ketergantungan itu bukan hiasan. Tanpa `depends_on: ['T-047']`,
+ * `T-047-UI` akan tampil READY sejak hari pertama, dan lane ui akan mulai
+ * menulis route handler untuk fungsi yang belum ada tanda tangannya.
+ *
+ * Sumber: docs/ai/RENCANA-GELOMBANG-3.md
+ */
+const TURUNAN: Record<string, { fase: number; judul: string; depends_on: string[] }> = {
+  'T-065-UI': {
+    fase: 3,
+    judul: 'Route handler proker (separuh ui T-065)',
+    depends_on: ['T-065'],
+  },
+  'T-047-UI': { fase: 1, judul: 'Halaman & API undangan/manajemen user', depends_on: ['T-047'] },
+  'T-048-UI': { fase: 1, judul: 'Halaman & API import massal user', depends_on: ['T-048'] },
+  'T-068-UI': { fase: 3, judul: 'Wizard proker langkah 1-3 (tampilan)', depends_on: ['T-068'] },
+  'T-070-UI': { fase: 3, judul: 'Halaman & API approval proker', depends_on: ['T-070'] },
+  'T-071-UI': { fase: 3, judul: 'Halaman edit proker terkunci', depends_on: ['T-071'] },
+  'T-076-UI': { fase: 3, judul: 'Banner koneksi & langganan MasterGantt', depends_on: ['T-076'] },
+  'T-079-UI': { fase: 3, judul: 'Route handler cron harian', depends_on: ['T-079'] },
+  'T-083-UI': { fase: 4, judul: 'DeadlineBadge di kartu Kanban', depends_on: ['T-083'] },
+  'T-113-UI': { fase: 9, judul: 'Terapkan sanitasi di route handler', depends_on: ['T-113'] },
+};
+
+// ---------------------------------------------------------------------------
+// Pelonggaran dependensi — akibat penundaan fase berat
+// ---------------------------------------------------------------------------
+
+/**
+ * Empat task gelombang ketiga bergantung pada task di fase yang DITUNDA
+ * pemilik produk (persuratan P2, TOR P6, LPJ P7, restore P9). Dibiarkan apa
+ * adanya, keempatnya tidak akan pernah READY dan bundel "fitur ringan" tidak
+ * dapat diselesaikan sama sekali.
+ *
+ * `depends_on` aslinya ada di `tasks.json` yang BEKU dan tidak boleh disunting
+ * lane mana pun. Karena itu pelonggarannya dicatat di sini — eksplisit, dengan
+ * alasan per baris, dan mudah dicabut kembali begitu fase beratnya dikerjakan.
+ *
+ * Yang dilonggarkan HANYA ketergantungan pada fase yang ditunda. Ketergantungan
+ * antar-task di dalam gelombang ini tidak disentuh: melonggarkannya berarti
+ * mengizinkan halaman ditulis sebelum service yang dipanggilnya ada.
+ *
+ * Konsekuensinya nyata dan harus disebut di laporan task masing-masing: bagian
+ * yang bergantung pada fase tertunda TIDAK ikut selesai, dan task-nya ditutup
+ * dengan catatan itu. Bukan dianggap tidak pernah ada.
+ *
+ * Sumber: docs/ai/RENCANA-GELOMBANG-3.md · keputusan pemilik produk 2026-09-04
+ */
+const PELONGGARAN: Record<string, { buang: string[]; alasan: string }> = {
+  'T-077': {
+    buang: ['T-060'],
+    alasan:
+      'Panel Sekum memuat antrean approval surat. Dashboard dibangun tanpa panel itu; ' +
+      'panelnya menyusul bersama P2.',
+  },
+  'T-106': {
+    buang: ['T-061'],
+    alasan:
+      'Endpoint generate notulensi memakai Document Engine DOCX. Notulensi dibangun ' +
+      'tanpa endpoint generate; endpointnya menyusul bersama T-061.',
+  },
+  'T-108': {
+    buang: ['T-058'],
+    alasan:
+      'Peminjaman ruangan menautkan surat peminjaman. Booking dibangun tanpa tautan itu; ' +
+      'tautannya menyusul bersama P2.',
+  },
+  'T-113': {
+    buang: ['T-105', 'T-096', 'T-112'],
+    alasan:
+      'Hardening mengaudit rute yang ADA saat ia dijalankan. Dijalankan atas rute gelombang ' +
+      'ini, dan WAJIB diulang setelah fase berat masuk — audit lama tidak mencakup rute baru.',
+  },
+};
+
+/** `depends_on` setelah pelonggaran diterapkan. */
+function dependensi(t: { id: string; depends_on: string[] }): string[] {
+  const p = PELONGGARAN[t.id];
+  if (!p) return t.depends_on;
+  return t.depends_on.filter((d) => !p.buang.includes(d));
+}
+
 /** Bangun ulang berkas state kedua lane dari tasks.json + pembagian task. */
 function cmdInit(): number {
   const PEMBAGIAN: Record<Lane, string[]> = {
@@ -542,24 +642,77 @@ function cmdInit(): number {
       // dicatat di sini; didaftarkan supaya keduanya tidak berbeda.
       'T-086',
 
-      // Gelombang ketiga, urutan yang diminta pemilik produk (HANDOFF-DATA §3):
-      // fitur non-surat lebih dulu, dimulai dari inti Program Kerja.
+      // ---------------------------------------------------------------------
+      // GELOMBANG KETIGA — fitur ringan lebih dulu, surat dan dokumen berat
+      // ditunda. Keputusan pemilik produk 2026-09-04.
       //
-      // T-065 CAMPUR dan dibelah seperti T-045 — lane data menulis
-      // lib/proker/{service,schema,status}.ts dan menuliskan tanda tangannya
-      // di docs/ai/PROKER_CONTRACT.md; app/api/proker/** milik lane ui.
-      // T-066 seluruhnya milik lane data (scripts/ + supabase/tests/).
+      // Pembelahan ke-26 task dilakukan SEKALIGUS di sini, bukan satu per satu
+      // saat diklaim. Cara lama sudah dua kali menghentikan pekerjaan di
+      // tengah: T-074 dan T-078 sama-sama baru ketahuan butuh berkas milik
+      // lane lain SETELAH separuhnya selesai ditulis. Rinciannya di
+      // docs/ai/RENCANA-GELOMBANG-3.md.
+      // ---------------------------------------------------------------------
       'T-065', 'T-066',
+
+      // Separuh data dari task campuran. Seluruhnya menulis di lib/** milik
+      // lane ini, dan seluruhnya harus selesai LEBIH DULU daripada separuh
+      // ui-nya — lihat TURUNAN di bawah.
+      'T-047',   // lib/auth/invitation.ts
+      'T-048',   // lib/import/parse-tabel.ts
+      'T-068',   // lib/proker/wizard-state.ts
+      'T-070',   // lib/kepanitiaan/bentuk-otomatis.ts
+      'T-071',   // lib/proker/klasifikasi-perubahan.ts
+      'T-076',   // lib/realtime/**  + migrasi 020_realtime.sql
+      'T-079',   // lib/cron/** + vercel.json
+      'T-083',   // lib/deadline.ts + lib/cron/cek-deadline.ts
+      'T-113',   // lib/security/** + next.config.ts + middleware.ts
     ],
     ui: [
       'T-012', 'T-013', 'T-014', 'T-015', 'T-016', 'T-017', 'T-018',
       'T-072', 'T-073', 'T-074', 'T-078',
+
+      // ---------------------------------------------------------------------
+      // GELOMBANG KETIGA
+      // ---------------------------------------------------------------------
+
+      // Murni tampilan: seluruh berkasnya jatuh di app/** dan components/**.
+      'T-049', 'T-050', 'T-051', 'T-052', 'T-053',
+      'T-067', 'T-069', 'T-075', 'T-077',
+      'T-080', 'T-081', 'T-082',
+      'T-106', 'T-107', 'T-108', 'T-109',
+
+      // Separuh ui dari task campuran. Masing-masing menunggu induknya selesai
+      // di lane data supaya tanda tangan yang dipanggilnya sudah ada.
+      'T-065-UI', 'T-047-UI', 'T-048-UI', 'T-068-UI', 'T-070-UI',
+      'T-071-UI', 'T-076-UI', 'T-079-UI', 'T-083-UI', 'T-113-UI',
     ],
   };
 
   const db = JSON.parse(fs.readFileSync(TASKS, 'utf8')) as { tasks: Tugas[] };
   const by = new Map(db.tasks.map((t) => [t.id, t]));
   fs.mkdirSync(DIR_LANE, { recursive: true });
+
+  // =========================================================================
+  // STATUS YANG SUDAH ADA DIPERTAHANKAN. INI BUKAN KENYAMANAN.
+  // =========================================================================
+  // Versi pertama membangun state SEPENUHNYA dari tasks.json. Karena tasks.json
+  // dibekukan selama kerja paralel dan hanya diperbarui di sync point, seluruh
+  // task yang selesai SESUDAH sync terakhir masih tercatat TODO di sana —
+  // saat ini sepuluh, termasuk T-045, T-065, T-066, T-072, T-073, T-074.
+  //
+  // Menjalankan `sync --init` dengan versi itu akan mengembalikan kesepuluhnya
+  // menjadi TODO tanpa satu pun peringatan, dan pekerjaan berminggu-minggu
+  // hilang dari catatan. Berkasnya masih ada di git, tetapi tidak ada agent
+  // yang akan tahu ia sudah dikerjakan; keduanya akan mengerjakannya lagi.
+  //
+  // Karena itu status diambil dari state lane yang sudah ada bila ada di sana,
+  // dan dari tasks.json hanya untuk task yang benar-benar baru.
+  const lama = new Map<string, Tugas>();
+  for (const l of ['data', 'ui'] as Lane[]) {
+    if (!fs.existsSync(fileState(l))) continue;
+    const st = JSON.parse(fs.readFileSync(fileState(l), 'utf8')) as StateLane;
+    st.tasks.forEach((t) => lama.set(`${l}:${t.id}`, t));
+  }
 
   for (const l of ['data', 'ui'] as Lane[]) {
     const s: StateLane = {
@@ -569,15 +722,66 @@ function cmdInit(): number {
       adr_range: RENTANG_ADR[l],
       milik: MILIK[l],
       tasks: PEMBAGIAN[l].map((id) => {
-        const t = by.get(id);
-        if (!t) throw new Error(`Task ${id} tidak ada di tasks.json`);
-        return { ...t };
+        const sebelumnya = lama.get(`${l}:${id}`);
+        if (sebelumnya) return { ...sebelumnya, depends_on: dependensi(sebelumnya) };
+
+        const induk = by.get(id);
+        if (induk) return { ...induk, depends_on: dependensi(induk) };
+
+        // Task turunan tidak ada di tasks.json yang beku; metadatanya di TURUNAN.
+        const turunan = TURUNAN[id];
+        if (!turunan) {
+          throw new Error(
+            `Task ${id} tidak ada di tasks.json maupun di TURUNAN (scripts/lane.ts).`,
+          );
+        }
+        return {
+          id,
+          fase: turunan.fase,
+          judul: turunan.judul,
+          depends_on: turunan.depends_on,
+          status: 'TODO' as Status,
+          completed_at: null,
+        };
       }),
     };
     promosi(s);
     tulisState(s);
+
+    const hilang = [...lama.keys()]
+      .filter((k) => k.startsWith(`${l}:`))
+      .map((k) => k.slice(l.length + 1))
+      .filter((id) => !PEMBAGIAN[l].includes(id));
+
     const siap = s.tasks.filter((t) => t.status === 'READY').length;
-    console.log(`  state-${l}.json  ${s.tasks.length} task, ${siap} siap dikerjakan`);
+    const selesai = s.tasks.filter((t) => t.status === 'DONE').length;
+    console.log(
+      `  state-${l}.json  ${s.tasks.length} task, ${selesai} DONE, ${siap} siap dikerjakan`,
+    );
+
+    // Task yang hilang dari PEMBAGIAN tidak dibuang diam-diam. Kalau ia DONE,
+    // menghapusnya berarti menghapus jejak pekerjaan yang sudah ada.
+    if (hilang.length) {
+      console.log(`      PERINGATAN: ${hilang.length} task dikeluarkan dari lane ini:`);
+      hilang.forEach((id) => {
+        const t = lama.get(`${l}:${id}`)!;
+        console.log(`        ${id}  (${t.status})${t.status === 'DONE' ? '  <- SUDAH SELESAI' : ''}`);
+      });
+    }
+  }
+
+  const dilonggarkan = Object.keys(PELONGGARAN);
+  if (dilonggarkan.length) {
+    console.log('');
+    console.log(`  ${dilonggarkan.length} task dilonggarkan dependensinya (fase tertunda):`);
+    dilonggarkan.forEach((id) => {
+      const p = PELONGGARAN[id]!;
+      console.log(`    ${id}  tanpa ${p.buang.join(', ')}`);
+      console.log(`          ${p.alasan}`);
+    });
+    console.log('');
+    console.log('  Bagian yang bergantung pada fase tertunda TIDAK ikut selesai.');
+    console.log('  Sebutkan itu di laporan task, jangan dianggap tidak pernah ada.');
   }
   return 0;
 }
