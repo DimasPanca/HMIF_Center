@@ -60,22 +60,44 @@
  * diminifikasi dan memakai React build pengembangan, sehingga waktu parse dan
  * hydration-nya beberapa kali lipat produksi.
  *
- * Diukur pada worktree ini, harness bawaan yang hanya berisi DUA proker:
- * 382,5 ms dari `responseEnd` sampai bar pertama tergambar. Itu 76% anggaran
- * 500 ms yang habis sebelum satu pun task tambahan dirender — dan hampir
- * seluruhnya milik kerangka kerja, bukan milik Gantt.
+ * Diukur pada worktree ini, harness bawaan yang hanya berisi TIGA baris
+ * (1 grup + 2 proker), rute sudah panas, lima jalan berturut-turut:
+ *
+ *     636,6 · 381,5 · 389,3 · 368,8 · 445,1 ms
+ *
+ * dari `responseEnd` sampai bar pertama tergambar. Sekitar 390 ms itu 78%
+ * anggaran 500 ms yang habis sebelum satu pun task tambahan dirender — dan
+ * hampir seluruhnya milik kerangka kerja, bukan milik Gantt.
  *
  * Karena itu setiap pengukuran di bawah disertai BASELINE dari harness bawaan
- * yang sama, dan yang dilaporkan tiga angka: absolut, baseline, dan selisihnya.
- * Assertion tetap pada angka absolut karena begitulah bunyi PRD F-6.3 — tetapi
- * ketika ia merah, laporannya langsung memperlihatkan apakah yang membengkak
- * chart-nya atau bundle dev-nya.
+ * yang sama, di browser dan jalan yang sama, dan yang dilaporkan tiga angka:
+ * absolut, baseline, dan selisihnya. Assertion tetap pada angka absolut karena
+ * begitulah bunyi PRD F-6.3 — tetapi ketika ia merah, laporannya langsung
+ * memperlihatkan apakah yang membengkak chart-nya atau bundle dev-nya.
  *
- * Untuk angka produksi yang sesungguhnya, jalankan gate ini terhadap build
- * produksi:
+ * ---------------------------------------------------------------------------
+ * BUILD PRODUKSI BUKAN JALAN KELUARNYA — SUDAH DICOBA
+ * ---------------------------------------------------------------------------
+ * Godaan pertama adalah menjalankan gate ini terhadap `npm run build && npm
+ * run start` supaya bundle-nya diminifikasi. Itu TIDAK BEKERJA, dan bukan
+ * karena kesalahan setelan: harness sengaja tidak dapat dicapai di produksi,
+ * dijaga DUA lapis yang keduanya disengaja dan didokumentasikan —
  *
- *     npm run build && npm run start
- *     NEXT_PUBLIC_APP_URL=http://localhost:3000 npx playwright test gantt-perf
+ *   1. `middleware.ts` hanya melewatkan prefix `/qa/` saat
+ *      `NODE_ENV !== 'production'`;
+ *   2. `app/qa/gantt/page.tsx` memanggil `notFound()` di produksi.
+ *
+ * Diukur: `next start` menjawab `/qa/gantt` dengan 307 ke `/login`. `next
+ * start` sendiri memaksa `NODE_ENV=production`, jadi tidak ada celah yang
+ * dapat dibuka tanpa melemahkan salah satu lapis itu — dan melemahkannya
+ * berarti membuka halaman tanpa autentikasi di produksi demi sebuah angka.
+ *
+ * Jadi gate ini hanya akan pernah berjalan di mode dev, dan ambang 500 ms-nya
+ * memikul beban kerangka kerja yang tidak akan ada di produksi. Bila kelak
+ * angka absolut 100 task jatuh di sekitar ambang, yang benar BUKAN menaikkan
+ * ambangnya diam-diam: catat angkanya, dan putuskan lewat ADR apakah yang
+ * ditegakkan absolut atau selisih terhadap baseline. Keputusan itu menunggu
+ * angka sungguhan dari fixture 100 task, bukan tebakan hari ini.
  *
  * Sumber: docs/ai/tasks/P3-proker-gantt.md T-074 · PRD F-6.3 (AC), §11 tabel performa
  *         SYSTEM_DESIGN §10.3, §19.2
