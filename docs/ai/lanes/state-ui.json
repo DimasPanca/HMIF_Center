@@ -160,9 +160,10 @@
         "T-044",
         "T-046"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Implementasi UI/API siap, tetapi e2e/profil-ttd.spec.ts milik lane data belum tersedia; gate kontrak menemukan 0 test dan runtime butuh DB/storage lintas-lane."
     },
     {
       "id": "T-050",
