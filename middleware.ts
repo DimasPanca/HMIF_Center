@@ -37,7 +37,26 @@ import { NextResponse, type NextRequest } from 'next/server';
  * MEMINTA LOGIN — merepotkan, tetapi tidak membocorkan apa pun. Dengan daftar
  * hitam, kelalaian yang sama membuat halaman itu terbuka bagi siapa saja.
  */
-const RUTE_PUBLIK = ['/login', '/api/auth/login', '/api/auth/logout'];
+const RUTE_PUBLIK = [
+  '/login',
+  '/api/auth/login',
+  '/api/auth/logout',
+
+  // Aktivasi undangan (T-047). WAJIB publik, dan bukan kelonggaran:
+  // penerima undangan BELUM PUNYA AKUN. Bila middleware mengalihkannya ke
+  // /login, ia diminta masuk memakai akun yang justru sedang ia buat —
+  // undangannya menjadi buntu dan tidak ada pesan yang menjelaskan kenapa.
+  //
+  // Yang menjaga keduanya bukan sesi melainkan tokennya sendiri: 32 byte acak
+  // yang hanya tersimpan sebagai SHA-256, sekali pakai, berlaku 7 hari.
+  // Halaman tanpa token yang sah tidak menampilkan apa pun selain pesan
+  // kegagalan (lihat periksaUndangan di lib/auth/invitation.ts).
+  //
+  // Pencocokan di bawah memakai `pathname === r || startsWith(r + '/')`,
+  // sehingga '/undangan' ikut membuka '/undangan/<token>'.
+  '/undangan',
+  '/api/auth/activate',
+];
 
 /**
  * Prefix halaman harness E2E, terbuka HANYA di luar produksi.
