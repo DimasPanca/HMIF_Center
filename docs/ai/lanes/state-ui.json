@@ -367,8 +367,9 @@
       "depends_on": [
         "T-048"
       ],
-      "status": "READY",
-      "completed_at": null
+      "status": "BLOCKED",
+      "completed_at": null,
+      "blocked_reason": "Halaman Admin target Ubah belum ada karena T-047-UI terblokir, dan belum ada kontrak service untuk cek duplikat serta penyimpanan batch/tautan sekali-tampil (ADR-054)."
     },
     {
       "id": "T-068-UI",
