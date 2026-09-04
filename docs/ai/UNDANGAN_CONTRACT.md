@@ -275,3 +275,105 @@ keadaan        -> MENUNGGU_AKTIVASI -> AKTIF -> NONAKTIF
 aktivasi ke-2  -> TOKEN_TERPAKAI          (sekali pakai benar-benar bekerja)
 ubah nama      -> angkatan 2022 tetap utuh
 ```
+
+---
+
+## 10. Import massal — T-048
+
+Separuh data T-048 adalah `lib/import/parse-tabel.ts`. Ia **generik sejak awal**
+(kontrak butir 5): T-092 data peserta dan T-107 data pengurus akan memakainya
+dengan kolom dan aturan berbeda, jadi modul itu tidak tahu apa pun tentang NIM
+maupun pengguna.
+
+| | |
+|---|---|
+| **Task turunan ui** | `T-048-UI` |
+| **Verifikasi lane data** | `npm run test -- import` — 42 lulus |
+| **Berkas ui** | `app/api/users/bulk-import/route.ts` · `components/shared/ImportPreview.tsx` |
+
+### Alur yang harus dibangun lane ui
+
+```ts
+import {
+  bacaTabel, parseTabel, barisUntukDisimpan, laporanCsv,
+  type DefinisiKolom,
+} from '@/lib/import/parse-tabel';
+
+const KOLOM: DefinisiKolom[] = [
+  { kunci: 'nama_lengkap', label: 'Nama Lengkap', alias: ['Nama'], wajib: true },
+  { kunci: 'nim',          label: 'NIM',                            wajib: true },
+  { kunci: 'email',        label: 'Email', alias: ['Alamat Email'], wajib: true },
+  { kunci: 'angkatan',     label: 'Angkatan' },
+];
+
+// 1. Unggah -> pratinjau. TIDAK menyimpan apa pun.
+const matriks = await bacaTabel(berkas.name, buffer);
+const hasil = parseTabel(matriks, KOLOM, SKEMA_BARIS, {
+  kunciUnik: 'nim',
+  sudahAda: (nim) => nimTerdaftar.has(nim),   // disuntik dari database
+});
+
+// 2. Pengguna menekan konfirmasi, mengirim nomor baris yang dilewati.
+const disimpan = barisUntukDisimpan(hasil, lewati);
+```
+
+### Empat hal yang mudah salah
+
+**1. `parseTabel` TIDAK menyimpan apa pun, dan tidak bisa.** Modul itu tidak
+punya akses database sama sekali — bentuknya sendiri yang memenuhi klausa
+**Jangan** T-048, bukan disiplin pemanggil. Penyimpanan seluruhnya urusan route
+handler, dan hanya setelah pengguna menekan konfirmasi.
+
+**2. Duplikat adalah PERINGATAN, bukan ERROR.** USER_FLOW §9.1 menetapkannya,
+dan alasannya: NIM yang sama bisa berarti ekspor ganda, bisa juga dua orang
+berbeda yang salah satunya salah ketik. Sistem tidak dapat membedakannya, jadi
+ia tidak boleh memutuskan. Baris PERINGATAN **ikut tersimpan** kecuali pengguna
+mencentangnya untuk dilewati.
+
+**3. Duplikat terhadap database masuk lewat `sudahAda`.** Modul ini tidak
+mengenal database; route handler yang mengambil daftar NIM yang sudah ada lalu
+menyuntikkan predikatnya. Tanpa itu, pratinjau hanya melihat duplikat DI DALAM
+berkas, dan bentrokan baru muncul saat penyimpanan.
+
+**4. `nomor` menunjuk baris di BERKAS, bukan indeks array.** Baris data pertama
+bernomor 2 karena baris 1 adalah header. Angka yang meleset membuat pengguna
+memperbaiki baris yang salah di Excel.
+
+### Bentuk hasil
+
+```ts
+interface HasilParse<T> {
+  peta: Record<string, number>;   // kunci kolom -> indeks; -1 = tidak ditemukan
+  takDikenal: string[];           // judul kolom yang tak dikenali -> layar pemetaan
+  hilang: string[];               // kolom wajib yang belum dipetakan
+  baris: BarisHasil<T>[];
+  ringkas: { total; valid; peringatan; error };
+}
+
+interface BarisHasil<T> {
+  nomor: number;                  // nomor baris di berkas, 1-based
+  data: T | null;                 // null bila status ERROR
+  masalah: { tingkat: 'ERROR' | 'PERINGATAN'; kolom?: string; pesan: string }[];
+  status: 'VALID' | 'PERINGATAN' | 'ERROR';
+}
+```
+
+`takDikenal` dan `hilang` bersama-sama mengisi layar pemetaan kolom (USER_FLOW
+§9.1). Bila pengguna memetakan sendiri, kirim ulang lewat `opsi.petaManual` —
+ia menimpa deteksi otomatis.
+
+`laporanCsv(hasil)` menghasilkan berkas unduhan untuk kontrak butir 4. Ia memuat
+baris ERROR **dan** PERINGATAN sekaligus: memisahkannya membuat orang memperbaiki
+separuh lalu mengunggah ulang.
+
+### Yang sudah diurus dan tidak perlu diulang
+
+Bentuk berkas nyata yang gagal **diam** bila tidak ditangani, seluruhnya sudah
+ada testnya:
+
+- pemisah `;` dari Excel berbahasa Indonesia (dibaca dengan koma → satu kolom)
+- BOM UTF-8 (kolom pertama tak pernah cocok)
+- CRLF, koma dan baris baru di dalam medan berkutip
+- baris kosong berekor (Excel menyisakan puluhan)
+- NIM yang menjadi **angka** di XLSX, rich text, dan sel berformula
+- hanya sheet PERTAMA yang dibaca — sheet dropdown tidak ikut
