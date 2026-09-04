@@ -112,6 +112,12 @@ const MILIK: Record<Lane, string[]> = {
     'docs/ai/PROVISIONING_CHECKLIST.md',
     'docs/ai/ENV_SETUP.md',
 
+    // Serah-terima antar-sesi. Memuat keputusan yang lahir di percakapan dan
+    // tidak punya rumah lain — pembagian task yang belum tuntas, urutan yang
+    // diminta pemilik produk, jebakan lingkungan yang sudah pernah memakan
+    // waktu. Ditulis lane ini karena isinya tentang pekerjaan lane ini.
+    'docs/ai/HANDOFF-DATA.md',
+
     // Laporan yang isinya tentang kode lane ini.
     'docs/ai/TEMPLATE_MAPPING.md',
     'docs/ai/SECURITY_AUDIT.md',
@@ -120,6 +126,13 @@ const MILIK: Record<Lane, string[]> = {
     // route handler milik lane ui. Ditulis lane data karena lane inilah yang
     // memiliki fungsinya; lane ui membacanya, tidak menyuntingnya.
     'docs/ai/AUTH_CONTRACT.md',
+
+    // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
+    // lane data memiliki lib/proker/**, lane ui memanggilnya dari
+    // app/api/proker/**. Tanpa berkas ini pembelahan T-065 hanya hidup di
+    // percakapan, dan lane ui harus membaca kode untuk mengetahui bentuk
+    // argumen yang diterimanya.
+    'docs/ai/PROKER_CONTRACT.md',
 
     // README menjelaskan cara menyiapkan dan menjalankan proyek — env,
     // migrasi, skrip — seluruhnya wilayah lane ini. Dikeluarkan dari BEKU
@@ -524,6 +537,19 @@ function cmdInit(): number {
       // seperti T-045, bukan diberikan utuh ke satu lane. Pembelahannya
       // keputusan manusia di sync point, bukan keputusan agent.
       'T-045', 'T-046',
+
+      // T-086 sudah dikerjakan dan DONE di state-data.json sebelum sempat
+      // dicatat di sini; didaftarkan supaya keduanya tidak berbeda.
+      'T-086',
+
+      // Gelombang ketiga, urutan yang diminta pemilik produk (HANDOFF-DATA §3):
+      // fitur non-surat lebih dulu, dimulai dari inti Program Kerja.
+      //
+      // T-065 CAMPUR dan dibelah seperti T-045 — lane data menulis
+      // lib/proker/{service,schema,status}.ts dan menuliskan tanda tangannya
+      // di docs/ai/PROKER_CONTRACT.md; app/api/proker/** milik lane ui.
+      // T-066 seluruhnya milik lane data (scripts/ + supabase/tests/).
+      'T-065', 'T-066',
     ],
     ui: [
       'T-012', 'T-013', 'T-014', 'T-015', 'T-016', 'T-017', 'T-018',
