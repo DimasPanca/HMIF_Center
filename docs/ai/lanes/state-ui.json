@@ -356,8 +356,9 @@
       "depends_on": [
         "T-047"
       ],
-      "status": "READY",
-      "completed_at": null
+      "status": "BLOCKED",
+      "completed_at": null,
+      "blocked_reason": "Gate undangan memakai response top-level yang bertentangan dengan K-02, dan route aktivasi wajib belum tercantum di cakupan task (ADR-053)."
     },
     {
       "id": "T-048-UI",
