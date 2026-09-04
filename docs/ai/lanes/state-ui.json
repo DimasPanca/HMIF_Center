@@ -137,9 +137,10 @@
       "depends_on": [
         "T-073"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Kontrak Buat/Ubah tidak mencakup harness dan titik integrasi drag/resize/dependensi; bentuk CRUD grup/dependensi juga belum ditetapkan (ADR-049)."
     }
   ]
 }
