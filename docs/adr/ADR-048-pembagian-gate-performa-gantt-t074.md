@@ -2,7 +2,7 @@
 
 |                    |                                                 |
 | ------------------ | ----------------------------------------------- |
-| **Status**         | **Usulan**                                      |
+| **Status**         | **Diterima**                                    |
 | **Tanggal**        | 2026-09-03                                      |
 | **Ditemukan oleh** | T-074 saat membaca kontrak dan kepemilikan lane |
 | **Task terkait**   | T-074                                           |
@@ -23,7 +23,7 @@ Ini bukan alasan untuk melewati pengukuran. Kontrak mensyaratkan angka nyata
 untuk render 100 task, 48 bar, dan scroll horizontal 60 fps; T-074 tidak boleh
 ditutup hanya berdasarkan unit test atau perkiraan.
 
-## Usulan keputusan
+## Keputusan
 
 - lane `ui` mengerjakan virtualisasi dan integrasinya hanya pada
   `lib/gantt/**` serta `components/gantt/**`;
@@ -46,3 +46,8 @@ ditutup hanya berdasarkan unit test atau perkiraan.
   tersedia serta ketiga target terukur lulus.
 - Bila test membutuhkan fixture 100 task pada route QA, bentuk fixture dan
   route disepakati saat sync agar lane `ui` tidak menebak kontrak selector.
+
+Sync tak terjadwal pada 2026-09-04 menerima pembagian ini. Lane `data`
+menyediakan benchmark dan gate melalui commit `5ced522`; kontrak gate tersebut
+menetapkan `app/qa/gantt/page.tsx` sebagai pasangan milik lane `ui`, dengan
+fixture bawaan tetap dan dua dataset tambahan: `48bar` serta `100task`.
