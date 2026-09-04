@@ -54,12 +54,53 @@ function buatKlienRuntime() {
   });
 }
 
+type KlienSql = ReturnType<typeof buatKlienRuntime>;
+
 // Singleton. Tanpa ini, hot reload Next.js membuat pool baru setiap kali berkas
 // berubah sampai kuota koneksi Supabase habis.
-const global_ = globalThis as unknown as { __hmifSql?: ReturnType<typeof buatKlienRuntime> };
+const global_ = globalThis as unknown as { __hmifSql?: KlienSql };
+let lokal: KlienSql | undefined;
 
-export const sql = global_.__hmifSql ?? buatKlienRuntime();
-if (process.env.NODE_ENV !== 'production') global_.__hmifSql = sql;
+function klien(): KlienSql {
+  if (global_.__hmifSql) return global_.__hmifSql;
+  lokal ??= buatKlienRuntime();
+  if (process.env.NODE_ENV !== 'production') global_.__hmifSql = lokal;
+  return lokal;
+}
+
+/**
+ * MALAS, bukan langsung. Koneksi baru dibuat saat `sql` pertama kali dipakai.
+ *
+ * Versi pertama berbunyi `export const sql = global_.__hmifSql ?? buatKlienRuntime()`,
+ * dan itu memanggil `wajib('DATABASE_URL')` saat modulnya DIIMPOR. Akibatnya
+ * setiap berkas yang mengimpor apa pun dari sini — termasuk yang hanya butuh
+ * `klienLangsung` atau sekadar tipe — meledak di lingkungan yang env-nya belum
+ * lengkap, dan `next build` gagal dengan pesan yang menunjuk ke dalam
+ * node_modules.
+ *
+ * Ini kejadian KEEMPAT dari pola yang sama; tiga sebelumnya `lib/storage/index.ts`,
+ * `lib/storage/supabase-adapter.ts`, dan `lib/db/client.ts`. Tiga yang pertama
+ * ketahuan karena worktree lane ui sengaja tidak memegang kredensial penuh —
+ * detektor yang hilang sejak kedua lane memegangnya. Yang ini ketahuan oleh
+ * `npm run check:lazy-env`, yang dibuat justru untuk menggantikan detektor itu.
+ *
+ * Kegagalannya tetap keras dan tetap menyebut nama variabelnya — hanya terjadi
+ * pada saat yang benar, yaitu saat database sungguh-sungguh dipakai.
+ *
+ * Proxy membungkus FUNGSI, bukan objek: `sql` dipakai sebagai tagged template
+ * (`` sql`SELECT 1` ``) sekaligus sebagai objek (`sql.end()`), jadi jebakan
+ * `apply` dan `get` dua-duanya diperlukan.
+ */
+export const sql: KlienSql = new Proxy(function () {} as unknown as KlienSql, {
+  apply(_target, _thisArg, args: unknown[]) {
+    return (klien() as unknown as (...a: unknown[]) => unknown)(...args);
+  },
+  get(_target, prop: string | symbol) {
+    const k = klien();
+    const nilai = Reflect.get(k as object, prop) as unknown;
+    return typeof nilai === 'function' ? nilai.bind(k) : nilai;
+  },
+});
 
 /**
  * Klien sesi langsung untuk migrasi dan skrip administratif.

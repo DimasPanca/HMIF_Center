@@ -1,17 +1,20 @@
 # HANDOFF-DATA.md — apa yang perlu diketahui sesi berikutnya
 
-Berkas ini untuk agent lane `data` yang memulai sesi baru. Isinya **hanya**
-hal-hal yang tidak dapat ditemukan di tempat lain: keputusan yang lahir di
-percakapan, jebakan lingkungan yang sudah terlanjur ditemukan, dan arah yang
-diminta pemilik produk.
+Berkas ini untuk agent lane `data` yang memulai sesi baru — **termasuk Codex,
+yang mengambil alih lane ini saat Claude kena limit.** Isinya **hanya** hal-hal
+yang tidak dapat ditemukan di tempat lain: keputusan yang lahir di percakapan,
+jebakan lingkungan yang sudah terlanjur ditemukan, dan arah yang diminta pemilik
+produk.
 
 Yang **tidak** ditulis di sini karena sudah ada tempatnya:
 
 | Pertanyaan | Jawabannya di |
 |---|---|
-| Aturan main lane, batas berkas | `CLAUDE.md`, `docs/ai/PARALLEL_PROTOCOL.md` |
+| Aturan main lane, batas berkas | `CLAUDE.md`, `AGENTS.md`, `docs/ai/PARALLEL_PROTOCOL.md` |
 | Task berikutnya apa | `npx tsx scripts/lane.ts status data` |
+| **Rencana & urutan gelombang ini** | **`docs/ai/RENCANA-GELOMBANG-3.md`** |
 | Kontrak sebuah task | `docs/ai/tasks/P{fase}-*.md` |
+| Tanda tangan yang dipanggil lane ui | `docs/ai/AUTH_CONTRACT.md`, `docs/ai/PROKER_CONTRACT.md` |
 | Kenapa sebuah kode begitu | komentar di berkasnya, dan ADR terkait |
 | Apa yang sudah dikerjakan | `git log --oneline` — badan commit memuat alasannya |
 
@@ -23,72 +26,80 @@ ia dipercaya.
 
 ## 1. Keadaan per 2026-09-04
 
-Lane `data` **35/35 DONE**. Tidak ada yang READY — bukan karena pekerjaan habis,
-melainkan karena pembagian task ke lane belum dilanjutkan. Lihat §2.
+**53 dari 116 task selesai — 45,7%.** Lane data 35/44, lane ui 10/37.
 
-Aplikasi **sudah dapat di-login**. Gate `test:e2e -- login` hijau 31 lulus,
-1 sengaja dilewati, dan stabil pada tiga jalan berturut-turut.
+Aplikasi **sudah dapat di-login**, tetapi **belum punya kerangka navigasi**.
+Yang ada hanya `/login` dan halaman harness `/qa/gantt`. T-051 (Layout, sidebar,
+header) belum dikerjakan, dan ia menahan tujuh task lain — lihat jalur kritis di
+`RENCANA-GELOMBANG-3.md` §3.
 
-Inti Program Kerja sudah ada separuhnya. T-065 dibelah seperti T-045: lane data
-menulis `lib/proker/{schema,status,service}.ts` dan kontraknya di
-`docs/ai/PROKER_CONTRACT.md`; **`app/api/proker/**` masih kosong dan menunggu
-lane ui.** T-066 selesai utuh — `npx tsx scripts/stress-anti-bentrok.ts`, 22
-assertion, stabil pada lima jalan berturut-turut.
+Gate yang hijau dan stabil saat ini:
+
+```
+npm run verify                     336 lulus
+npm run db:test                     23 lulus
+npx tsx scripts/stress-anti-bentrok.ts   22 lulus, 5 jalan berturut-turut
+npm run test:e2e -- login           31 lulus, 1 sengaja dilewati
+npx tsx scripts/bench-gantt.ts       3 kasus di bawah target
+```
+
+Dua gate menunggu pekerjaan lane ui dan **dilewati dengan pesan yang menyebut
+persis apa yang kurang** — itu disengaja, bukan kerusakan:
+
+```
+npm run test:e2e -- gantt-perf      10 dilewati tanpa harness berdataset
+npm run test:e2e -- gantt-editor    13 dilewati, harness /qa/gantt-editor belum ada
+```
 
 ---
 
-## 2. Pembagian task ke lane baru separuh jalan
+## 2. Untuk Codex yang mengambil alih lane ini
 
-`PEMBAGIAN` di `scripts/lane.ts` hanya pernah menutup gelombang pertama —
-fondasi fase 0-2 plus T-045 dan T-046. **73 task lain belum masuk lane mana
-pun.**
+Pemilik produk memberikan `.env.local` **penuh** ke worktree Codex supaya lane
+`data` tidak berhenti saat Claude kena limit. Lima hal yang berbeda dari lane
+`ui` dan mudah terlewat:
 
-Sebagian besar tidak dapat diberikan utuh ke satu lane. Diperiksa lewat berkas
-yang dibuat tiap kontrak: mayoritas **campuran** — satu task membuat service di
-`lib/` sekaligus halaman di `app/`. Contohnya T-065:
+1. **Hanya lane ini yang boleh menyentuh database.** Migrasi ganda dari dua
+   agent merusak state migrasi secara permanen.
+2. **Setiap migrasi wajib jalan dari database kosong.** Jalankan
+   `npm run db:reset` setelah setiap task migrasi, lalu **`npm run seed:e2e-auth`**
+   — reset menghapus fixture E2E dan gate login akan gagal seluruhnya tanpa itu.
+3. **Nomor migrasi berikutnya adalah 020.** Kontrak T-076 menyebut `019_realtime.sql`;
+   nomor itu sudah dipakai `019_setujui_proker_serial.sql`. Selalu cek
+   `ls supabase/migrations/` sebelum menamai.
+4. **Rentang ADR lane ini 020–039.** Terpakai: 020, 021, 022, 023.
+5. **`npx tsx scripts/lane.ts guard data` wajib sebelum commit.** Ia membaca
+   `git status` dan menolak bila kamu menyentuh berkas lane `ui`. Itu satu-satunya
+   hal yang mencegah dua agent saling merusak.
 
-```
-Buat: lib/proker/{service,schema,status}.ts        <- lane data
-      app/api/proker/{route,[id],cek-konflik,kalender}/route.ts   <- lane ui
-```
-
-Pola yang sudah terbukti untuk kasus begini adalah **T-045**: lane data menulis
-fungsinya, menuliskan tanda tangannya di sebuah berkas kontrak
-(`docs/ai/AUTH_CONTRACT.md`), lalu lane ui memanggilnya dari route handler.
-Gate E2E-nya milik lane data, dan lane data pula yang menutupnya setelah merge —
-karena worktree lane ui sengaja tidak memegang kredensial penuh.
-
-**Pembelahan per task adalah keputusan manusia di sync point, bukan keputusan
-agent.** Yang boleh dikerjakan agent tanpa bertanya hanya task yang seluruh
-berkasnya jatuh di satu lane.
+**Jaring pengaman yang hilang karena keputusan kredensial ini.** Sampai hari ini,
+worktree lane ui yang miskin kredensial adalah detektor: ia menangkap pola bug
+"baca env saat modul dimuat" tiga kali. Penggantinya `npm run check:lazy-env`,
+sudah masuk `npm run verify`. Jangan dilepas dari sana — pada jalan pertamanya ia
+langsung menemukan kejadian keempat di `lib/db/connection.ts`.
 
 ---
 
 ## 3. Arah yang diminta pemilik produk
 
-Persuratan, TOR, Proposal, dan LPJ **ditunda**. Alasannya bukan teknis: ketiga
-dokumen besar itu panjang dan butuh sesi pembahasan tersendiri, sementara yang
-dibutuhkan sekarang adalah aplikasinya berjalan pada fitur lain lebih dulu.
+**Fitur ringan lebih dulu; surat, RAB, TOR, nota, dan LPJ menyusul.** Targetnya
+aplikasi dapat dibuka dari HP lewat Vercel, dengan Gantt dan daftar proker yang
+benar-benar bisa dipakai.
 
-Template-nya sendiri sudah siap (T-006 selesai, sebelas berkas lulus dry run),
-jadi penundaan ini tidak memblokir apa pun — ia hanya menggeser urutan.
+Seluruh rinciannya — cakupan, jalur kritis, pembelahan 26 task, dependensi yang
+dilonggarkan — ada di **`docs/ai/RENCANA-GELOMBANG-3.md`**. Baca berkas itu
+sebelum mengklaim task pertama.
 
-**Urutan yang diminta:** fitur non-surat dulu. Yang paling membuka jalan:
-
-1. ~~**T-065 separuh data**~~ — **selesai 2026-09-04.** Kontraknya di
-   `docs/ai/PROKER_CONTRACT.md`.
-2. ~~**T-066**~~ — **selesai 2026-09-04**, dan menemukan satu cacat nyata. Lihat §4.5.
-3. **T-050, T-047, T-048** — periode dan manajemen user; campuran, perlu dibelah.
-
-Yang paling membuka jalan berikutnya adalah **separuh ui T-065** — empat route
-handler tipis di atas service yang sudah ada. Tanpa itu, T-067 sampai T-071
-tidak punya endpoint untuk dipanggil.
+Yang paling perlu diingat dari sana: **pembelahan task campuran sudah diputuskan
+seluruhnya di muka** dan tercatat di `PEMBAGIAN` serta `TURUNAN` di
+`scripts/lane.ts`. Tidak perlu lagi memutuskannya sendiri saat mengklaim — cara
+lama sudah dua kali menghentikan pekerjaan di tengah.
 
 ---
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Empat hal ini sudah pernah memakan waktu. Jangan mengulanginya.
+Enam hal ini sudah pernah memakan waktu. Jangan mengulanginya.
 
 ### 4.1 Ada DUA pembatas percobaan login
 
@@ -129,14 +140,15 @@ Alasannya tertulis di `playwright.config.ts`. Jangan dinaikkan tanpa mengukur.
 
 ### 4.4 Pola bug yang berulang: membaca env saat modul dimuat
 
-Sudah tiga kali: `lib/storage/index.ts`, `lib/storage/supabase-adapter.ts`,
-`lib/db/client.ts`. Gejalanya sama tiap kali — worktree lane ui yang sengaja
-tidak memegang kredensial penuh gagal bahkan untuk hal yang tidak menyentuh
-kredensial itu, dan build Vercel ikut gagal.
+Sudah **empat** kali: `lib/storage/index.ts`, `lib/storage/supabase-adapter.ts`,
+`lib/db/client.ts`, dan `lib/db/connection.ts`. Gejalanya sama tiap kali —
+worktree yang tidak memegang kredensial penuh gagal bahkan untuk hal yang tidak
+menyentuh kredensial itu, dan build Vercel ikut gagal dengan pesan yang menunjuk
+ke dalam node_modules.
 
-Baca env di dalam fungsi, bukan di tingkat modul.
-
----
+**Baca env di dalam fungsi, bukan di tingkat modul.** Pola yang dipakai keempatnya
+sama: Proxy yang membuat klien saat method pertama dipanggil, dan tetap gagal
+keras menyebut nama variabelnya. Dijaga `npm run check:lazy-env`.
 
 ### 4.5 Beban BESAR justru bukan yang menyingkap race condition
 
@@ -149,9 +161,9 @@ lebih dulu dan sembilan sisanya mengantre di belakang SATU baris — tidak ada
 siklus. Pada dua pesaing, keduanya menyisipkan hampir bersamaan dan saling
 menunggu.
 
-Pelajarannya berlaku umum di project ini: **menaikkan jumlah pesaing tidak
-membuat uji konkurensi lebih tajam.** Kasus dua — yang paling mungkin terjadi
-di organisasi berisi enam departemen — justru yang paling mudah terlewat.
+Pelajarannya berlaku umum: **menaikkan jumlah pesaing tidak membuat uji
+konkurensi lebih tajam.** Kasus dua — yang paling mungkin terjadi di organisasi
+berisi enam departemen — justru yang paling mudah terlewat.
 
 Sudah diperbaiki lewat migrasi `019_setujui_proker_serial.sql` (ADR-022).
 `supabase/tests/021_konflik_konkuren.sql` menguji keberadaan advisory lock-nya
@@ -161,10 +173,29 @@ tersebut tidak membuat satu pun test merah.
 ### 4.6 `db:reset` menghapus fixture E2E
 
 `db:reset` menjalankan seluruh migrasi dari nol, dan periode "Periode Uji E2E"
-beserta tiga akunnya ikut hilang. Gate login akan gagal seluruhnya sesudahnya,
-dengan pesan yang menunjuk halaman login.
+beserta **empat** akunnya ikut hilang. Gate login akan gagal seluruhnya
+sesudahnya, dengan pesan yang menunjuk halaman login.
 
 Jalankan `npm run seed:e2e-auth` setiap kali sesudah `db:reset`.
+
+Akun keempat, `e2e-bph@uji.test`, ditambahkan untuk T-078: ia dapat masuk tetapi
+**tidak berhak menulis apa pun**. Tanpa akun seperti itu, separuh kontrak T-078
+("API menolak pengguna tanpa izin") tidak dapat diuji siapa pun — tiga akun
+lainnya entah tidak dapat masuk sama sekali, entah masuk sebagai KETUA yang
+justru berhak penuh.
+
+### 4.7 Angka performa mode dev hampir seluruhnya bundle, bukan aplikasi
+
+Diukur: harness Gantt berisi **tiga baris** memakan 400–530 ms dari anggaran
+500 ms PRD. Angka absolut di mode dev karena itu tidak dapat dipakai menilai
+apa pun, dan gate yang menegakkannya melempar koin — terbukti, dua jalan
+berturut-turut atas kode yang sama memberi 2 gagal lalu 10 lulus.
+
+Harness sengaja tidak dapat dicapai di produksi (dua lapis, keduanya
+disengaja), jadi tidak ada lingkungan lain untuk mengukurnya. Yang ditegakkan
+sekarang biaya **marginal** terhadap baseline, virtualisasi, dan 60 fps. Lihat
+ADR-023 — dan **jangan membaca kelulusan gate itu sebagai "100 task render di
+bawah 500 ms di produksi".** Itu belum pernah diukur siapa pun.
 
 ---
 
@@ -172,11 +203,13 @@ Jalankan `npm run seed:e2e-auth` setiap kali sesudah `db:reset`.
 
 | # | Hal | Catatan |
 |---|---|---|
-| 1 | Rotasi publishable key Supabase | Nilainya pernah masuk commit di GitHub. Wajib sebelum data pengurus sungguhan masuk. |
-| 2 | ADR-021 masih berstatus **Usulan** | Sebelas template sudah memakainya. Perlu diterima atau ditolak. |
-| 2b | ADR-022 masih berstatus **Usulan** | Sudah diimplementasikan migrasi 019 dan dituntut PRD F-5.2 Acceptance Criteria. Diangkat karena T-066 menyatakan **Ubah: —** sementara perbaikannya menambah migrasi. Perlu diterima atau ditolak. |
-| 3 | Temuan 10 `TEMPLATE_MAPPING.md` | LPJ tidak punya tabel keuangan sama sekali padahal PRD F-12.1 menuntut empat bagiannya. Menambahkannya = membuat template baru, bukan membedah — pekerjaan T-093. |
-| 4 | Buka sebelas template di Word | Memastikan tidak ada peringatan korupsi, dan membandingkan kop surat hasil generate dengan aslinya. |
+| 1 | **Rotasi publishable key Supabase** | Nilainya pernah masuk commit di GitHub. **Wajib sebelum deploy publik** — begitu URL-nya hidup, kuncinya terpapar. |
+| 2 | Status DONE **T-074** ditinjau | Ditutup atas 10/10 lulus di mesin lane ui; tidak reproduksi di mesin lain (3/10 gagal). Lihat ADR-023. |
+| 3 | **ADR-023** berstatus *Usulan* | Gate performa menegakkan biaya marginal, bukan angka absolut. Kriteria absolut PRD F-6.3 belum pernah terverifikasi. |
+| 4 | **ADR-022** berstatus *Usulan* | Advisory lock approval proker, sudah diimplementasikan migrasi 019. |
+| 5 | **ADR-021** berstatus *Usulan* | Sebelas template sudah memakainya. Menunggu sejak gelombang kedua. |
+| 6 | Temuan 10 `TEMPLATE_MAPPING.md` | LPJ tidak punya tabel keuangan sama sekali padahal PRD F-12.1 menuntut empat bagiannya. Pekerjaan T-093, fase yang ditunda. |
+| 7 | Buka sebelas template di Word | Memastikan tidak ada peringatan korupsi. Tidak memblokir gelombang ini. |
 
 ---
 
@@ -185,7 +218,7 @@ Jalankan `npm run seed:e2e-auth` setiap kali sesudah `db:reset`.
 Sesi baru **tidak perlu diberi ringkasan panjang**. Cukup:
 
 ```
-Baca CLAUDE.md lalu docs/ai/HANDOFF-DATA.md.
+Baca CLAUDE.md, docs/ai/HANDOFF-DATA.md, lalu docs/ai/RENCANA-GELOMBANG-3.md.
 Jalankan: npx tsx scripts/lane.ts status data
 Lanjutkan dari situ.
 ```

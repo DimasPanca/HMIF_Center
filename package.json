@@ -10,6 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "check:env": "tsx scripts/check-env.ts",
+    "check:lazy-env": "tsx scripts/check-lazy-env.ts",
     "check:secrets": "tsx scripts/check-client-secrets.ts",
     "db:migrate": "tsx scripts/db.ts migrate",
     "db:ping": "tsx scripts/db-ping.ts",
@@ -30,7 +31,7 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm run check:secrets && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run check:secrets && npm run check:lazy-env && npm run test"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
