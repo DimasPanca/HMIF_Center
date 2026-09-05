@@ -1,11 +1,11 @@
 # ADR-051 — Kontrak harness kalender ketersediaan T-067
 
-|                    |                                                           |
-| ------------------ | --------------------------------------------------------- |
-| **Status**         | **Usulan**                                                |
-| **Tanggal**        | 2026-09-04                                                |
-| **Ditemukan oleh** | T-067 setelah gate `kalender-ketersediaan` diperiksa      |
-| **Task terkait**   | T-067, T-068                                              |
+|                    |                                                      |
+| ------------------ | ---------------------------------------------------- |
+| **Status**         | **Diterima**                                         |
+| **Tanggal**        | 2026-09-04                                           |
+| **Ditemukan oleh** | T-067 setelah gate `kalender-ketersediaan` diperiksa |
+| **Task terkait**   | T-067, T-068                                         |
 
 ## Konteks
 
@@ -43,8 +43,11 @@ T-067 diusulkan menjadi integrasi lintas-lane dengan batas berikut:
 4. Lane UI menjalankan bagian harness yang tidak membutuhkan database; lane
    data menjalankan skenario halaman sungguhan setelah merge untuk membuktikan
    hanya satu request ke `/api/proker/kalender`.
-5. T-067 tetap `BLOCKED` sampai usulan ini diterima atau kontrak task diperbaiki
-   dengan keputusan lain.
+5. Setelah keputusan ini diterima, T-067 dapat dilanjutkan dengan verifikasi
+   terpisah: lane UI membuktikan perilaku komponen melalui harness, lalu lane
+   data membuktikan integrasi halaman sungguhan setelah merge.
+
+Keputusan ini diterima oleh pemilik proyek pada 2026-09-05.
 
 ## Konsekuensi implementasi
 
