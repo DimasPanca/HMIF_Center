@@ -488,9 +488,9 @@
       "depends_on": [
         "T-067"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-08"
     },
     {
       "id": "T-070",

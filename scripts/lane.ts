@@ -138,6 +138,7 @@ const MILIK: Record<Lane, string[]> = {
     // dipanggil route handler T-047-UI.
     'docs/ai/UNDANGAN_CONTRACT.md',
     'docs/ai/PERIODE_CONTRACT.md',
+    'docs/ai/WIZARD_PROKER_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
