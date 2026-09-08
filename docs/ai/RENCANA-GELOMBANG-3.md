@@ -343,3 +343,87 @@ halaman login.
 `periode.spec.ts` sengaja tidak mengaktifkan apa pun, dan memuat satu test
 penjaga: **tepat satu periode AKTIF, dan namanya bukan periode uji.** Bila
 seseorang kelak menambahkan aktivasi, test itu yang merah lebih dulu.
+
+---
+
+## 11. Penyesuaian setelah umpan balik Codex (2026-09-04)
+
+Codex menjalankan generator antrean UI dan menemukan lima hal. Empat diterima
+dan sudah dikerjakan; satu ditolak dengan alasan. Dicatat di sini supaya tidak
+diperdebatkan ulang.
+
+### 11.1 Bentuk respons K-02 — DITERIMA, diperbaiki menyeluruh
+
+Gate dan kontrak `undangan`/`periode` membaca `body.id`/`body.status`/`body.kode`
+— bertentangan dengan K-02 (`{ ok, data }` / `{ ok:false, error:{code,message,
+details?} }`). Codex benar.
+
+Akar masalahnya: tidak ada perakit respons bersama, jadi tiap route menyusun
+bentuknya sendiri dan mulai menyimpang (route login menulis `error.message`,
+`guard.ts` menulis `error.pesan`). Diperbaiki di akarnya:
+
+- **`lib/http/respond.ts`** (baru, milik data) — `sukses(data)` dan
+  `gagal(code, message, {details, status})`. Satu-satunya tempat bentuk K-02
+  dirakit. Semua route memakainya.
+- `lib/auth/guard.ts` diperbaiki: `requirePermission` kini `error.message`, bukan
+  `error.pesan`.
+- Service mengekspor `STATUS_GAGAL` (peta kode→HTTP) supaya route tetap tipis.
+- Gate `undangan` dan `periode` membaca `body.data.*` dan `body.error.code`.
+- Kontrak `UNDANGAN` dan `PERIODE` menunjukkan pemanggilan `sukses`/`gagal`.
+
+**Aturan tetap:** tiap route handler WAJIB memakai `sukses`/`gagal` dari
+`lib/http/respond`. Jangan merakit `NextResponse.json` sendiri.
+
+### 11.2 Service & kontrak periode — DITERIMA (ADR-050)
+
+T-050 semula seluruhnya lane ui. Salah: aktivasi, penghapusan, dan larangan
+ubah-arsip aturan data. Dibelah menjadi `T-050-DATA` (`lib/periode/service.ts` +
+`PERIODE_CONTRACT.md`) dan `T-050-UI`. `app/api/periode/[id]/route.ts` yang hilang
+dari cakupan resmi masuk lewat kontrak.
+
+### 11.3 Roll-up -DATA/-UI — DITERIMA
+
+Tanpa roll-up, fitur tampak DONE begitu backend selesai. `scripts/lane.ts` kini
+punya `ROLLUP`: parent (mis. `T-050`) DONE **hanya** bila `T-050-DATA` dan
+`T-050-UI` dua-duanya DONE. Diterapkan di `semuaDone()` (dep antar-task) dan
+`cmdSync` (tulis-balik tasks.json).
+
+**Pengecualian tercatat:** pembelahan lama T-047, T-048, T-065 memakai id polos
+sebagai separuh-data (bukan `-DATA`). Ketiganya sudah merged; id polosnya berarti
+**separuh data selesai, fitur menunggu `-UI`-nya**. Tidak diroll-up ulang untuk
+menghindari churn sejarah. Untuk pembelahan BARU, pakai `-DATA`/`-UI` eksplisit.
+
+### 11.4 Gate all-skip = hijau palsu — DITERIMA sebagai aturan penyelesaian
+
+Gate yang 100% `skip` lolos hijau, dan bisa disalahbaca "fitur terverifikasi".
+**Aturan penyelesaian:** sebuah task `-UI` DONE hanya bila gate-nya berjalan
+dengan **0 skipped dan >0 passed** untuk bagian yang menjadi tanggung jawabnya.
+Skip yang sah hanya untuk bagian lintas-lane yang memang belum ada.
+
+`npx tsx scripts/gate-status.ts <nama>` melaporkan hitungan pass/skip per gate
+supaya aturan ini dapat diperiksa, bukan diklaim.
+
+### 11.5 Isolasi worktree — DITERIMA
+
+Codex tidak boleh mengganti worktree UI-nya ke `lane/data`. Kredensial penuh
+hanya di worktree data. Bila lane data perlu dikerjakan saat Claude limit,
+gunakan **worktree Codex terpisah pada `lane/data`**, dan Claude idle. Ini
+memperbaiki RENCANA §1 yang semula menulis "Codex bergantian lane" — yang benar:
+satu worktree per lane, jangan pindah lane dalam satu worktree.
+
+### 11.6 Guard aktivasi "wajib ADMIN di target" — DITERIMA, diselesaikan (ADR-024)
+
+Iterasi pertama menolak butir ini karena tampak membuntu (undangan hanya mengisi
+peran di periode AKTIF → periode PERSIAPAN tak pernah punya ADMIN → tak pernah
+bisa diaktifkan). Pemilik produk menegaskan ADR-050 diterima penuh, dan
+pemeriksaan ulang menemukan resolusi tanpa perubahan skema:
+
+- **Carry-forward ADMIN** — `buatPeriode` menyalin ADMIN dari periode aktif ke
+  periode baru. Selalu ada sumber (guard `periode.create` menuntut periode aktif).
+- **Bootstrap** — periode pertama + ADMIN pertama dibuat `prisma/seed.ts` oleh
+  pemegang kredensial. Itu jalur terautentikasi untuk periode pertama; jalur
+  anonim in-app mustahil (tanpa periode aktif, roles=[] untuk semua).
+
+Keduanya dituangkan di **ADR-024** (menyempurnakan ADR-050, bukan menggantikan).
+`aktifkanPeriode` kini menegakkan §3 apa adanya (`TANPA_ADMIN` 409). Lockout
+tertutup: Admin yang mengaktifkan periode baru tetap ber-ADMIN sesudahnya.

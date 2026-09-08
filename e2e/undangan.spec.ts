@@ -142,7 +142,13 @@ function lewatiBila(): void {
 async function undangBaru(
   ctx: APIRequestContext,
   ubah: Record<string, unknown> = {},
-): Promise<{ status: number; body: Record<string, unknown> }> {
+): Promise<{
+  status: number;
+  body: {
+    data?: Record<string, unknown>;
+    error?: { code?: string; message?: string; details?: unknown };
+  };
+}> {
   const r = await ctx.post('/api/users/invite', {
     data: {
       nama_lengkap: 'Uji Undangan E2E',
@@ -154,7 +160,11 @@ async function undangBaru(
     },
     failOnStatusCode: false,
   });
-  return { status: r.status(), body: (await r.json().catch(() => ({}))) as Record<string, unknown> };
+  const body = (await r.json().catch(() => ({}))) as {
+    data?: Record<string, unknown>;
+    error?: { code?: string; message?: string; details?: unknown };
+  };
+  return { status: r.status(), body };
 }
 
 // ---------------------------------------------------------------------------
@@ -204,8 +214,8 @@ test.describe('PRD F-1.2 — aturan undangan', () => {
     expect(status).toBe(201);
     // Klausa "Jangan" T-047: belum ada layanan email di MVP. Tautannya
     // ditampilkan supaya Admin menyalinnya sendiri.
-    expect(String(body.tautan)).toMatch(/\/undangan\/[A-Za-z0-9_-]{20,}$/);
-    expect(body.kedaluwarsa).toBeTruthy();
+    expect(String(body.data?.tautan)).toMatch(/\/undangan\/[A-Za-z0-9_-]{20,}$/);
+    expect(body.data?.kedaluwarsa).toBeTruthy();
   });
 
   test('AC 1 — email yang sudah terdaftar ditolak', async () => {
@@ -215,7 +225,7 @@ test.describe('PRD F-1.2 — aturan undangan', () => {
 
     const kedua = await undangBaru(ctxAdmin!, { email });
     expect(kedua.status).toBe(409);
-    expect(String(kedua.body.kode)).toBe('EMAIL_TERDAFTAR');
+    expect(kedua.body.error?.code).toBe('EMAIL_TERDAFTAR');
   });
 
   test('AC 1 — NIM yang sudah terdaftar ditolak, dan dibedakan dari email', async () => {
@@ -226,7 +236,7 @@ test.describe('PRD F-1.2 — aturan undangan', () => {
     const kedua = await undangBaru(ctxAdmin!, { nim });
     expect(kedua.status).toBe(409);
     // Pesan yang menyamakan keduanya membuat Admin mengganti medan yang salah.
-    expect(String(kedua.body.kode)).toBe('NIM_TERDAFTAR');
+    expect(kedua.body.error?.code).toBe('NIM_TERDAFTAR');
   });
 
   test('AC 3 — satu pengguna dapat memiliki peran ganda', async () => {
@@ -238,7 +248,7 @@ test.describe('PRD F-1.2 — aturan undangan', () => {
     // departemen_id null untuk ANGGOTA memang ditolak — yang diuji di sini
     // bahwa penolakannya berbentuk pesan form, bukan error 500 dari constraint.
     expect([201, 422]).toContain(status);
-    if (status === 422) expect(body.isu).toBeTruthy();
+    if (status === 422) expect(body.error?.details).toBeTruthy();
   });
 
   test('peran KADEPT tanpa departemen ditolak dengan pesan form', async () => {
@@ -246,7 +256,7 @@ test.describe('PRD F-1.2 — aturan undangan', () => {
     const { status, body } = await undangBaru(ctxAdmin!, { roles: [{ role: 'KADEPT' }] });
 
     expect(status).toBe(422);
-    const isu = body.isu as { path: string; pesan: string }[] | undefined;
+    const isu = body.error?.details as { path: string; pesan: string }[] | undefined;
     expect(isu?.some((i) => i.path.includes('departemen_id'))).toBe(true);
   });
 });
@@ -259,7 +269,7 @@ test.describe('Token', () => {
   test('tautan tidak pernah dapat ditampilkan ulang lewat API', async () => {
     lewatiBila();
     const { body } = await undangBaru(ctxAdmin!);
-    const token = String(body.tautan).split('/').pop()!;
+    const token = String(body.data?.tautan).split('/').pop()!;
 
     // Yang tersimpan hanya SHA-256-nya. Bila suatu hari ada endpoint yang dapat
     // mengembalikan tokennya lagi, jaminan "isi database yang bocor tidak dapat
@@ -293,7 +303,7 @@ test.describe('USER_FLOW 2.2 — halaman aktivasi', () => {
   test('token sah menampilkan form password', async ({ page }) => {
     lewatiBila();
     const { body } = await undangBaru(ctxAdmin!);
-    const token = String(body.tautan).split('/').pop()!;
+    const token = String(body.data?.tautan).split('/').pop()!;
 
     const ada = await bukaAktivasi(page, token);
     test.skip(!ada, 'Halaman /undangan/[token] belum ada. Ia milik lane ui (T-047-UI).');
@@ -304,7 +314,7 @@ test.describe('USER_FLOW 2.2 — halaman aktivasi', () => {
   test('halaman aktivasi dapat dibuka tanpa sesi', async ({ page }) => {
     lewatiBila();
     const { body } = await undangBaru(ctxAdmin!);
-    const token = String(body.tautan).split('/').pop()!;
+    const token = String(body.data?.tautan).split('/').pop()!;
 
     const r = await page.goto(`/undangan/${token}`, { waitUntil: 'load' });
     test.skip(!r || r.status() === 404, 'Halaman /undangan/[token] belum ada (T-047-UI).');
@@ -326,7 +336,7 @@ test.describe('PRD F-1.2 — menonaktifkan pengguna', () => {
   test('AC 4 — dinonaktifkan tetapi barisnya tetap ada', async () => {
     lewatiBila();
     const { body } = await undangBaru(ctxAdmin!);
-    const userId = String(body.userId);
+    const userId = String(body.data?.userId);
 
     const r = await ctxAdmin!.patch(`/api/users/${userId}`, {
       data: { is_active: false },
@@ -344,7 +354,7 @@ test.describe('PRD F-1.2 — menonaktifkan pengguna', () => {
   test('keadaan membedakan MENUNGGU_AKTIVASI dari NONAKTIF', async () => {
     lewatiBila();
     const { body } = await undangBaru(ctxAdmin!);
-    const userId = String(body.userId);
+    const userId = String(body.data?.userId);
 
     const daftar = await ctxAdmin!.get('/api/users', { failOnStatusCode: false });
     test.skip(!daftar.ok(), 'GET /api/users belum ada (T-047-UI).');

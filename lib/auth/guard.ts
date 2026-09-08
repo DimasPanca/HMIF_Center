@@ -36,6 +36,8 @@
 
 import { NextResponse } from 'next/server';
 
+import { gagal as responsGagal } from '@/lib/http/respond';
+
 import { db } from '@/lib/db/client';
 import {
   can,
@@ -176,10 +178,10 @@ export async function requirePermission(
   const h = await periksa(permission);
   if (!gagal(h)) return { ok: true, konteks: h };
 
-  return {
-    ok: false,
-    nilai: NextResponse.json({ ok: false, error: h }, { status: STATUS[h.code] }),
-  };
+  // Bentuk K-02 lewat helper bersama (lib/http/respond): error.message, bukan
+  // error.pesan. Route login sudah memakai bentuk itu; sebelum ini guard
+  // menulis error.pesan, dan antarmuka menerima dua nama untuk hal yang sama.
+  return { ok: false, nilai: responsGagal(h.code, h.pesan, { status: STATUS[h.code] }) };
 }
 
 /**
@@ -192,10 +194,10 @@ export async function requirePermission(
  */
 export async function guardAction(
   permission: Permission,
-): Promise<Hasil<{ ok: false; error: GagalGuard }>> {
+): Promise<Hasil<{ ok: false; error: { code: KodeGagalGuard; message: string } }>> {
   const h = await periksa(permission);
   if (!gagal(h)) return { ok: true, konteks: h };
-  return { ok: false, nilai: { ok: false, error: h } };
+  return { ok: false, nilai: { ok: false, error: { code: h.code, message: h.pesan } } };
 }
 
 /**

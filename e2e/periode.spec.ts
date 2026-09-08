@@ -39,27 +39,43 @@
  * ===========================================================================
  * KONTRAK UNTUK LANE UI
  * ===========================================================================
- *   GET    /api/periode                daftar periode
- *   POST   /api/periode                buat periode
- *   PATCH  /api/periode/{id}           ubah periode
- *   POST   /api/periode/{id}/activate  aktifkan  -> fungsi DB aktifkan_periode
- *   DELETE /api/periode/{id}           hapus, HANYA bila tidak punya surat terbit
+ *   GET    /api/periode                daftar periode        -> daftarPeriode()
+ *   POST   /api/periode                buat periode          -> buatPeriode()
+ *   PATCH  /api/periode/{id}           ubah periode          -> ubahPeriode()
+ *   DELETE /api/periode/{id}           hapus                 -> hapusPeriode()
+ *   POST   /api/periode/{id}/activate  aktifkan              -> aktifkanPeriode()
  *
- * Badan `POST /api/periode`:
+ * PENTING soal cakupan: kontrak T-050 di tasks.json HANYA menyebut
+ * `app/api/periode/{route.ts,[id]/activate/route.ts}`. Route PATCH dan DELETE
+ * menuntut `app/api/periode/[id]/route.ts`, yang tidak ada di sana — Codex
+ * benar menandainya (ADR-050). Berkas itu resmi menjadi bagian T-050-UI lewat
+ * PERIODE_CONTRACT.md §1, jalur yang sama dengan T-047 yang juga menambah
+ * `[id]/route.ts` lewat kontraknya.
  *
- *   { nama, tanggal_mulai, tanggal_selesai, nomor_surat_awal? }
+ * ===========================================================================
+ * BENTUK RESPONS: K-02, LEWAT lib/http/respond
+ * ===========================================================================
+ * Setiap respons `{ ok: true, data }` atau `{ ok: false, error: { code, message,
+ * details? } }` — tidak ada bentuk lain (K-02). Route handler memakai helper
+ * `sukses`/`gagal` dari `lib/http/respond` dan peta `STATUS_GAGAL` dari service:
  *
- * `status` TIDAK diterima dari badan request. Satu-satunya jalan menuju AKTIF
- * adalah endpoint `/activate`, yang memanggil fungsi database — kontrak 2
- * T-050 menyebutnya eksplisit: "bukan update manual dari aplikasi".
+ *     import { sukses, gagal } from '@/lib/http/respond';
+ *     import { STATUS_GAGAL } from '@/lib/periode/service';
+ *     return h.ok
+ *       ? sukses(h.nilai, { status: 201 })
+ *       : gagal(h.kode, h.pesan, { details: h.isu, status: STATUS_GAGAL[h.kode] });
  *
- * Badan `POST /api/periode/{id}/activate`:
+ * Gate ini membaca `body.data.*` untuk sukses dan `body.error.code` untuk gagal.
+ * Versi pertama membaca `body.id`/`body.status`/`body.isu` — bentuk yang
+ * bertentangan dengan K-02, dan Codex benar menolaknya.
  *
- *   { konfirmasi: "<nama periode persis>" }
+ * Badan `POST /api/periode`:  { nama, tanggal_mulai, tanggal_selesai, nomor_surat_awal? }
+ *   `status` TIDAK diterima — satu-satunya jalan menuju AKTIF adalah `/activate`
+ *   (kontrak 2 T-050: "bukan update manual dari aplikasi").
  *
- * Kontrak 3 menuntut konfirmasi tingkat kritis berupa mengetik nama periode.
- * Konfirmasi yang tidak cocok ditolak **sebelum** apa pun berubah. Tanpa syarat
- * ini, satu permintaan nyasar dapat mengarsipkan seluruh kepengurusan berjalan.
+ * Badan `POST /api/periode/{id}/activate`:  { konfirmasi: "<nama periode persis>" }
+ *   Kontrak 3: konfirmasi kritis. Ditolak SEBELUM apa pun berubah; tanpa ini
+ *   satu permintaan nyasar dapat mengarsipkan seluruh kepengurusan berjalan.
  *
  * Nama-nama di atas USULAN. Angkat di sync point bila ada yang lebih cocok.
  *
@@ -135,7 +151,10 @@ function lewatiBila(): void {
 async function buatPeriode(
   ctx: APIRequestContext,
   ubah: Record<string, unknown> = {},
-): Promise<{ status: number; body: Record<string, unknown> }> {
+): Promise<{
+  status: number;
+  body: { data?: Record<string, unknown>; error?: { code?: string; message?: string; details?: unknown } };
+}> {
   const r = await ctx.post('/api/periode', {
     data: {
       nama: namaUji(),
@@ -147,8 +166,12 @@ async function buatPeriode(
     failOnStatusCode: false,
   });
 
-  const body = (await r.json().catch(() => ({}))) as Record<string, unknown>;
-  if (r.status() === 201 && typeof body.id === 'string') dibuat.push(body.id);
+  const body = (await r.json().catch(() => ({}))) as {
+    data?: Record<string, unknown>;
+    error?: { code?: string; message?: string; details?: unknown };
+  };
+  const id = body.data?.id;
+  if (r.status() === 201 && typeof id === 'string') dibuat.push(id);
   return { status: r.status(), body };
 }
 
@@ -204,7 +227,7 @@ test.describe('Membuat periode', () => {
     // database. Periode yang lahir langsung AKTIF melewati aktifkan_periode,
     // dan bersamanya melewati pembuatan `surat_counter` — surat pertama periode
     // itu akan gagal dialokasikan nomor, jauh kemudian, tanpa sebab yang jelas.
-    expect(body.status).toBe('PERSIAPAN');
+    expect(body.data?.status).toBe('PERSIAPAN');
   });
 
   test('status AKTIF dari badan request diabaikan atau ditolak', async () => {
@@ -212,7 +235,7 @@ test.describe('Membuat periode', () => {
     const { status, body } = await buatPeriode(ctxAdmin!, { status: 'AKTIF' });
 
     expect([201, 422]).toContain(status);
-    if (status === 201) expect(body.status).toBe('PERSIAPAN');
+    if (status === 201) expect(body.data?.status).toBe('PERSIAPAN');
   });
 
   test('tanggal selesai sebelum tanggal mulai ditolak dengan pesan form', async () => {
@@ -223,7 +246,7 @@ test.describe('Membuat periode', () => {
     });
 
     expect(status).toBe(422);
-    expect(body.isu ?? body.pesan).toBeTruthy();
+    expect(body.error?.code).toBe('VALIDASI_GAGAL');
   });
 
   test('nomor_surat_awal nol atau negatif ditolak', async () => {
@@ -250,7 +273,7 @@ test.describe('Aktivasi menuntut konfirmasi kritis', () => {
     const { status, body } = await buatPeriode(ctxAdmin!);
     test.skip(status !== 201, 'POST /api/periode belum bekerja.');
 
-    const id = String(body.id);
+    const id = String(body.data?.id);
     const r = await ctxAdmin!.post(`/api/periode/${id}/activate`, {
       data: { konfirmasi: 'jelas bukan nama periode ini' },
       failOnStatusCode: false,
@@ -273,7 +296,7 @@ test.describe('Aktivasi menuntut konfirmasi kritis', () => {
     const { status, body } = await buatPeriode(ctxAdmin!);
     test.skip(status !== 201, 'POST /api/periode belum bekerja.');
 
-    const r = await ctxAdmin!.post(`/api/periode/${String(body.id)}/activate`, {
+    const r = await ctxAdmin!.post(`/api/periode/${String(body.data?.id)}/activate`, {
       data: {},
       failOnStatusCode: false,
     });
@@ -289,8 +312,8 @@ test.describe('Aktivasi menuntut konfirmasi kritis', () => {
     const ctx = await playwright.request.newContext({ baseURL });
     try {
       expect(await masuk(ctx, AKUN.aktif.email)).toBe(200);
-      const r = await ctx.post(`/api/periode/${String(body.id)}/activate`, {
-        data: { konfirmasi: String(body.nama) },
+      const r = await ctx.post(`/api/periode/${String(body.data?.id)}/activate`, {
+        data: { konfirmasi: String(body.data?.nama) },
         failOnStatusCode: false,
       });
       test.skip(r.status() === 404, 'POST /api/periode/{id}/activate belum ada (T-050).');

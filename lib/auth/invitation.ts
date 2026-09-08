@@ -212,6 +212,28 @@ export interface GagalUndangan {
 
 export type Hasil<T> = { ok: true; nilai: T } | GagalUndangan;
 
+/**
+ * Peta kode → status HTTP, diekspor supaya route handler tetap tipis dan
+ * K-02-benar (lihat docs/ai/UNDANGAN_CONTRACT.md §3):
+ *
+ *     import { sukses, gagal } from '@/lib/http/respond';
+ *     import { STATUS_GAGAL } from '@/lib/auth/invitation';
+ *     return h.ok ? sukses(h.nilai, { status: 201 })
+ *                 : gagal(h.kode, h.pesan, { details: h.isu, status: STATUS_GAGAL[h.kode] });
+ */
+export const STATUS_GAGAL: Record<KodeGagalUndangan, number> = {
+  TIDAK_VALID: 422,
+  EMAIL_TERDAFTAR: 409,
+  NIM_TERDAFTAR: 409,
+  TIDAK_ADA_PERIODE: 409,
+  TIDAK_DITEMUKAN: 404,
+  TOKEN_TIDAK_DIKENAL: 404,
+  TOKEN_KEDALUWARSA: 410,
+  TOKEN_TERPAKAI: 409,
+  GAGAL_AUTH: 502,
+  AUTH_YATIM: 500,
+};
+
 export interface UndanganTerbuat {
   userId: string;
   invitationId: string;
