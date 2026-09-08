@@ -2,7 +2,7 @@
 
 |                    |                                                        |
 | ------------------ | ------------------------------------------------------ |
-| **Status**         | **Usulan**                                             |
+| **Status**         | **Diterima**                                           |
 | **Tanggal**        | 2026-09-08                                             |
 | **Ditemukan oleh** | T-051 setelah gate `sidebar-role` diperiksa            |
 | **Task terkait**   | T-045, T-051, T-052, T-075, T-077                      |
@@ -30,7 +30,7 @@ kondisi kedua membuat harness dapat lulus sementara aplikasi sungguhan tidak
 pernah memakai sidebar. Menambahkan atau memindahkan berkas secara diam-diam
 melanggar AGENT_RULES P-10.
 
-## Keputusan yang diusulkan
+## Keputusan
 
 Perluas cakupan T-051 dengan batas berikut:
 
@@ -59,4 +59,4 @@ Perluas cakupan T-051 dengan batas berikut:
 - T-052, T-075, dan T-077 memperoleh titik integrasi layout yang benar tanpa
   perlu memindahkan beranda lagi.
 
-T-051 diblokir sampai pemilik proyek menerima atau menolak usulan ini.
+Keputusan ini diterima oleh pemilik proyek pada 2026-09-09.
