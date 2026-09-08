@@ -77,19 +77,28 @@ yang belum punya akun.
 
 ```ts
 // app/api/users/invite/route.ts
+import { sukses, gagal } from '@/lib/http/respond';
+import { STATUS_GAGAL } from '@/lib/auth/invitation';
+
 export async function POST(req: Request) {
   const g = await requirePermission('user.create');
-  if (!g.ok) return g.nilai;
+  if (!g.ok) return g.nilai;   // sudah K-02: { ok:false, error:{code,message} }
 
   const badan = await req.json();
   const asal = new URL(req.url).origin;
 
   const h = await withAuditContext(req, (tx) => undang(tx, g.konteks, badan, asal));
   return h.ok
-    ? NextResponse.json({ ok: true, ...h.nilai }, { status: 201 })
-    : NextResponse.json(h, { status: STATUS_GAGAL[h.kode] });
+    ? sukses(h.nilai, { status: 201 })
+    : gagal(h.kode, h.pesan, { details: h.isu, status: STATUS_GAGAL[h.kode] });
 }
 ```
+
+**Bentuk respons WAJIB K-02**, dan satu-satunya cara benar adalah lewat
+`sukses`/`gagal` dari `lib/http/respond` — jangan merakit `NextResponse.json`
+sendiri. Sukses `{ ok: true, data }`; gagal `{ ok: false, error: { code, message,
+details? } }`. `STATUS_GAGAL` diekspor service supaya semantik HTTP-nya tidak
+ditebak ulang di route. `requirePermission` sudah mengembalikan bentuk yang sama.
 
 `asalUrl` diminta dari pemanggil, bukan dibaca dari `NEXT_PUBLIC_APP_URL`:
 tautan yang salah domain membuat undangan tidak dapat dibuka, dan itu baru
@@ -122,8 +131,12 @@ interface GagalUndangan {
 | `TOKEN_TERPAKAI` | **409** | halaman "Sudah digunakan, silakan login" |
 | `AUTH_YATIM` | **500** | `pesan` — memuat email yang harus dibersihkan tangan |
 
-`isu[].path` memakai titik (`roles.0.departemen_id`) dan cocok langsung dengan
-`setError` react-hook-form.
+Di respons HTTP, `kode` menjadi `error.code`, `pesan` menjadi `error.message`,
+dan `isu` menjadi `error.details` (K-02). Pemetaan itu dikerjakan `gagal()`; route
+tidak menyentuhnya.
+
+`error.details[].path` memakai titik (`roles.0.departemen_id`) dan cocok langsung
+dengan `setError` react-hook-form.
 
 **`pesan` sudah siap tampil.** Jangan menyusun kalimat sendiri dari `kode` — dua
 kalimat untuk keadaan yang sama akan berbeda suatu hari.

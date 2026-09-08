@@ -78,6 +78,8 @@ const MILIK: Record<Lane, string[]> = {
     // dimiliki siapa pun dan guard menolaknya dengan "milik TIDAK TERDAFTAR" —
     // baru ketahuan setelah agent selesai menulis kodenya.
     'lib/proker/**',
+    'lib/periode/**',
+    'lib/http/**',
     'lib/kepanitiaan/**',
     'lib/tor/**',
     'lib/proposal/**',
@@ -135,6 +137,7 @@ const MILIK: Record<Lane, string[]> = {
     // Kontrak antar-lane untuk T-047: tanda tangan lib/auth/invitation.ts yang
     // dipanggil route handler T-047-UI.
     'docs/ai/UNDANGAN_CONTRACT.md',
+    'docs/ai/PERIODE_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
@@ -285,6 +288,27 @@ function tulisState(s: StateLane): void {
   fs.writeFileSync(fileState(s.lane), JSON.stringify(s, null, 2) + '\n', 'utf8');
 }
 
+/**
+ * Roll-up pembelahan -DATA/-UI.
+ *
+ * Codex menandai lubang nyata: tanpa roll-up, sebuah fitur tampak DONE begitu
+ * separuh backend-nya selesai. Untuk pasangan di bawah, parent (nama tanpa
+ * akhiran) dianggap DONE HANYA bila KEDUA separuhnya DONE.
+ *
+ * Berlaku terbatas pada pola -DATA/-UI yang eksplisit. Pembelahan lama yang
+ * memakai id polos sebagai separuh-data (T-047, T-048, T-065) TIDAK ikut —
+ * konvensinya berbeda dan sudah terlanjur merged; lihat RENCANA §11.
+ */
+const ROLLUP: { parent: string; data: string; ui: string }[] = [
+  { parent: 'T-050', data: 'T-050-DATA', ui: 'T-050-UI' },
+];
+
+function terapkanRollup(done: Set<string>): void {
+  for (const r of ROLLUP) {
+    if (done.has(r.data) && done.has(r.ui)) done.add(r.parent);
+  }
+}
+
 /** Task DONE di lane lain juga memuaskan dependency. */
 function semuaDone(): Set<string> {
   const done = new Set<string>();
@@ -295,6 +319,7 @@ function semuaDone(): Set<string> {
     const s = JSON.parse(fs.readFileSync(fileState(l), 'utf8')) as StateLane;
     s.tasks.filter((t) => t.status === 'DONE').forEach((t) => done.add(t.id));
   }
+  terapkanRollup(done);
   return done;
 }
 
@@ -505,6 +530,18 @@ function cmdSync(): number {
     }
   }
 
+  // Roll-up pembelahan -DATA/-UI: parent di tasks.json DONE bila kedua separuhnya
+  // DONE di lane state. Separuhnya sendiri task turunan, tidak ada di tasks.json.
+  const doneLane = semuaDone(); // sudah memuat rollup
+  for (const r of ROLLUP) {
+    const induk = by.get(r.parent);
+    if (induk && induk.status !== 'DONE' && doneLane.has(r.data) && doneLane.has(r.ui)) {
+      induk.status = 'DONE';
+      induk.completed_at = new Date().toISOString().slice(0, 10);
+      diperbarui++;
+    }
+  }
+
   // Promosi global TODO -> READY
   const done = new Set(db.tasks.filter((t) => t.status === 'DONE').map((t) => t.id));
   for (const t of db.tasks) {
@@ -553,6 +590,14 @@ const TURUNAN: Record<string, { fase: number; judul: string; depends_on: string[
     depends_on: ['T-065'],
   },
   'T-047-UI': { fase: 1, judul: 'Halaman & API undangan/manajemen user', depends_on: ['T-047'] },
+
+  // T-050 dibelah SETELAH gate periode disediakan — Codex benar bahwa aktivasi,
+  // penghapusan, dan larangan ubah-arsip adalah aturan data (ADR-050). Pola
+  // -DATA/-UI ini yang menggerakkan roll-up: parent T-050 di tasks.json DONE
+  // hanya bila KEDUA separuhnya DONE (lihat ROLLUP), sehingga fitur tidak
+  // pernah tampak selesai saat baru backend-nya yang selesai.
+  'T-050-DATA': { fase: 1, judul: 'Service & kontrak periode', depends_on: ['T-046'] },
+  'T-050-UI': { fase: 1, judul: 'Halaman & API periode', depends_on: ['T-050-DATA'] },
   'T-048-UI': { fase: 1, judul: 'Halaman & API import massal user', depends_on: ['T-048'] },
   'T-068-UI': { fase: 3, judul: 'Wizard proker langkah 1-3 (tampilan)', depends_on: ['T-068'] },
   'T-070-UI': { fase: 3, judul: 'Halaman & API approval proker', depends_on: ['T-070'] },
@@ -661,6 +706,7 @@ function cmdInit(): number {
       // Separuh data dari task campuran. Seluruhnya menulis di lib/** milik
       // lane ini, dan seluruhnya harus selesai LEBIH DULU daripada separuh
       // ui-nya — lihat TURUNAN di bawah.
+      'T-050-DATA', // lib/periode/service.ts (+ PERIODE_CONTRACT)
       'T-047',   // lib/auth/invitation.ts
       'T-048',   // lib/import/parse-tabel.ts
       'T-068',   // lib/proker/wizard-state.ts
@@ -680,7 +726,7 @@ function cmdInit(): number {
       // ---------------------------------------------------------------------
 
       // Murni tampilan: seluruh berkasnya jatuh di app/** dan components/**.
-      'T-049', 'T-050', 'T-051', 'T-052', 'T-053',
+      'T-049', 'T-050-UI', 'T-051', 'T-052', 'T-053',
       'T-067', 'T-069', 'T-075', 'T-077',
       'T-080', 'T-081', 'T-082',
       'T-106', 'T-107', 'T-108', 'T-109',

@@ -20,6 +20,8 @@
     "lib/backup/**",
     "lib/realtime/**",
     "lib/proker/**",
+    "lib/periode/**",
+    "lib/http/**",
     "lib/kepanitiaan/**",
     "lib/tor/**",
     "lib/proposal/**",
@@ -52,6 +54,8 @@
     "docs/ai/SECURITY_AUDIT.md",
     "docs/ai/AUTH_CONTRACT.md",
     "docs/ai/RENCANA-GELOMBANG-3.md",
+    "docs/ai/UNDANGAN_CONTRACT.md",
+    "docs/ai/PERIODE_CONTRACT.md",
     "docs/ai/PROKER_CONTRACT.md",
     "README.md",
     "docs/adr/ADR-010*.md",
@@ -444,6 +448,16 @@
       "status": "DONE",
       "butuh_manusia": false,
       "completed_at": "2026-09-03"
+    },
+    {
+      "id": "T-050-DATA",
+      "fase": 1,
+      "judul": "Service & kontrak periode",
+      "depends_on": [
+        "T-046"
+      ],
+      "status": "DONE",
+      "completed_at": "2026-09-08"
     },
     {
       "id": "T-047",
