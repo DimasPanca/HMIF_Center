@@ -166,16 +166,14 @@
       "blocked_reason": "Implementasi UI/API siap, tetapi e2e/profil-ttd.spec.ts milik lane data belum tersedia; gate kontrak menemukan 0 test dan runtime butuh DB/storage lintas-lane."
     },
     {
-      "id": "T-050",
+      "id": "T-050-UI",
       "fase": 1,
-      "judul": "Periode kepengurusan",
+      "judul": "Halaman & API periode",
       "depends_on": [
-        "T-046"
+        "T-050-DATA"
       ],
-      "status": "BLOCKED",
-      "butuh_manusia": false,
-      "completed_at": null,
-      "blocked_reason": "Route [id] tidak tercakup, shape gate bertentangan dengan K-02, dan service periode belum menyediakan jalur RLS plus audit yang aman (ADR-050)."
+      "status": "DONE",
+      "completed_at": "2026-09-08"
     },
     {
       "id": "T-051",
@@ -186,7 +184,7 @@
         "T-018",
         "T-050"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
