@@ -266,13 +266,15 @@ test.describe('Selesai bila 3 — Haluan Kerja tidak ada', () => {
 
 test.describe('Sidebar sungguhan', () => {
   /*
-   * Satu-satunya test di berkas ini yang memakai sesi, dan ia menutup celah
-   * yang tidak dapat ditutup harness: harness menerima role dari query, jadi ia
-   * akan lulus sempurna walau sidebar sungguhan mempercayai nilai yang dikirim
-   * klien. Yang benar, role dibaca dari `user_role` di server (INV-02).
+   * Dua test bersesi, dan keduanya menutup celah yang tidak dapat ditutup
+   * harness: harness menerima role dari query, jadi ia akan lulus sempurna walau
+   * sidebar sungguhan mempercayai nilai yang dikirim klien. Yang benar, role
+   * dibaca dari `user_role` di server (INV-02).
    *
-   * Dipakai akun ADMIN karena susunan menunya paling khas — delapan menu penuh,
-   * termasuk Administrasi yang tersembunyi bagi lima role lain.
+   * Yang pertama login ADMIN — susunan menunya paling khas (delapan menu penuh,
+   * termasuk Administrasi yang tersembunyi bagi lima role lain) — dan memastikan
+   * server menurunkan susunan itu benar. Yang kedua login sebagai non-ADMIN lalu
+   * menyuntik ?role=ADMIN, memastikan query TIDAK menaikkan susunannya.
    */
   test('menampilkan susunan ADMIN setelah login sebagai ADMIN', async ({ page }) => {
     const r = await page.goto('/login', { waitUntil: 'load' });
@@ -297,22 +299,49 @@ test.describe('Sidebar sungguhan', () => {
   });
 
   test('role dari query TIDAK mengubah sidebar sungguhan', async ({ page }) => {
-    // Bila ini merah, siapa pun dapat memunculkan menu Administrasi dengan
+    // Bila ini merah, siapa pun dapat menaikkan susunan menunya ke ADMIN dengan
     // menambahkan ?role=ADMIN pada URL beranda. Menunya sendiri tidak memberi
     // hak apa pun — RLS dan guard tetap menolak — tetapi ia membocorkan
-    // struktur sistem kepada orang yang tidak berhak melihatnya.
-    const r = await page.goto('/?role=ADMIN', { waitUntil: 'load' });
-    test.skip(!r, 'Beranda belum ada.');
+    // struktur sistem kepada orang yang tidak berhak melihatnya (INV-02).
+    //
+    // WAJIB login lebih dahulu. Tanpa sesi, `/` mengalihkan ke `/login` dan test
+    // hanya akan SKIP — celah yang selama ini menutupi bug ini: harness bisa
+    // lulus sempurna sementara beranda sungguhan tak pernah teruji terhadap
+    // spoof. Dipakai akun non-ADMIN e2e-aktif (KETUA), yang susunannya berbeda
+    // dari ADMIN tepat pada Administrasi — 'baca' bagi KETUA, 'penuh' bagi ADMIN.
+    // Bila query dihormati, mode itu akan naik ke 'penuh'; harusnya tetap 'baca'.
+    const r = await page.goto('/login', { waitUntil: 'load' });
+    test.skip(!r || r.status() === 404, 'Halaman /login belum ada.');
 
-    const tujuan = new URL(page.url()).pathname;
-    test.skip(tujuan === '/login', 'Beranda menuntut sesi; dijalankan setelah T-051 ada.');
+    await page.getByLabel(/email/i).fill(AKUN.aktif.email);
+    await page.getByLabel(/password|kata sandi/i).fill(PASSWORD_UJI);
+    await page.getByRole('button', { name: /masuk|login/i }).click();
 
-    const muncul = await page
-      .waitForSelector('[data-testid="sidebar-root"]', { timeout: 5000 })
+    const masuk = await page
+      .waitForSelector('[data-testid="sidebar-root"]', { timeout: 15_000 })
       .then(() => true)
       .catch(() => false);
-    test.skip(!muncul, 'Sidebar belum ada di beranda (T-051).');
+    test.skip(
+      !masuk,
+      'Sidebar tidak muncul setelah login KETUA. Layout dashboard T-051 belum ada, ' +
+        'atau login belum mengalihkan ke beranda.',
+    );
 
-    await expect(page.getByTestId('sidebar-menu-admin')).toHaveCount(0);
+    // Kini bersesi sebagai KETUA. Buka beranda dengan query jahat.
+    await page.goto('/?role=ADMIN', { waitUntil: 'load' });
+
+    const tujuan = new URL(page.url()).pathname;
+    expect(tujuan, 'sesi KETUA seharusnya tetap di beranda, bukan dialihkan').toBe('/');
+
+    await page.waitForSelector('[data-testid="sidebar-root"]', { timeout: 5000 });
+
+    // Susunan HARUS tetap milik KETUA (peran dari server), sama sekali tak
+    // terpengaruh ?role=ADMIN.
+    const peran = AKUN.aktif.role!;
+    const susunan = await bacaMenu(page, MENU, 'sidebar-menu');
+    expect(susunan).toEqual(VISIBILITAS[peran]);
+    // Bukti paling tajam terhadap spoof: Administrasi tetap 'baca' (hak KETUA),
+    // tidak naik ke 'penuh' (hak ADMIN yang diminta lewat query).
+    expect(susunan.admin).toBe('baca');
   });
 });
