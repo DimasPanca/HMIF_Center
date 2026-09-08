@@ -2,8 +2,9 @@
 
 | | |
 |---|---|
-| **Status** | Usulan |
+| **Status** | Diterima |
 | **Tanggal** | 2026-09-08 |
+| **Disetujui** | pemilik proyek, 2026-09-08 |
 | **Ditemukan oleh** | T-050-DATA, saat mengimplementasikan ADR-050 §3 dan §4 |
 | **Lane** | `data` |
 | **Task terkait** | T-050, T-047 |

@@ -380,8 +380,10 @@ export async function hapusPeriode(tx: TxKlien, id: string): Promise<Hasil<{ id:
  * soal nama periode tidak boleh dapat mengaktifkannya hanya karena mengulang
  * tebakannya sendiri.
  *
- * Soal Admin yang bisa terkunci setelah aktivasi: lihat catatan panjang di
- * kepala berkas. Sengaja TIDAK dijaga di sini.
+ * Soal Admin yang bisa terkunci setelah aktivasi: DIJAGA di sini. Periode target
+ * wajib punya minimal satu ADMIN (`TANPA_ADMIN`), dan `buatPeriode` menyalin
+ * ADMIN dari periode aktif sehingga penjaga itu selalu dapat dipenuhi — lihat
+ * catatan panjang di kepala berkas dan ADR-024.
  */
 export async function aktifkanPeriode(
   tx: TxKlien,
