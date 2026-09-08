@@ -184,10 +184,9 @@
         "T-018",
         "T-050"
       ],
-      "status": "BLOCKED",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null,
-      "blocked_reason": "\"Menunggu keputusan ADR-055: harness /qa/sidebar dan pemindahan app/page.tsx ke route group dashboard tidak tercantum dalam kontrak T-051\""
+      "completed_at": "2026-09-08"
     },
     {
       "id": "T-052",
@@ -196,7 +195,7 @@
       "depends_on": [
         "T-051"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -207,7 +206,7 @@
       "depends_on": [
         "T-051"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -229,7 +228,7 @@
       "depends_on": [
         "T-068"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -265,7 +264,7 @@
         "T-051",
         "T-029"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -333,7 +332,7 @@
       "depends_on": [
         "T-051"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -376,7 +375,7 @@
       "depends_on": [
         "T-068"
       ],
-      "status": "TODO",
+      "status": "READY",
       "completed_at": null
     },
     {
