@@ -184,9 +184,10 @@
         "T-018",
         "T-050"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "\"Menunggu keputusan ADR-055: harness /qa/sidebar dan pemindahan app/page.tsx ke route group dashboard tidak tercantum dalam kontrak T-051\""
     },
     {
       "id": "T-052",
