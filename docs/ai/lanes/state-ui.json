@@ -13,10 +13,20 @@
     "lib/theme.ts",
     "lib/gantt/**",
     "lib/shortcuts.ts",
+    "hooks/**",
     "tailwind.config.ts",
     "postcss.config.mjs",
     "components.json",
-    "docs/ai/lanes/state-ui.json"
+    "docs/ai/lanes/state-ui.json",
+    "docs/ai/A11Y_REPORT.md",
+    "docs/ai/PERFORMANCE_REPORT.md",
+    "docs/ai/BACKLOG.md",
+    "docs/ai/UAT_SKENARIO.md",
+    "docs/ai/UAT_HASIL.md",
+    "docs/ai/UJI_CETAK.md",
+    "docs/panduan/**",
+    "docs/adr/ADR-04*.md",
+    "docs/adr/ADR-05*.md"
   ],
   "tasks": [
     {
@@ -126,9 +136,9 @@
       "depends_on": [
         "T-073"
       ],
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-04"
     },
     {
       "id": "T-078",
@@ -137,8 +147,297 @@
       "depends_on": [
         "T-073"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
+      "completed_at": null,
+      "blocked_reason": "Kontrak Buat/Ubah tidak mencakup harness dan titik integrasi drag/resize/dependensi; bentuk CRUD grup/dependensi juga belum ditetapkan (ADR-049)."
+    },
+    {
+      "id": "T-049",
+      "fase": 1,
+      "judul": "Profil & tanda tangan",
+      "depends_on": [
+        "T-044",
+        "T-046"
+      ],
+      "status": "BLOCKED",
+      "butuh_manusia": false,
+      "completed_at": null,
+      "blocked_reason": "Implementasi UI/API siap, tetapi e2e/profil-ttd.spec.ts milik lane data belum tersedia; gate kontrak menemukan 0 test dan runtime butuh DB/storage lintas-lane."
+    },
+    {
+      "id": "T-050",
+      "fase": 1,
+      "judul": "Periode kepengurusan",
+      "depends_on": [
+        "T-046"
+      ],
+      "status": "BLOCKED",
+      "butuh_manusia": false,
+      "completed_at": null,
+      "blocked_reason": "Route [id] tidak tercakup, shape gate bertentangan dengan K-02, dan service periode belum menyediakan jalur RLS plus audit yang aman (ADR-050)."
+    },
+    {
+      "id": "T-051",
+      "fase": 1,
+      "judul": "Layout, sidebar dinamis, header",
+      "depends_on": [
+        "T-046",
+        "T-018",
+        "T-050"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-052",
+      "fase": 1,
+      "judul": "Command palette & pintasan keyboard",
+      "depends_on": [
+        "T-051"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-053",
+      "fase": 1,
+      "judul": "Audit log viewer",
+      "depends_on": [
+        "T-051"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-067",
+      "fase": 3,
+      "judul": "Kalender ketersediaan",
+      "depends_on": [
+        "T-065"
+      ],
+      "status": "DONE",
+      "butuh_manusia": false,
+      "completed_at": "2026-09-05"
+    },
+    {
+      "id": "T-069",
+      "fase": 3,
+      "judul": "Wizard proker langkah 4-6",
+      "depends_on": [
+        "T-068"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-075",
+      "fase": 3,
+      "judul": "Master Gantt di beranda",
+      "depends_on": [
+        "T-074",
+        "T-070",
+        "T-040"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-077",
+      "fase": 3,
+      "judul": "Dashboard kontekstual per role",
+      "depends_on": [
+        "T-075"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-080",
+      "fase": 4,
+      "judul": "Kanban board departemen",
+      "depends_on": [
+        "T-051",
+        "T-029"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-081",
+      "fase": 4,
+      "judul": "Checklist",
+      "depends_on": [
+        "T-080"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-082",
+      "fase": 4,
+      "judul": "Kendala departemen",
+      "depends_on": [
+        "T-080"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-106",
+      "fase": 8,
+      "judul": "Notulensi rapat",
+      "depends_on": [
+        "T-051",
+        "T-080"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-107",
+      "fase": 8,
+      "judul": "Data pengurus",
+      "depends_on": [
+        "T-048"
+      ],
+      "status": "BLOCKED",
+      "butuh_manusia": false,
+      "completed_at": null,
+      "blocked_reason": "Service/kontrak pengurus dan gate data-pengurus belum ada; target Ubah surat/massal juga belum dibuat karena T-064 bukan dependency T-107 (ADR-052)."
+    },
+    {
+      "id": "T-108",
+      "fase": 8,
+      "judul": "Peminjaman ruangan",
+      "depends_on": [
+        "T-107"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-109",
+      "fase": 8,
+      "judul": "Bersihkan menu Haluan Kerja",
+      "depends_on": [
+        "T-051"
+      ],
+      "status": "TODO",
+      "butuh_manusia": false,
+      "completed_at": null
+    },
+    {
+      "id": "T-065-UI",
+      "fase": 3,
+      "judul": "Route handler proker (separuh ui T-065)",
+      "depends_on": [
+        "T-065"
+      ],
+      "status": "DONE",
+      "completed_at": "2026-09-04"
+    },
+    {
+      "id": "T-047-UI",
+      "fase": 1,
+      "judul": "Halaman & API undangan/manajemen user",
+      "depends_on": [
+        "T-047"
+      ],
+      "status": "BLOCKED",
+      "completed_at": null,
+      "blocked_reason": "Gate undangan memakai response top-level yang bertentangan dengan K-02, dan route aktivasi wajib belum tercantum di cakupan task (ADR-053)."
+    },
+    {
+      "id": "T-048-UI",
+      "fase": 1,
+      "judul": "Halaman & API import massal user",
+      "depends_on": [
+        "T-048"
+      ],
+      "status": "BLOCKED",
+      "completed_at": null,
+      "blocked_reason": "Halaman Admin target Ubah belum ada karena T-047-UI terblokir, dan belum ada kontrak service untuk cek duplikat serta penyimpanan batch/tautan sekali-tampil (ADR-054)."
+    },
+    {
+      "id": "T-068-UI",
+      "fase": 3,
+      "judul": "Wizard proker langkah 1-3 (tampilan)",
+      "depends_on": [
+        "T-068"
+      ],
+      "status": "TODO",
+      "completed_at": null
+    },
+    {
+      "id": "T-070-UI",
+      "fase": 3,
+      "judul": "Halaman & API approval proker",
+      "depends_on": [
+        "T-070"
+      ],
+      "status": "TODO",
+      "completed_at": null
+    },
+    {
+      "id": "T-071-UI",
+      "fase": 3,
+      "judul": "Halaman edit proker terkunci",
+      "depends_on": [
+        "T-071"
+      ],
+      "status": "TODO",
+      "completed_at": null
+    },
+    {
+      "id": "T-076-UI",
+      "fase": 3,
+      "judul": "Banner koneksi & langganan MasterGantt",
+      "depends_on": [
+        "T-076"
+      ],
+      "status": "TODO",
+      "completed_at": null
+    },
+    {
+      "id": "T-079-UI",
+      "fase": 3,
+      "judul": "Route handler cron harian",
+      "depends_on": [
+        "T-079"
+      ],
+      "status": "TODO",
+      "completed_at": null
+    },
+    {
+      "id": "T-083-UI",
+      "fase": 4,
+      "judul": "DeadlineBadge di kartu Kanban",
+      "depends_on": [
+        "T-083"
+      ],
+      "status": "TODO",
+      "completed_at": null
+    },
+    {
+      "id": "T-113-UI",
+      "fase": 9,
+      "judul": "Terapkan sanitasi di route handler",
+      "depends_on": [
+        "T-113"
+      ],
+      "status": "TODO",
       "completed_at": null
     }
   ]
