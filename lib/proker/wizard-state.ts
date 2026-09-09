@@ -121,6 +121,63 @@ export interface WizardDraft {
    */
   kebutuhan_ruangan?: string;
   kebutuhan_barang?: string;
+  // Langkah 4 — Kepanitiaan (hanya TERJADWAL)
+  kepanitiaan?: DraftKepanitiaan;
+  // Langkah 5 — Gantt (hanya TERJADWAL)
+  gantt?: DraftGantt;
+}
+
+// ---------------------------------------------------------------------------
+// Bentuk longgar langkah 4-5 di dalam draft
+// ---------------------------------------------------------------------------
+//
+// Sengaja LONGGAR (semua opsional) seperti sisa WizardDraft: draft boleh separuh
+// jadi. Bentuk KETAT yang divalidasi saat submit adalah `RencanaKepanitiaan` dan
+// `RencanaGantt` di bawah (turunan skema Zod). Dua lapis ini disengaja — yang
+// disimpan draft berbeda dari yang lolos validasi.
+
+export interface DraftDivisi {
+  nama?: string;
+  koordinator_id?: string;
+  /** #RRGGBB */
+  warna?: string;
+  /** app_user id anggota divisi (boleh lintas departemen). */
+  anggota?: string[];
+}
+
+export interface DraftKepanitiaan {
+  /** Kosong berarti memakai nama proker saat materialisasi (T-070). */
+  nama_acara?: string;
+  tema?: string;
+  /** app_user id — bebas lintas departemen (PRD F-8.1). */
+  ketua_pelaksana?: string;
+  wakil_pelaksana?: string;
+  sekretaris?: string;
+  bendahara?: string;
+  target_anggaran?: number;
+  divisi?: DraftDivisi[];
+}
+
+export interface DraftGanttTask {
+  nama?: string;
+  tanggal_mulai?: string;
+  tanggal_selesai?: string;
+  progres?: number;
+  assignee_id?: string;
+  is_milestone?: boolean;
+}
+
+export interface DraftGanttGroup {
+  /** Fase: Persiapan / Pelaksanaan / Evaluasi, atau nama bebas. */
+  nama?: string;
+  warna?: string;
+  pj_nama?: string;
+  tasks?: DraftGanttTask[];
+}
+
+export interface DraftGantt {
+  judul?: string;
+  groups?: DraftGanttGroup[];
 }
 
 export type PatchLangkah = Partial<WizardDraft>;
@@ -235,6 +292,102 @@ const skemaLangkah3 = z.object({
   kebutuhan_barang: z.string().trim().max(2000).optional(),
 });
 
+// ---------------------------------------------------------------------------
+// Langkah 4-5 — Kepanitiaan & Gantt (hanya TERJADWAL)
+// ---------------------------------------------------------------------------
+//
+// Bentuk KETAT yang harus lolos submit. Aturan minimalnya mengikuti ADR-056:
+// Ketua Pelaksana wajib (dari seluruh pengurus aktif — keanggotaannya diperiksa
+// server, di sini hanya bentuk uuid), setiap divisi bernama unik, dan Gantt
+// TERJADWAL punya minimal satu task. Kolom targetnya migrasi 005/006, jadi
+// panjang & format disamakan (nama <=200/100/100, warna #RRGGBB, progres 0-100).
+
+const WARNA_HEX = /^#[0-9A-Fa-f]{6}$/;
+
+const SkemaDivisiRencana = z.object({
+  nama: z.string().trim().min(1, 'Nama divisi wajib diisi.').max(100),
+  koordinator_id: z.uuid().optional(),
+  warna: z.string().regex(WARNA_HEX, 'Warna harus berformat #RRGGBB.').optional(),
+  anggota: z.array(z.uuid()).default([]),
+});
+
+export const SkemaKepanitiaanRencana = z
+  .object({
+    nama_acara: z.string().trim().min(3, 'Nama acara minimal 3 karakter.').max(200).optional(),
+    tema: z.string().trim().max(200).optional(),
+    ketua_pelaksana: z.uuid('Ketua Pelaksana wajib dipilih.'),
+    wakil_pelaksana: z.uuid().optional(),
+    sekretaris: z.uuid().optional(),
+    bendahara: z.uuid().optional(),
+    target_anggaran: z.number().nonnegative('Target anggaran tidak boleh negatif.').optional(),
+    divisi: z.array(SkemaDivisiRencana).min(1, 'Tambahkan minimal satu divisi.'),
+  })
+  .superRefine((v, ctx) => {
+    // Nama divisi unik dalam satu acara — cermin CONSTRAINT divisi_unik_per_acara.
+    const terlihat = new Set<string>();
+    v.divisi.forEach((d, i) => {
+      const kunci = d.nama.trim().toLowerCase();
+      if (terlihat.has(kunci)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['divisi', i, 'nama'],
+          message: `Nama divisi "${d.nama}" dipakai lebih dari sekali.`,
+        });
+      }
+      terlihat.add(kunci);
+    });
+  });
+
+const SkemaGanttTaskRencana = z
+  .object({
+    nama: z.string().trim().min(1, 'Nama task wajib diisi.').max(200),
+    tanggal_mulai: tanggal,
+    tanggal_selesai: tanggal,
+    progres: z.int().min(0).max(100).optional(),
+    assignee_id: z.uuid().optional(),
+    is_milestone: z.boolean().optional(),
+  })
+  .superRefine((v, ctx) => {
+    // Cermin CONSTRAINT task_tanggal_valid: selesai >= mulai.
+    if (selisihHari(v.tanggal_mulai, v.tanggal_selesai) < 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['tanggal_selesai'],
+        message: 'Task selesai lebih awal daripada mulai.',
+      });
+    }
+  });
+
+const SkemaGanttGroupRencana = z.object({
+  nama: z.string().trim().min(1, 'Nama fase wajib diisi.').max(100),
+  warna: z.string().regex(WARNA_HEX, 'Warna harus berformat #RRGGBB.').optional(),
+  pj_nama: z.string().trim().max(200).optional(),
+  tasks: z.array(SkemaGanttTaskRencana).default([]),
+});
+
+export const SkemaGanttRencana = z
+  .object({
+    judul: z.string().trim().max(200).optional(),
+    groups: z.array(SkemaGanttGroupRencana).min(1, 'Tambahkan minimal satu fase.'),
+  })
+  .superRefine((v, ctx) => {
+    // ADR-056: TERJADWAL wajib minimal satu task Gantt (di grup mana pun).
+    const jumlahTask = v.groups.reduce((n, g) => n + g.tasks.length, 0);
+    if (jumlahTask < 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['groups'],
+        message: 'Gantt harus memuat minimal satu task.',
+      });
+    }
+  });
+
+export type RencanaDivisi = z.infer<typeof SkemaDivisiRencana>;
+export type RencanaKepanitiaan = z.infer<typeof SkemaKepanitiaanRencana>;
+export type RencanaGanttTask = z.infer<typeof SkemaGanttTaskRencana>;
+export type RencanaGanttGroup = z.infer<typeof SkemaGanttGroupRencana>;
+export type RencanaGantt = z.infer<typeof SkemaGanttRencana>;
+
 /**
  * Durasi persiapan dalam hari, atau `null` bila kedua tanggalnya belum lengkap.
  * Dipakai UI untuk menampilkan hitungan langsung saat tanggal dipilih.
@@ -255,9 +408,10 @@ export function pesanDurasi(durasi: number): string {
 }
 
 /**
- * Memvalidasi satu langkah dari draft. Hanya langkah 1-3 (T-068). Langkah 4-6
- * milik T-069 dan sementara dianggap OK di sini supaya WizardShell tidak
- * menahan navigasi untuk aturan yang belum ditulis — T-069 menggantinya.
+ * Memvalidasi satu langkah dari draft, dari satu sumber kebenaran (K-04). Langkah
+ * 1-3 selalu berlaku; 4-5 hanya untuk TERJADWAL; 6 tak punya isian sendiri.
+ * Validasi yang sama berjalan lagi di server saat submit — jangan menganggap
+ * lolosnya di klien sebagai jaminan.
  */
 export function validasiLangkah(draft: WizardDraft, nomor: NomorLangkah): HasilLangkah {
   if (nomor === 1) {
@@ -284,7 +438,24 @@ export function validasiLangkah(draft: WizardDraft, nomor: NomorLangkah): HasilL
     return h.success ? OK : dariZod(h.error);
   }
 
-  return OK; // 4-6: T-069
+  // Langkah 4 (Kepanitiaan) & 5 (Gantt) hanya wajib untuk TERJADWAL. Untuk
+  // BERKALA/RESPONSIF keduanya DILEWATI (langkahUntuk() tidak memuatnya), jadi
+  // dianggap valid supaya navigasi tak tertahan aturan yang tak berlaku.
+  if (nomor === 4) {
+    if (draft.kategori !== 'TERJADWAL') return OK;
+    const h = SkemaKepanitiaanRencana.safeParse(draft.kepanitiaan ?? {});
+    return h.success ? OK : dariZod(h.error);
+  }
+
+  if (nomor === 5) {
+    if (draft.kategori !== 'TERJADWAL') return OK;
+    const h = SkemaGanttRencana.safeParse(draft.gantt ?? {});
+    return h.success ? OK : dariZod(h.error);
+  }
+
+  // Langkah 6 (Tinjau & Ajukan) tidak punya isian sendiri; kelengkapan menyeluruh
+  // ditegakkan oleh submit (SkemaProker + validasi langkah 4-5 di server).
+  return OK;
 }
 
 /**
@@ -333,8 +504,9 @@ export function permintaanCekKonflik(
  */
 export function keInputProker(draft: WizardDraft): Partial<InputProker> & Record<string, unknown> {
   // Medan yang bukan milik InputProker dibuang di sini; sisanya disaring dari
-  // nilai kosong.
-  const dibuang = new Set(['kebutuhan_ruangan', 'kebutuhan_barang']);
+  // nilai kosong. Kepanitiaan & Gantt tidak masuk tabel `proker` — keduanya ke
+  // `proker_rencana` lewat keRencana() — jadi ikut dibuang.
+  const dibuang = new Set(['kebutuhan_ruangan', 'kebutuhan_barang', 'kepanitiaan', 'gantt']);
   const keluar: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(draft)) {
     if (dibuang.has(k)) continue;
@@ -343,6 +515,16 @@ export function keInputProker(draft: WizardDraft): Partial<InputProker> & Record
     }
   }
   return keluar as Partial<InputProker> & Record<string, unknown>;
+}
+
+/**
+ * Rencana kepanitiaan & Gantt mentah dari draft, untuk disimpan ke
+ * `proker_rencana` saat submit (dimaterialisasi T-070). TIDAK memvalidasi —
+ * penegakannya `SkemaKepanitiaanRencana`/`SkemaGanttRencana` di jalur submit.
+ * Mengembalikan objek kosong bila medannya belum diisi (mis. non-TERJADWAL).
+ */
+export function keRencana(draft: WizardDraft): { kepanitiaan: DraftKepanitiaan; gantt: DraftGantt } {
+  return { kepanitiaan: draft.kepanitiaan ?? {}, gantt: draft.gantt ?? {} };
 }
 
 export { HARI, SUMBER_DANA };
