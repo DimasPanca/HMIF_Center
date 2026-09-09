@@ -21,11 +21,14 @@ import {
   bolehLanjut,
   durasiPersiapan,
   keInputProker,
+  keRencana,
   langkahUntuk,
   permintaanCekKonflik,
   pesanDurasi,
   terapkanLangkah,
   validasiLangkah,
+  type DraftKepanitiaan,
+  type DraftGantt,
   type WizardDraft,
 } from '../wizard-state';
 
@@ -232,8 +235,13 @@ describe('bolehLanjut', () => {
   it('langkah tak valid tidak boleh dilewati (kontrak 1)', () => {
     expect(bolehLanjut({ kategori: 'TERJADWAL' }, 1)).toBe(false);
   });
-  it('langkah 4-6 (T-069) belum dijaga di sini → boleh', () => {
-    expect(bolehLanjut(TERJADWAL, 4)).toBe(true);
+  // Sejak T-069, langkah 4 TERJADWAL dijaga: tanpa kepanitiaan tak boleh lanjut,
+  // dengan kepanitiaan sah boleh.
+  it('langkah 4 TERJADWAL tanpa kepanitiaan tidak boleh dilewati', () => {
+    expect(bolehLanjut(TERJADWAL, 4)).toBe(false);
+  });
+  it('langkah 4 TERJADWAL dengan kepanitiaan sah boleh dilewati', () => {
+    expect(bolehLanjut({ ...TERJADWAL, kepanitiaan: KEPANITIAAN_SAH }, 4)).toBe(true);
   });
 });
 
@@ -290,5 +298,128 @@ describe('keInputProker', () => {
   it('membuang medan kosong', () => {
     const input = keInputProker({ ...TERJADWAL, deskripsi: '   ' });
     expect('deskripsi' in input).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Langkah 4 — Kepanitiaan (hanya TERJADWAL)
+// ---------------------------------------------------------------------------
+
+const KETUA = '55555555-5555-4555-8555-555555555555';
+const KOOR = '66666666-6666-4666-8666-666666666666';
+
+const KEPANITIAAN_SAH: DraftKepanitiaan = {
+  ketua_pelaksana: KETUA,
+  divisi: [
+    { nama: 'Acara', koordinator_id: KOOR, anggota: [PJ] },
+    { nama: 'Konsumsi', anggota: [] },
+  ],
+};
+
+const GANTT_SAH: DraftGantt = {
+  groups: [
+    {
+      nama: 'Persiapan',
+      tasks: [{ nama: 'Rapat perdana', tanggal_mulai: '2026-11-01', tanggal_selesai: '2026-11-02' }],
+    },
+  ],
+};
+
+describe('validasi langkah 4 — kepanitiaan', () => {
+  it('TERJADWAL: sah bila ada Ketua Pelaksana dan divisi bernama unik', () => {
+    expect(validasiLangkah({ ...TERJADWAL, kepanitiaan: KEPANITIAAN_SAH }, 4).ok).toBe(true);
+  });
+
+  it('TERJADWAL: gagal tanpa Ketua Pelaksana', () => {
+    const h = validasiLangkah({ ...TERJADWAL, kepanitiaan: { divisi: [{ nama: 'Acara' }] } }, 4);
+    expect(h.ok).toBe(false);
+    expect(h.isu.some((i) => i.path === 'ketua_pelaksana')).toBe(true);
+  });
+
+  it('TERJADWAL: gagal tanpa satu divisi pun', () => {
+    expect(validasiLangkah({ ...TERJADWAL, kepanitiaan: { ketua_pelaksana: KETUA, divisi: [] } }, 4).ok).toBe(
+      false,
+    );
+  });
+
+  it('TERJADWAL: gagal bila nama divisi kembar (cermin divisi_unik_per_acara)', () => {
+    const h = validasiLangkah(
+      {
+        ...TERJADWAL,
+        kepanitiaan: { ketua_pelaksana: KETUA, divisi: [{ nama: 'Acara' }, { nama: 'acara' }] },
+      },
+      4,
+    );
+    expect(h.ok).toBe(false);
+    expect(h.isu.some((i) => i.path.startsWith('divisi.'))).toBe(true);
+  });
+
+  it('BERKALA & RESPONSIF: langkah 4 dilewati (selalu sah)', () => {
+    expect(validasiLangkah({ kategori: 'BERKALA' }, 4).ok).toBe(true);
+    expect(validasiLangkah({ kategori: 'RESPONSIF' }, 4).ok).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Langkah 5 — Gantt (hanya TERJADWAL)
+// ---------------------------------------------------------------------------
+
+describe('validasi langkah 5 — gantt', () => {
+  it('TERJADWAL: sah dengan minimal satu task (ADR-056)', () => {
+    expect(validasiLangkah({ ...TERJADWAL, gantt: GANTT_SAH }, 5).ok).toBe(true);
+  });
+
+  it('TERJADWAL: gagal bila tidak ada task sama sekali', () => {
+    const h = validasiLangkah({ ...TERJADWAL, gantt: { groups: [{ nama: 'Persiapan', tasks: [] }] } }, 5);
+    expect(h.ok).toBe(false);
+  });
+
+  it('TERJADWAL: gagal bila task selesai mendahului mulai', () => {
+    const h = validasiLangkah(
+      {
+        ...TERJADWAL,
+        gantt: {
+          groups: [
+            { nama: 'Persiapan', tasks: [{ nama: 'X', tanggal_mulai: '2026-11-05', tanggal_selesai: '2026-11-01' }] },
+          ],
+        },
+      },
+      5,
+    );
+    expect(h.ok).toBe(false);
+  });
+
+  it('TERJADWAL: gagal tanpa satu fase pun', () => {
+    expect(validasiLangkah({ ...TERJADWAL, gantt: { groups: [] } }, 5).ok).toBe(false);
+  });
+
+  it('BERKALA: langkah 5 dilewati (selalu sah)', () => {
+    expect(validasiLangkah({ kategori: 'BERKALA' }, 5).ok).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Langkah 6 & keRencana
+// ---------------------------------------------------------------------------
+
+describe('langkah 6 & keRencana', () => {
+  it('langkah 6 tidak punya isian sendiri (selalu sah)', () => {
+    expect(validasiLangkah(TERJADWAL, 6).ok).toBe(true);
+  });
+
+  it('keRencana mengembalikan kepanitiaan & gantt dari draft', () => {
+    const r = keRencana({ ...TERJADWAL, kepanitiaan: KEPANITIAAN_SAH, gantt: GANTT_SAH });
+    expect(r.kepanitiaan).toEqual(KEPANITIAAN_SAH);
+    expect(r.gantt).toEqual(GANTT_SAH);
+  });
+
+  it('keRencana mengembalikan objek kosong bila belum diisi', () => {
+    expect(keRencana(TERJADWAL)).toEqual({ kepanitiaan: {}, gantt: {} });
+  });
+
+  it('keInputProker membuang kepanitiaan & gantt (bukan medan proker)', () => {
+    const input = keInputProker({ ...TERJADWAL, kepanitiaan: KEPANITIAAN_SAH, gantt: GANTT_SAH });
+    expect('kepanitiaan' in input).toBe(false);
+    expect('gantt' in input).toBe(false);
   });
 });
