@@ -228,9 +228,10 @@
       "depends_on": [
         "T-068"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Kontrak data langkah 4-6, service submit, persistensi rencana kepanitiaan/Gantt, dan gate wizard-proker-4-6 belum tersedia (ADR-056)."
     },
     {
       "id": "T-075",
