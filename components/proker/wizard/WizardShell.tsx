@@ -18,10 +18,14 @@ import {
 import { Langkah1Informasi } from './Langkah1Informasi';
 import { Langkah2Jadwal } from './Langkah2Jadwal';
 import { Langkah3Anggaran } from './Langkah3Anggaran';
+import { Langkah4Kepanitiaan } from './Langkah4Kepanitiaan';
+import { Langkah5Gantt } from './Langkah5Gantt';
+import { Langkah6Tinjau } from './Langkah6Tinjau';
 import type { KonflikWizard, OpsiPilihan, PatchWizard } from './types';
 
 interface WizardShellProps {
   departemen: OpsiPilihan[];
+  divisiPreset: string[];
   pengurus: OpsiPilihan[];
   departemenAwal?: string;
 }
@@ -39,7 +43,12 @@ interface DraftDariServer {
 
 type StatusSimpan = 'diam' | 'menyimpan' | 'tersimpan' | 'gagal';
 
-export function WizardShell({ departemen, departemenAwal, pengurus }: WizardShellProps) {
+export function WizardShell({
+  departemen,
+  departemenAwal,
+  divisiPreset,
+  pengurus,
+}: WizardShellProps) {
   const [draft, setDraft] = useState<WizardDraft>(() => ({
     departemen_id: departemenAwal,
   }));
@@ -75,8 +84,16 @@ export function WizardShell({ departemen, departemenAwal, pengurus }: WizardShel
         if (body.data) {
           const pulih = { ...body.data.data };
           pulih.departemen_id ||= departemenAwal;
+          const langkahPulih = langkahUntuk(pulih.kategori);
+          const langkahTersimpan = body.data.langkah;
+          const langkahFallback =
+            langkahPulih.filter((langkah) => langkah.nomor < langkahTersimpan).at(-1)?.nomor ?? 1;
           setDraft(pulih);
-          setLangkahAktif(body.data.langkah);
+          setLangkahAktif(
+            langkahPulih.some((langkah) => langkah.nomor === langkahTersimpan)
+              ? langkahTersimpan
+              : langkahFallback,
+          );
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -172,9 +189,7 @@ export function WizardShell({ departemen, departemenAwal, pengurus }: WizardShel
   const indeksAktif = langkahBerlaku.findIndex((langkah) => langkah.nomor === langkahAktif);
   const langkahBerikut = langkahBerlaku[indeksAktif + 1]?.nomor;
   const langkahSebelum = langkahBerlaku[indeksAktif - 1]?.nomor;
-  const langkahSudahDibangun = langkahAktif <= 3;
   const bisaLanjut =
-    langkahSudahDibangun &&
     bolehLanjut(draft, langkahAktif) &&
     !sedangCek &&
     konflik.length === 0 &&
@@ -264,15 +279,17 @@ export function WizardShell({ departemen, departemenAwal, pengurus }: WizardShel
           />
         ) : langkahAktif === 3 ? (
           <Langkah3Anggaran draft={draft} onUbah={ubah} />
+        ) : langkahAktif === 4 ? (
+          <Langkah4Kepanitiaan
+            divisiPreset={divisiPreset}
+            draft={draft}
+            onUbah={ubah}
+            pengurus={pengurus}
+          />
+        ) : langkahAktif === 5 ? (
+          <Langkah5Gantt draft={draft} onUbah={ubah} pengurus={pengurus} />
         ) : (
-          <section className="py-12 text-center">
-            <h2 className="text-lg font-semibold text-primary">
-              {LANGKAH.find((langkah) => langkah.nomor === langkahAktif)?.judul}
-            </h2>
-            <p className="mt-2 text-[13px] text-secondary">
-              Bagian ini dilanjutkan pada tahap berikutnya setelah langkah 1–3 tersimpan.
-            </p>
-          </section>
+          <Langkah6Tinjau departemen={departemen} draft={draft} pengurus={pengurus} />
         )}
 
         <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-subtle pt-4">
@@ -291,15 +308,17 @@ export function WizardShell({ departemen, departemenAwal, pengurus }: WizardShel
               <ChevronLeft aria-hidden="true" />
               Kembali
             </Button>
-            <Button
-              data-testid="wizard-lanjut"
-              onClick={() => void lanjut()}
-              disabled={!bisaLanjut || !langkahBerikut}
-              loading={statusSimpan === 'menyimpan'}
-            >
-              Lanjut
-              <ChevronRight aria-hidden="true" />
-            </Button>
+            {langkahBerikut ? (
+              <Button
+                data-testid="wizard-lanjut"
+                onClick={() => void lanjut()}
+                disabled={!bisaLanjut}
+                loading={statusSimpan === 'menyimpan'}
+              >
+                Lanjut
+                <ChevronRight aria-hidden="true" />
+              </Button>
+            ) : null}
           </div>
         </footer>
       </Card>
