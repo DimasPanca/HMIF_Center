@@ -41,11 +41,87 @@
  * Sumber: docs/ai/tasks/P3-proker-gantt.md T-068 · PRD F-5.3 · USER_FLOW §4.1
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 
-import { AKUN, PASSWORD_UJI } from './fixtures/akun';
+import { expect, test, type Page } from '@playwright/test';
+import postgres from 'postgres';
+
+import { AKUN, PASSWORD_UJI, type AkunUji } from './fixtures/akun';
 
 const HAL = '/proker/baru';
+
+// ---------------------------------------------------------------------------
+// Isolasi draft antar-test DAN antar-project
+// ---------------------------------------------------------------------------
+//
+// Wizard menyimpan draft ke server tiap perubahan dan, saat dibuka lagi,
+// MEMULIHKAN ke `draft.langkah` — itu justru fitur yang diuji "Selesai bila 2"
+// (kontrak §4). Draft bersifat SATU per pengguna per periode, jadi tiap akun
+// hanya punya satu baris. Dua sumber tabrakan harus ditutup:
+//
+//   1. Antar-test dalam satu project — test sebelumnya bisa meninggalkan draft
+//      di langkah 2, sehingga pembukaan berikutnya terbuka di langkah 2 (field
+//      langkah 1 tak dirender → isiLangkah1 timeout). Ditutup dengan menghapus
+//      draft sebelum tiap test PLUS menjalankan berkas ini secara serial.
+//   2. Antar-project — desktop & mobile berjalan paralel (workers=2). Bila
+//      keduanya memakai akun sama, satu project menimpa baris draft milik yang
+//      lain tepat saat test pemulihan membuka ulang. Ditutup dengan memberi
+//      tiap project AKUN BERBEDA sehingga barisnya tak pernah sama: desktop →
+//      ADMIN, mobile → KETUA (keduanya pemilik `proker.create`, periode sama).
+//
+// Ini bukan bug UI (pemulihan memang benar), melainkan gate yang harus
+// mengisolasi datanya sendiri. Penghapusan lewat DB, bukan API, supaya tidak
+// menuntut sesi DAN tidak ikut menghapus draft yang justru sedang diuji
+// pemulihannya di tengah test. Bila DIRECT_URL/DATABASE_URL tidak ada (mis.
+// worktree lane ui), penghapusan dilewati diam-diam supaya gate tetap dapat
+// dijalankan tanpa error koneksi.
+
+test.describe.configure({ mode: 'serial' });
+
+/** Akun per-project — baris draftnya tak pernah bertabrakan lintas-project. */
+function akunProyek(): AkunUji {
+  return test.info().project.name === 'mobile' ? AKUN.aktif : AKUN.admin;
+}
+
+function bacaKoneksi(): string | undefined {
+  const berkas = path.resolve(process.cwd(), '.env.local');
+  const env: Record<string, string> = {};
+  if (fs.existsSync(berkas)) {
+    for (const baris of fs.readFileSync(berkas, 'utf8').split(/\r?\n/)) {
+      const t = baris.trim();
+      if (!t || t.startsWith('#')) continue;
+      const i = t.indexOf('=');
+      if (i > 0) env[t.slice(0, i).trim()] = t.slice(i + 1).trim();
+    }
+  }
+  const gabung = { ...env, ...process.env };
+  return gabung.DIRECT_URL ?? gabung.DATABASE_URL;
+}
+
+let sql: ReturnType<typeof postgres> | null = null;
+let userId: string | null = null;
+
+test.beforeAll(async () => {
+  const koneksi = bacaKoneksi();
+  if (!koneksi) return;
+  sql = postgres(koneksi, { ssl: 'require', max: 1, connect_timeout: 30, onnotice: () => {} });
+  const baris = await sql<{ id: string }[]>`
+    SELECT id FROM app_user WHERE email = ${akunProyek().email} LIMIT 1
+  `;
+  userId = baris[0]?.id ?? null;
+});
+
+test.afterAll(async () => {
+  await sql?.end();
+  sql = null;
+});
+
+// Tiap test mulai tanpa draft milik akun project-nya — dijamin terbuka di langkah 1.
+test.beforeEach(async () => {
+  if (!sql || !userId) return;
+  await sql`DELETE FROM proker_draft WHERE user_id = ${userId}::uuid`;
+});
 
 /** Login lewat form lalu buka wizard; SKIP bila login atau wizard belum ada. */
 async function bukaWizard(page: Page): Promise<boolean> {
@@ -54,7 +130,7 @@ async function bukaWizard(page: Page): Promise<boolean> {
     test.skip(true, 'Halaman /login belum ada.');
     return false;
   }
-  await page.getByLabel(/email/i).fill(AKUN.admin.email);
+  await page.getByLabel(/email/i).fill(akunProyek().email);
   await page.getByLabel(/password|kata sandi/i).fill(PASSWORD_UJI);
   await page.getByRole('button', { name: /masuk|login/i }).click();
   await page.waitForLoadState('networkidle');
@@ -165,11 +241,17 @@ test.describe('Selesai bila 2 — draft pulih setelah ditinggal', () => {
   test('meninggalkan wizard lalu kembali memulihkan isian', async ({ page }) => {
     if (!(await bukaWizard(page))) return;
 
+    // isiLangkah1 dulu (mengisi kategori + nama placeholder), BARU timpa nama
+    // dengan nilai unik supaya nilai unik itulah yang tersimpan TERAKHIR.
+    // Urutan sebelumnya menaruh nama unik lebih dulu lalu isiLangkah1
+    // menimpanya menjadi "Uji Wizard E2E", sehingga draft menyimpan nama yang
+    // salah dan assertion pemulihan mustahil hijau.
+    await isiLangkah1(page);
     const nama = `Draf Pulih ${Date.now().toString(36)}`;
     await page.getByTestId('wizard-field-nama').fill(nama);
-    await isiLangkah1(page);
-    // Beri wizard waktu menyimpan draft ke server (PUT /api/proker/draft).
-    await page.waitForLoadState('networkidle');
+    // Tunggu autosave (debounce 400ms) benar-benar menulis draft ke server,
+    // bukan sekadar networkidle yang bisa lewat sebelum debounce memicu PUT.
+    await expect(page.getByText('Draft tersimpan di server.')).toBeVisible();
 
     // Tinggalkan: navigasi ke luar, lalu kembali dengan konteks browser BARU
     // supaya localStorage tidak ikut — memaksa pemulihan dari server.
