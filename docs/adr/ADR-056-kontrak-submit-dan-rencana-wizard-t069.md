@@ -2,7 +2,7 @@
 
 |                    |                                                         |
 | ------------------ | ------------------------------------------------------- |
-| **Status**         | **Usulan**                                              |
+| **Status**         | **Diterima**                                            |
 | **Tanggal**        | 2026-09-09                                              |
 | **Ditemukan oleh** | T-069 saat memeriksa batas data langkah 4–6             |
 | **Task terkait**   | T-068, T-068-UI, T-069, T-070                           |
@@ -81,3 +81,5 @@ submit secara eksplisit.
   bukan hanya diasumsikan dari tampilan.
 - T-069 tertunda satu sync point, tetapi tidak menghasilkan UI yang terlihat
   lengkap sementara data kepanitiaannya hilang atau statusnya salah.
+
+Keputusan ini diterima oleh pemilik proyek pada 2026-09-09.

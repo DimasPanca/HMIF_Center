@@ -14,7 +14,7 @@ export default async function TambahProkerPage() {
   if (!can(konteks.roles, 'proker.create')) notFound();
 
   const lingkup = lingkupUntuk(konteks.roles, 'proker.create');
-  const [barisDepartemen, barisPengurus] = await Promise.all([
+  const [barisDepartemen, barisPengurus, barisPreset] = await Promise.all([
     db.departemen.findMany({
       where: {
         is_active: true,
@@ -27,6 +27,11 @@ export default async function TambahProkerPage() {
       where: { is_active: true },
       orderBy: { nama_lengkap: 'asc' },
       select: { id: true, nama_lengkap: true },
+    }),
+    db.divisi_preset.findMany({
+      where: { is_active: true },
+      orderBy: { urutan: 'asc' },
+      select: { nama: true },
     }),
   ]);
 
@@ -63,6 +68,7 @@ export default async function TambahProkerPage() {
         <WizardShell
           departemen={departemen}
           departemenAwal={departemenAwal}
+          divisiPreset={barisPreset.map((item) => item.nama)}
           pengurus={pengurus}
         />
       </div>
