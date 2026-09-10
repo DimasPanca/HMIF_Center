@@ -145,6 +145,9 @@ const MILIK: Record<Lane, string[]> = {
     // Kontrak approval (T-070): setujui/tolak/revisi + bentuk_kepanitiaan yang
     // dipanggil app/api/proker/[id]/{approve,reject,revisi}/route.ts milik lane ui.
     'docs/ai/APPROVAL_CONTRACT.md',
+    // Kontrak edit proker terkunci (T-071): editProkerTerkunci + tolakRevisi +
+    // klasifikasi minor/mayor untuk halaman edit & percabangan tolak revisi.
+    'docs/ai/EDIT_TERKUNCI_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
