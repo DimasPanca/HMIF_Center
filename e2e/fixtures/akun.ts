@@ -47,7 +47,7 @@ export interface AkunUji {
 }
 
 export const AKUN: Record<
-  'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja' | 'admin',
+  'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja' | 'admin' | 'anggota',
   AkunUji
 > = {
   /** Jalur bahagia: masuk, punya peran, punya periode aktif. */
@@ -57,6 +57,21 @@ export const AKUN: Record<
     nim: '3337229001',
     aktif: true,
     role: 'KETUA',
+  },
+
+  /**
+   * ANGGOTA aktif berdepartemen. Ditambahkan untuk T-052: ANGGOTA adalah
+   * SATU-SATUNYA role tanpa `surat.read` (matriks `surat_arsip`), sehingga
+   * hanya dengannya dapat dibuktikan command palette menyembunyikan menu surat
+   * dan tak meminta `/api/surat`. Akun `nonaktif` juga ANGGOTA tetapi tak dapat
+   * masuk (is_active = false), jadi tak bisa dipakai untuk uji sesi.
+   */
+  anggota: {
+    email: 'e2e-anggota@uji.test',
+    namaLengkap: 'Uji E2E Anggota',
+    nim: '3337229006',
+    aktif: true,
+    role: 'ANGGOTA',
   },
 
   /** Password benar, tetapi `is_active = false` (PRD F-1.1 kriteria 4). */
