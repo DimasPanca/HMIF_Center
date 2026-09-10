@@ -241,7 +241,7 @@
         "T-070",
         "T-040"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -385,8 +385,8 @@
       "depends_on": [
         "T-070"
       ],
-      "status": "TODO",
-      "completed_at": null
+      "status": "DONE",
+      "completed_at": "2026-09-10"
     },
     {
       "id": "T-071-UI",
