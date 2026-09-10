@@ -4,7 +4,8 @@ import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { withAuditContext } from '@/lib/db/with-audit-context';
 import { gagal, sukses } from '@/lib/http/respond';
-import { STATUS_GAGAL, tolakProker } from '@/lib/proker/approval';
+import { STATUS_GAGAL, tolakProker, tolakRevisi } from '@/lib/proker/approval';
+import { detailProker } from '@/lib/proker/service';
 
 const SkemaId = z.uuid();
 const TANPA_CACHE = { 'Cache-Control': 'no-store' };
@@ -33,7 +34,22 @@ export async function POST(request: Request, context: RouteContext) {
     typeof body === 'object' && body !== null && 'alasan' in body && typeof body.alasan === 'string'
       ? body.alasan
       : '';
-  const hasil = await withAuditContext(request, (tx) => tolakProker(tx, id, alasan));
+
+  const hasil = await withAuditContext(request, async (tx) => {
+    const proker = await detailProker(id, tx);
+    if (!proker || proker.periode_id !== konteks.periodeId) {
+      return {
+        ok: false as const,
+        kode: 'TIDAK_DITEMUKAN' as const,
+        pesan: 'Proker tidak ditemukan.',
+      };
+    }
+
+    return proker.status === 'MENUNGGU_APPROVAL_REVISI'
+      ? tolakRevisi(tx, konteks, id)
+      : tolakProker(tx, id, alasan);
+  });
+
   if (!hasil.ok) {
     return gagal(hasil.kode, hasil.pesan, {
       status: STATUS_GAGAL[hasil.kode],

@@ -1,30 +1,28 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requirePermission } from '@/lib/auth/guard';
 import { withAuditContext } from '@/lib/db/with-audit-context';
-import { detailProker, ubahProker, type GagalProker } from '@/lib/proker/service';
+import { gagal, sukses } from '@/lib/http/respond';
+import { editProkerTerkunci, STATUS_GAGAL as STATUS_GAGAL_EDIT } from '@/lib/proker/edit-terkunci';
+import { detailProker, dalamLingkup, ubahProker } from '@/lib/proker/service';
 
-const STATUS_GAGAL: Record<GagalProker['kode'], number> = {
+const SkemaId = z.uuid();
+const TANPA_CACHE = { 'Cache-Control': 'no-store' };
+const STATUS_GAGAL: Record<string, number> = {
+  ...STATUS_GAGAL_EDIT,
   TIDAK_DITEMUKAN: 404,
   DI_LUAR_LINGKUP: 403,
   TIDAK_VALID: 422,
   TIDAK_ADA_PERIODE_AKTIF: 409,
+  STATUS_TIDAK_SESUAI: 409,
 };
-
-const SkemaId = z.uuid();
+const STATUS_EDIT_BIASA = ['DRAFT', 'PERLU_REVISI', 'DITOLAK'] as const;
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-function jsonTanpaCache(data: unknown, init?: ResponseInit) {
-  const response = NextResponse.json(data, init);
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
-async function responsGuard(response: NextResponse) {
+async function responsGuard(response: Response) {
   const body = (await response.json()) as {
     error?: { code?: unknown; message?: unknown; pesan?: unknown };
   };
@@ -36,31 +34,14 @@ async function responsGuard(response: NextResponse) {
         ? body.error.pesan
         : 'Permintaan tidak dapat diproses.';
 
-  return jsonTanpaCache({ ok: false, error: { code, message } }, { status: response.status });
-}
-
-function responsGagal(hasil: GagalProker) {
-  return jsonTanpaCache(
-    {
-      ok: false,
-      error: {
-        code: hasil.kode,
-        message: hasil.pesan,
-        ...(hasil.isu ? { details: hasil.isu } : {}),
-      },
-    },
-    { status: STATUS_GAGAL[hasil.kode] },
-  );
+  return gagal(code, message, { status: response.status, headers: TANPA_CACHE });
 }
 
 function responsIdTidakValid() {
-  return jsonTanpaCache(
-    {
-      ok: false,
-      error: { code: 'TIDAK_VALID', message: 'ID proker tidak valid.' },
-    },
-    { status: 422 },
-  );
+  return gagal('TIDAK_VALID', 'ID proker tidak valid.', {
+    status: 422,
+    headers: TANPA_CACHE,
+  });
 }
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -71,17 +52,18 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!SkemaId.safeParse(id).success) return responsIdTidakValid();
 
   const data = await detailProker(id);
-  if (!data) {
-    return jsonTanpaCache(
-      {
-        ok: false,
-        error: { code: 'TIDAK_DITEMUKAN', message: 'Proker tidak ditemukan.' },
-      },
-      { status: 404 },
-    );
+  if (
+    !data ||
+    data.periode_id !== guard.konteks.periodeId ||
+    !dalamLingkup(guard.konteks, 'proker.read', data.departemen_id)
+  ) {
+    return gagal('TIDAK_DITEMUKAN', 'Proker tidak ditemukan.', {
+      status: 404,
+      headers: TANPA_CACHE,
+    });
   }
 
-  return jsonTanpaCache({ ok: true, data });
+  return sukses(data, { headers: TANPA_CACHE });
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -93,19 +75,44 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const body: unknown = await request.json().catch(() => null);
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    return jsonTanpaCache(
-      {
-        ok: false,
-        error: { code: 'TIDAK_VALID', message: 'Perubahan proker harus berupa objek JSON.' },
-      },
-      { status: 422 },
-    );
+    return gagal('TIDAK_VALID', 'Perubahan proker harus berupa objek JSON.', {
+      status: 422,
+      headers: TANPA_CACHE,
+    });
   }
 
-  const hasil = await withAuditContext(request, (tx) =>
-    ubahProker(tx, guard.konteks, id, body as Record<string, unknown>),
-  );
+  const perubahan = body as Record<string, unknown>;
+  const hasil = await withAuditContext(request, async (tx) => {
+    const proker = await detailProker(id, tx);
+    if (!proker || proker.periode_id !== guard.konteks.periodeId) {
+      return {
+        ok: false as const,
+        kode: 'TIDAK_DITEMUKAN',
+        pesan: 'Proker tidak ditemukan.',
+      };
+    }
 
-  if (!hasil.ok) return responsGagal(hasil);
-  return jsonTanpaCache({ ok: true, data: hasil.nilai });
+    if (proker.status === 'DISETUJUI') {
+      return editProkerTerkunci(tx, guard.konteks, id, perubahan);
+    }
+    if (STATUS_EDIT_BIASA.some((status) => status === proker.status)) {
+      return ubahProker(tx, guard.konteks, id, perubahan);
+    }
+
+    return {
+      ok: false as const,
+      kode: 'STATUS_TIDAK_SESUAI',
+      pesan: `Proker berstatus ${proker.status} tidak dapat disunting.`,
+    };
+  });
+
+  if (!hasil.ok) {
+    return gagal(hasil.kode, hasil.pesan, {
+      status: STATUS_GAGAL[hasil.kode] ?? 400,
+      details: 'isu' in hasil ? hasil.isu : undefined,
+      headers: TANPA_CACHE,
+    });
+  }
+
+  return sukses(hasil.nilai, { headers: TANPA_CACHE });
 }

@@ -10,10 +10,7 @@ import {
 } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 
-import {
-  ApprovalActions,
-  type KonflikApprovalView,
-} from '@/components/proker/ApprovalActions';
+import { ApprovalActions, type KonflikApprovalView } from '@/components/proker/ApprovalActions';
 import { GanttChart } from '@/components/gantt/GanttChart';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -231,9 +228,7 @@ export default async function DetailApprovalPage({ params }: DetailApprovalPageP
                 <Info
                   label="Diajukan"
                   nilai={
-                    proker.diajukan_at
-                      ? formatTanggalPendek(proker.diajukan_at.slice(0, 10))
-                      : '—'
+                    proker.diajukan_at ? formatTanggalPendek(proker.diajukan_at.slice(0, 10)) : '—'
                   }
                 />
                 <Info
@@ -350,7 +345,11 @@ export default async function DetailApprovalPage({ params }: DetailApprovalPageP
                 <h2 className="text-[16px] font-semibold">Tindakan</h2>
               </div>
               <div className="mt-4">
-                <ApprovalActions prokerId={proker.id} konflikAwal={konflikAwal} />
+                <ApprovalActions
+                  prokerId={proker.id}
+                  konflikAwal={konflikAwal}
+                  statusProker={proker.status}
+                />
               </div>
             </Card>
           </aside>

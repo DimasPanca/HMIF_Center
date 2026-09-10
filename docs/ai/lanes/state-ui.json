@@ -395,8 +395,8 @@
       "depends_on": [
         "T-071"
       ],
-      "status": "READY",
-      "completed_at": null
+      "status": "DONE",
+      "completed_at": "2026-09-10"
     },
     {
       "id": "T-076-UI",
