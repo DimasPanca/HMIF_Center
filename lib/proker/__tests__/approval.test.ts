@@ -45,7 +45,10 @@ const KONTEKS = {
 };
 const konteks = () => KONTEKS as unknown as Parameters<typeof setujuiProker>[1];
 
-const proker = (o: Record<string, unknown>) => [{ id: 'p1', nama_departemen: 'X', ...o }];
+const proker = (o: Record<string, unknown>) => [
+  { id: 'p1', nama_departemen: 'X', periode_id: KONTEKS.periodeId, ...o },
+];
+const PERIODE_AKTIF = [{ id: KONTEKS.periodeId }]; // hasil idPeriodeAktif(tx)
 const adaSql = (p: Panggilan[], s: string) => p.some((x) => x.sql.includes(s));
 
 describe('setujuiProker', () => {
@@ -108,6 +111,17 @@ describe('setujuiProker', () => {
     if (!r.ok) expect(r.kode).toBe('STATUS_TIDAK_SESUAI');
     expect(adaSql(panggilan, 'setujui_proker')).toBe(false);
   });
+
+  it('HARDENING: proker dari periode lain diperlakukan TIDAK_DITEMUKAN, tak menyetujui', async () => {
+    const { tx, panggilan } = klienTiruan([
+      proker({ status: 'MENUNGGU_APPROVAL', kategori: 'TERJADWAL', periode_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
+    ]);
+    const r = await setujuiProker(tx, konteks(), 'p1');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.kode).toBe('TIDAK_DITEMUKAN');
+    // Tidak pernah memanggil setujui_proker untuk proker lintas periode.
+    expect(adaSql(panggilan, 'setujui_proker')).toBe(false);
+  });
 });
 
 describe('tolakProker & mintaRevisi', () => {
@@ -121,6 +135,7 @@ describe('tolakProker & mintaRevisi', () => {
   it('tolak: dari MENUNGGU_APPROVAL → DITOLAK', async () => {
     const { tx, panggilan } = klienTiruan([
       proker({ status: 'MENUNGGU_APPROVAL', kategori: 'TERJADWAL' }),
+      PERIODE_AKTIF,
       [],
     ]);
     const r = await tolakProker(tx, 'p1', 'Anggaran tidak realistis.');
@@ -132,6 +147,7 @@ describe('tolakProker & mintaRevisi', () => {
   it('revisi: dari MENUNGGU_APPROVAL → PERLU_REVISI', async () => {
     const { tx, panggilan } = klienTiruan([
       proker({ status: 'MENUNGGU_APPROVAL', kategori: 'TERJADWAL' }),
+      PERIODE_AKTIF,
       [],
     ]);
     const r = await mintaRevisi(tx, 'p1', 'Lengkapi rincian divisi.');
@@ -141,9 +157,20 @@ describe('tolakProker & mintaRevisi', () => {
   });
 
   it('tolak: status yang tak dapat ditransisikan ditolak', async () => {
-    const { tx } = klienTiruan([proker({ status: 'DISETUJUI', kategori: 'TERJADWAL' })]);
+    const { tx } = klienTiruan([proker({ status: 'DISETUJUI', kategori: 'TERJADWAL' }), PERIODE_AKTIF]);
     const r = await tolakProker(tx, 'p1', 'alasan');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.kode).toBe('STATUS_TIDAK_SESUAI');
+  });
+
+  it('HARDENING: tolak proker dari periode lain → TIDAK_DITEMUKAN, tak meng-UPDATE', async () => {
+    const { tx, panggilan } = klienTiruan([
+      proker({ status: 'MENUNGGU_APPROVAL', periode_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
+      PERIODE_AKTIF,
+    ]);
+    const r = await tolakProker(tx, 'p1', 'alasan');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.kode).toBe('TIDAK_DITEMUKAN');
+    expect(adaSql(panggilan, 'UPDATE proker')).toBe(false);
   });
 });

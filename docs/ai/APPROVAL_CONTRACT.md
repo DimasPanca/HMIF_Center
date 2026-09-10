@@ -59,6 +59,16 @@ mintaRevisi(tx, prokerId, catatan): Promise<HasilApproval<{ status:'PERLU_REVISI
 
 Badan gagal K-02: `{ ok:false, error:{ code, message, details? } }`.
 
+**Pembatasan periode (hardening).** Ketiga fungsi MENOLAK proker di luar periode
+aktif dan mengembalikannya sebagai `TIDAK_DITEMUKAN` (404) — tanpa membocorkan
+keberadaannya. Pembatasan ini ditegakkan DI SERVICE, bukan diserahkan ke RLS:
+koneksi aplikasi dapat memakai role yang melewati RLS, jadi `detailProker`
+(mencari per-id lintas periode) tak cukup dijaga policy. `setujuiProker`
+membandingkan dengan `konteks.periodeId`; `tolakProker`/`mintaRevisi` tak
+menerima konteks (agar tanda tangan yang dipanggil route UI tak berubah) dan
+menurunkan periode aktif dari transaksi (`idPeriodeAktif(tx)`) — sama-sama
+authoritative. Tanda tangan TETAP; route UI tak perlu diubah.
+
 ---
 
 ## 2. Yang terjadi saat SETUJUI (satu transaksi)
