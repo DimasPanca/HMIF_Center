@@ -28,7 +28,7 @@
  */
 
 import { db } from '@/lib/db/client';
-import type { TxKlien } from '@/lib/db/with-audit-context';
+import { idPeriodeAktif, type TxKlien } from '@/lib/db/with-audit-context';
 import type { Konteks } from '@/lib/auth/guard';
 
 import { detailProker } from './service';
@@ -137,6 +137,12 @@ export async function setujuiProker(
   if (!proker) {
     return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Proker tidak ditemukan.' };
   }
+  // Periode lain: perlakukan sebagai tak ada. detailProker mencari per-id saja
+  // dan koneksi aplikasi bisa melewati RLS, jadi pembatasan periode DITEGAKKAN di
+  // service — bukan diserahkan ke RLS (hardening ADR-056/T-070).
+  if (proker.periode_id !== konteks.periodeId) {
+    return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Proker tidak ditemukan.' };
+  }
   if (!STATUS_MENUNGGU.includes(proker.status)) {
     return {
       ok: false,
@@ -212,6 +218,12 @@ async function ubahKeputusan<S extends 'DITOLAK' | 'PERLU_REVISI'>(
 
   const proker = await detailProker(prokerId, tx);
   if (!proker) {
+    return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Proker tidak ditemukan.' };
+  }
+  // Pembatasan periode ditegakkan di service (lihat setujuiProker). Karena route
+  // tolak/revisi tak meneruskan konteks, periode aktif diturunkan dari tx —
+  // authoritative, dan tidak bergantung pada RLS yang dapat dilewati.
+  if (proker.periode_id !== (await idPeriodeAktif(tx))) {
     return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Proker tidak ditemukan.' };
   }
   if (!STATUS_MENUNGGU.includes(proker.status) || !bolehTransisi(proker.status, ke)) {
