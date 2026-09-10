@@ -122,6 +122,20 @@ describe('setujuiProker', () => {
     // Tidak pernah memanggil setujui_proker untuk proker lintas periode.
     expect(adaSql(panggilan, 'setujui_proker')).toBe(false);
   });
+
+  it('REVISI disetujui: TIDAK membentuk kepanitiaan lagi, menghapus snapshot (T-071)', async () => {
+    const { tx, panggilan } = klienTiruan([
+      proker({ status: 'MENUNGGU_APPROVAL_REVISI', kategori: 'TERJADWAL' }),
+      [{ hasil: { ok: true, locked: true } }],
+    ]);
+    const r = await setujuiProker(tx, konteks(), 'p1');
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.nilai.status).toBe('DISETUJUI');
+    // Kepanitiaan sudah ada dari approval pertama — jangan bentuk dua.
+    expect(adaSql(panggilan, 'bentuk_kepanitiaan')).toBe(false);
+    // Kunci sudah dipindah; snapshot revisi dibersihkan.
+    expect(adaSql(panggilan, 'DELETE FROM proker_revisi')).toBe(true);
+  });
 });
 
 describe('tolakProker & mintaRevisi', () => {

@@ -27,6 +27,8 @@
  *         docs/ai/APPROVAL_CONTRACT.md · INV-04, INV-05, INV-09
  */
 
+import type { Prisma } from '@prisma/client';
+
 import { db } from '@/lib/db/client';
 import { idPeriodeAktif, type TxKlien } from '@/lib/db/with-audit-context';
 import type { Konteks } from '@/lib/auth/guard';
@@ -169,17 +171,100 @@ export async function setujuiProker(
     };
   }
 
-  // TERJADWAL yang lolos: bentuk kepanitiaan dari rencana, transaksi yang sama.
+  // Kepanitiaan dibentuk HANYA pada approval pertama (MENUNGGU_APPROVAL). Pada
+  // approval REVISI (MENUNGGU_APPROVAL_REVISI) kepanitiaan sudah ada — setujui_proker
+  // cukup memindah kunci ke rentang baru (T-071). `proker.status` di sini adalah
+  // status SEBELUM setujui_proker (dibaca detailProker di atas).
   let kepanitiaanId: string | undefined;
-  if (proker.kategori === 'TERJADWAL') {
+  if (proker.status === 'MENUNGGU_APPROVAL' && proker.kategori === 'TERJADWAL') {
     const b = await bentukKepanitiaanOtomatis(tx, prokerId, konteks.sesi.userId);
     kepanitiaanId = b.kepanitiaan_id;
   }
+
+  // Revisi disetujui: snapshot nilai lama tak lagi diperlukan (kunci baru sudah
+  // terpasang). Tak ada snapshot pada approval pertama — DELETE ini aman kosong.
+  await tx.$executeRaw`DELETE FROM proker_revisi WHERE proker_id = ${prokerId}::uuid`;
 
   return {
     ok: true,
     nilai: { status: 'DISETUJUI', locked: Boolean(hasil.locked), kepanitiaan_id: kepanitiaanId },
   };
+}
+
+/**
+ * Menolak REVISI proker (status MENUNGGU_APPROVAL_REVISI): mengembalikan tanggal/
+ * kategori/departemen ke nilai LAMA dari snapshot dan status ke DISETUJUI. Kunci
+ * kalender LAMA tidak pernah tersentuh sejak revisi diajukan (INV-13), jadi tak
+ * perlu dipasang ulang — tak ada jendela tanpa kunci (kontrak T-071).
+ *
+ * Berbeda dari `tolakProker` (yang memindah proker MENUNGGU_APPROVAL ke DITOLAK):
+ * menolak revisi tidak membatalkan proker, hanya membatalkan perubahan tanggalnya.
+ * Route/halaman approval memanggil fungsi ini bila status MENUNGGU_APPROVAL_REVISI
+ * (lihat docs/ai/APPROVAL_CONTRACT.md / EDIT_TERKUNCI_CONTRACT.md).
+ */
+export async function tolakRevisi(
+  tx: TxKlien,
+  konteks: Konteks,
+  prokerId: string,
+): Promise<HasilApproval<{ status: 'DISETUJUI' }>> {
+  const proker = await detailProker(prokerId, tx);
+  if (!proker) {
+    return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Proker tidak ditemukan.' };
+  }
+  if (proker.periode_id !== konteks.periodeId) {
+    return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Proker tidak ditemukan.' };
+  }
+  if (proker.status !== 'MENUNGGU_APPROVAL_REVISI') {
+    return {
+      ok: false,
+      kode: 'STATUS_TIDAK_SESUAI',
+      pesan: `Proker berstatus ${proker.status} — hanya revisi yang menunggu dapat ditolak di sini.`,
+    };
+  }
+
+  const snap = await tx.$queryRaw<
+    {
+      tanggal_mulai_persiapan: string | null;
+      tanggal_hari_h_mulai: string | null;
+      tanggal_hari_h_selesai: string | null;
+      kategori: ProkerKategori;
+      departemen_id: string;
+      pola_ulang: unknown;
+    }[]
+  >`
+    SELECT to_char(tanggal_mulai_persiapan, 'YYYY-MM-DD') AS tanggal_mulai_persiapan,
+           to_char(tanggal_hari_h_mulai,    'YYYY-MM-DD') AS tanggal_hari_h_mulai,
+           to_char(tanggal_hari_h_selesai,  'YYYY-MM-DD') AS tanggal_hari_h_selesai,
+           kategori, departemen_id, pola_ulang
+    FROM proker_revisi WHERE proker_id = ${prokerId}::uuid
+  `;
+  const lama = snap[0];
+  if (!lama) {
+    // Tak ada snapshot untuk proker berstatus revisi — keadaan tak konsisten;
+    // jangan tebak nilai lama.
+    return {
+      ok: false,
+      kode: 'STATUS_TIDAK_SESUAI',
+      pesan: 'Tidak ada catatan nilai lama untuk dikembalikan.',
+    };
+  }
+
+  // Kembalikan nilai lama; kunci LAMA masih berlaku dan cocok dengan tanggal ini.
+  await tx.$executeRaw`
+    UPDATE proker SET
+      tanggal_mulai_persiapan = ${lama.tanggal_mulai_persiapan}::date,
+      tanggal_hari_h_mulai    = ${lama.tanggal_hari_h_mulai}::date,
+      tanggal_hari_h_selesai  = ${lama.tanggal_hari_h_selesai}::date,
+      kategori                = ${lama.kategori}::proker_kategori,
+      departemen_id           = ${lama.departemen_id}::uuid,
+      pola_ulang              = ${(lama.pola_ulang ?? null) as Prisma.InputJsonValue | null}::jsonb,
+      status                  = 'DISETUJUI',
+      updated_at              = now()
+    WHERE id = ${prokerId}::uuid
+  `;
+  await tx.$executeRaw`DELETE FROM proker_revisi WHERE proker_id = ${prokerId}::uuid`;
+
+  return { ok: true, nilai: { status: 'DISETUJUI' } };
 }
 
 /** Menolak proker. Alasan wajib (PRD F-5.4) dan ikut tercatat audit. */
