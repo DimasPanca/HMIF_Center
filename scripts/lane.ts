@@ -142,6 +142,9 @@ const MILIK: Record<Lane, string[]> = {
     // Kontrak submit wizard langkah 4-6 (T-069): tanda tangan submitWizard yang
     // dipanggil app/api/proker/submit/route.ts milik lane ui.
     'docs/ai/WIZARD_SUBMIT_CONTRACT.md',
+    // Kontrak approval (T-070): setujui/tolak/revisi + bentuk_kepanitiaan yang
+    // dipanggil app/api/proker/[id]/{approve,reject,revisi}/route.ts milik lane ui.
+    'docs/ai/APPROVAL_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
