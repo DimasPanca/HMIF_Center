@@ -247,7 +247,9 @@ export default async function DetailApprovalPage({ params }: DetailApprovalPageP
                 <Info
                   label="Sumber dana"
                   nilai={
-                    proker.sumber_dana.map((item) => LABEL_SUMBER[item] ?? item).join(', ') || '—'
+                    (proker.sumber_dana ?? [])
+                      .map((item) => LABEL_SUMBER[item] ?? item)
+                      .join(', ') || '—'
                   }
                 />
                 <Info
