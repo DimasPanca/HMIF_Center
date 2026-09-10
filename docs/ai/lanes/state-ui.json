@@ -195,7 +195,7 @@
       "depends_on": [
         "T-051"
       ],
-      "status": "READY",
+      "status": "IN_PROGRESS",
       "butuh_manusia": false,
       "completed_at": null
     },
