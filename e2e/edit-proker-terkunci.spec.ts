@@ -77,7 +77,10 @@ test.afterAll(async () => {
 });
 
 test.beforeEach(async () => {
-  if (sql) await sql`DELETE FROM proker WHERE nama LIKE ${prefixProyek() + ' %'}`.catch(() => {});
+  // Tanpa DB (mis. worktree lane ui), SKIP sebelum login/seed/dereferensi sql —
+  // seluruh test bergantung pada fixture DB. Ini mencegah `sql is not a function`.
+  test.skip(!sql, 'Butuh DIRECT_URL/DATABASE_URL untuk fixture DB.');
+  await sql!`DELETE FROM proker WHERE nama LIKE ${prefixProyek() + ' %'}`.catch(() => {});
 });
 
 /** Seed proker DISETUJUI + kunci kalender (lewat setujui_proker). Kembalikan id. */
@@ -106,6 +109,9 @@ function skip(pesan: string): false {
 }
 
 async function login(page: Page, akun: AkunUji): Promise<boolean> {
+  // Bersihkan sesi lebih dulu — test 3 berganti dari ADMIN (penyunting) ke KETUA
+  // (penolak revisi); tanpa ini /login mengalihkan sesi lama dan form tak muncul.
+  await page.context().clearCookies();
   const masuk = await page.goto('/login', { waitUntil: 'load' });
   if (!masuk || masuk.status() === 404) return skip('Halaman /login belum ada.');
   await page.getByLabel(/email/i).fill(akun.email);
@@ -125,6 +131,18 @@ async function bukaEdit(page: Page, id: string): Promise<boolean> {
     .then(() => true)
     .catch(() => false);
   return ada ? true : skip('Halaman edit (edit-simpan) belum ada (T-071-UI).');
+}
+
+/**
+ * Mengisi input tanggal (type=date) dengan andal. `.fill()` saja kadang tak
+ * memicu onChange React kecuali field diinteraksi lebih dulu; klik lalu tunggu
+ * nilainya benar-benar ter-commit (input terkontrol memantulkan state React).
+ */
+async function isiTanggal(page: Page, testid: string, nilai: string): Promise<void> {
+  const field = page.getByTestId(testid);
+  await field.click();
+  await field.fill(nilai);
+  await expect(field).toHaveValue(nilai);
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +176,7 @@ test.describe('Selesai bila 2 — mayor minta approval ulang, kunci lama tetap',
     const lockAwal = await lockRentang(id);
     if (!(await bukaEdit(page, id))) return;
 
-    await page.getByTestId('edit-field-harih-selesai').fill(tgl('06-05'));
+    await isiTanggal(page, 'edit-field-harih-selesai', tgl('06-05'));
     // Peringatan mayor muncul sebelum menyimpan (kontrak §4).
     await expect(page.getByTestId('edit-peringatan-mayor')).toBeVisible();
     await page.getByTestId('edit-simpan').click();
@@ -183,7 +201,8 @@ test.describe('Selesai bila 3 — tolak revisi memulihkan tanggal lama', () => {
     if (!(await bukaEdit(page, id))) return;
 
     // Ajukan revisi mayor.
-    await page.getByTestId('edit-field-harih-selesai').fill(tgl('08-06'));
+    await isiTanggal(page, 'edit-field-harih-selesai', tgl('08-06'));
+    await expect(page.getByTestId('edit-peringatan-mayor')).toBeVisible();
     await page.getByTestId('edit-simpan').click();
     await expect(page.getByTestId('edit-sukses')).toBeVisible({ timeout: 15_000 });
     expect(await status(id)).toBe('MENUNGGU_APPROVAL_REVISI');
