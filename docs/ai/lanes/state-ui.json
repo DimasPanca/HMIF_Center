@@ -241,9 +241,9 @@
         "T-070",
         "T-040"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-11"
     },
     {
       "id": "T-077",
@@ -252,7 +252,7 @@
       "depends_on": [
         "T-075"
       ],
-      "status": "TODO",
+      "status": "READY",
       "butuh_manusia": false,
       "completed_at": null
     },
@@ -415,7 +415,7 @@
       "depends_on": [
         "T-079"
       ],
-      "status": "TODO",
+      "status": "READY",
       "completed_at": null
     },
     {

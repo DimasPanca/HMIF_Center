@@ -479,7 +479,7 @@ function GanttChart({
                     onClick={() => toggleGroup(group)}
                   >
                     <span aria-hidden="true" className="inline-block w-3 shrink-0 text-center">
-                      ▾
+                      {collapsed ? '▸' : '▾'}
                     </span>
                     <span
                       aria-hidden="true"
