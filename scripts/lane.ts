@@ -151,6 +151,12 @@ const MILIK: Record<Lane, string[]> = {
     // Kontrak cron harian (T-079): jalankanCronHarian + cronTerotorisasi yang
     // dipanggil app/api/cron/harian/route.ts milik lane ui.
     'docs/ai/CRON_CONTRACT.md',
+    // Kontrak realtime Master Gantt (T-076): publication + kanal + hook
+    // lib/realtime/** yang dirakit KoneksiBanner & MasterGantt milik lane ui.
+    'docs/ai/REALTIME_CONTRACT.md',
+    // Kontrak data dashboard kontekstual (T-077): bentuk respons
+    // app/api/dashboard/route.ts + lingkup role, dibaca lane ui.
+    'docs/ai/DASHBOARD_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
