@@ -180,10 +180,14 @@ async function main(): Promise<void> {
               is_active    = EXCLUDED.is_active
       `;
 
+      // ANGGOTA dan KADEPT melekat pada satu departemen (CONSTRAINT
+      // `role_dept_wajib`, migrasi 003); role lintas-organisasi tidak boleh
+      // punya departemen. Tanpa cabang KADEPT ini, INSERT-nya melanggar CHECK.
+      const berdepartemen = a.role === 'ANGGOTA' || a.role === 'KADEPT';
       await sql`
         INSERT INTO user_role (user_id, periode_id, role, departemen_id)
         VALUES (${userId}::uuid, ${periodeId}::uuid, ${a.role}::role_code,
-                ${a.role === 'ANGGOTA' ? dept[0].id : null}::uuid)
+                ${berdepartemen ? dept[0].id : null}::uuid)
         ON CONFLICT DO NOTHING
       `;
 
