@@ -183,13 +183,15 @@ async function main(): Promise<void> {
       // ANGGOTA dan KADEPT melekat pada satu departemen (CONSTRAINT
       // `role_dept_wajib`, migrasi 003); role lintas-organisasi tidak boleh
       // punya departemen. Tanpa cabang KADEPT ini, INSERT-nya melanggar CHECK.
-      const berdepartemen = a.role === 'ANGGOTA' || a.role === 'KADEPT';
-      await sql`
-        INSERT INTO user_role (user_id, periode_id, role, departemen_id)
-        VALUES (${userId}::uuid, ${periodeId}::uuid, ${a.role}::role_code,
-                ${berdepartemen ? dept[0].id : null}::uuid)
-        ON CONFLICT DO NOTHING
-      `;
+      const perluDept = (r: string): boolean => r === 'ANGGOTA' || r === 'KADEPT';
+      for (const role of [a.role, ...(a.rolesTambahan ?? [])]) {
+        await sql`
+          INSERT INTO user_role (user_id, periode_id, role, departemen_id)
+          VALUES (${userId}::uuid, ${periodeId}::uuid, ${role}::role_code,
+                  ${perluDept(role) ? dept[0].id : null}::uuid)
+          ON CONFLICT DO NOTHING
+        `;
+      }
 
       tulis(
         `    [${baru ? 'buat' : 'ada '}]   ${a.email.padEnd(28)}` +
