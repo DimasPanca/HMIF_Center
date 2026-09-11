@@ -4,6 +4,7 @@ import {
   formatRentangTanggal,
   formatTanggalPanjang,
   formatTanggalPendek,
+  formatTanggalWaktu,
 } from '@/lib/utils/format-tanggal';
 
 const zonaWaktuAwal = process.env.TZ;
@@ -22,6 +23,10 @@ describe('format tanggal Indonesia', () => {
 
     expect(formatTanggalPanjang(tanggal)).toBe('Senin, 06 Oktober 2025');
     expect(formatTanggalPendek(tanggal)).toBe('06 Okt 2025');
+  });
+
+  it('memformat waktu audit dalam zona Asia/Jakarta', () => {
+    expect(formatTanggalWaktu('2025-10-06T07:30:00Z')).toBe('06 Okt 2025, 14.30 WIB');
   });
 
   it('tidak mengulang bulan untuk rentang pada bulan yang sama', () => {
