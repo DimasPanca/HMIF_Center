@@ -171,14 +171,16 @@ test('dua panggilan tidak menggandakan transisi; audit CRON tercatat sebagai sis
   }
 
   // Proker BERJALAN yang hari-H terakhirnya sudah lewat → HARUS jadi SELESAI
-  // saat cron jalan. Prefix per-project menjaga isolasi lintas-project.
+  // saat cron jalan. Prefix per-project menjaga isolasi lintas-project. Durasi
+  // persiapan 20 hari memenuhi CONSTRAINT durasi_persiapan_15_45 (migrasi 004);
+  // hari-H selesai tetap di masa lalu agar cron rule-1 menyelesaikannya.
   await sql`DELETE FROM proker WHERE nama LIKE ${prefix() + ' %'}`.catch(() => {});
   const [p] = await sql<{ id: string }[]>`
     INSERT INTO proker (periode_id, departemen_id, nama, kategori, status, sumber_dana,
       tanggal_mulai_persiapan, tanggal_hari_h_mulai, tanggal_hari_h_selesai, penanggung_jawab, dibuat_oleh)
     VALUES (${periodeId}::uuid, ${deptId}::uuid, ${prefix() + ' Lewat'}, 'TERJADWAL'::proker_kategori,
       'BERJALAN'::proker_status, '{}'::text[],
-      ${hariTambah(-40)}::date, ${hariTambah(-32)}::date, ${hariTambah(-30)}::date,
+      ${hariTambah(-45)}::date, ${hariTambah(-25)}::date, ${hariTambah(-23)}::date,
       ${pembuat}::uuid, ${pembuat}::uuid)
     RETURNING id`;
   const id = p!.id;
