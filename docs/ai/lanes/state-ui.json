@@ -195,9 +195,9 @@
       "depends_on": [
         "T-051"
       ],
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-10"
     },
     {
       "id": "T-053",
@@ -395,8 +395,8 @@
       "depends_on": [
         "T-071"
       ],
-      "status": "TODO",
-      "completed_at": null
+      "status": "DONE",
+      "completed_at": "2026-09-10"
     },
     {
       "id": "T-076-UI",

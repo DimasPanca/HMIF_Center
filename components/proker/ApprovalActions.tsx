@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { InlineAlert } from '@/components/ui/inline-alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { ProkerStatus } from '@/lib/proker/status';
 import { formatRentangTanggal } from '@/lib/utils/format-tanggal';
 
 export interface KonflikApprovalView {
@@ -20,6 +21,7 @@ export interface KonflikApprovalView {
 interface ApprovalActionsProps {
   konflikAwal: KonflikApprovalView[];
   prokerId: string;
+  statusProker: ProkerStatus;
 }
 
 interface ResponsApi {
@@ -71,7 +73,7 @@ function PanelKonflik({ konflik }: { konflik: KonflikApprovalView[] }) {
   );
 }
 
-export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps) {
+export function ApprovalActions({ konflikAwal, prokerId, statusProker }: ApprovalActionsProps) {
   const router = useRouter();
   const [alasan, setAlasan] = useState('');
   const [aksiAktif, setAksiAktif] = useState<Aksi | null>(null);
@@ -79,6 +81,7 @@ export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps)
   const [pesanSukses, setPesanSukses] = useState<string | null>(null);
   const [konflik, setKonflik] = useState(konflikAwal);
   const timerKembali = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sedangMenilaiRevisi = statusProker === 'MENUNGGU_APPROVAL_REVISI';
 
   useEffect(
     () => () => {
@@ -88,7 +91,7 @@ export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps)
   );
 
   async function kirimAksi(aksi: Aksi) {
-    const butuhAlasan = aksi === 'reject' || aksi === 'revisi';
+    const butuhAlasan = aksi === 'revisi' || (aksi === 'reject' && !sedangMenilaiRevisi);
     if (butuhAlasan && !alasan.trim()) {
       setPesanError(
         aksi === 'reject' ? 'Alasan penolakan wajib diisi.' : 'Catatan revisi wajib diisi.',
@@ -107,7 +110,9 @@ export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps)
         body:
           aksi === 'approve'
             ? undefined
-            : JSON.stringify(aksi === 'reject' ? { alasan } : { catatan: alasan }),
+            : aksi === 'reject' && sedangMenilaiRevisi
+              ? undefined
+              : JSON.stringify(aksi === 'reject' ? { alasan } : { catatan: alasan }),
       });
       const body = (await response.json().catch(() => null)) as ResponsApi | null;
 
@@ -125,7 +130,9 @@ export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps)
             ? 'Proker disetujui. Kalender terkunci dan ruang kerja kepanitiaan telah dibentuk.'
             : 'Proker disetujui tanpa mengunci kalender.'
           : aksi === 'reject'
-            ? 'Proker ditolak dan telah dikeluarkan dari antrian.'
+            ? sedangMenilaiRevisi
+              ? 'Revisi ditolak. Jadwal lama dipulihkan dan kunci lama tetap berlaku.'
+              : 'Proker ditolak dan telah dikeluarkan dari antrian.'
             : 'Permintaan revisi berhasil dikirim kepada pengusul.',
       );
       timerKembali.current = setTimeout(() => {
@@ -146,8 +153,9 @@ export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps)
           Keputusan approval
         </h2>
         <p className="mt-1 text-[13px] leading-[18px] text-secondary">
-          Persetujuan menjalankan pemeriksaan konflik final. Penolakan dan permintaan revisi
-          harus disertai alasan.
+          {sedangMenilaiRevisi
+            ? 'Setujui untuk memindahkan kunci ke jadwal baru, atau tolak untuk memulihkan jadwal lama.'
+            : 'Persetujuan menjalankan pemeriksaan konflik final. Penolakan dan permintaan revisi harus disertai alasan.'}
         </p>
       </header>
 
@@ -176,43 +184,49 @@ export function ApprovalActions({ konflikAwal, prokerId }: ApprovalActionsProps)
         </div>
       ) : null}
 
-      <div className="space-y-1.5">
-        <Label htmlFor="approval-alasan" required>
-          Alasan penolakan atau catatan revisi
-        </Label>
-        <Textarea
-          id="approval-alasan"
-          data-testid="approval-alasan"
-          value={alasan}
-          maxLength={2000}
-          disabled={Boolean(aksiAktif) || Boolean(pesanSukses)}
-          placeholder="Tuliskan alasan yang jelas untuk pengusul proker"
-          helperText="Wajib untuk Tolak dan Minta Revisi; tidak digunakan saat Setujui."
-          onChange={(event) => setAlasan(event.target.value)}
-        />
-      </div>
+      {!sedangMenilaiRevisi ? (
+        <div className="space-y-1.5">
+          <Label htmlFor="approval-alasan" required>
+            Alasan penolakan atau catatan revisi
+          </Label>
+          <Textarea
+            id="approval-alasan"
+            data-testid="approval-alasan"
+            value={alasan}
+            maxLength={2000}
+            disabled={Boolean(aksiAktif) || Boolean(pesanSukses)}
+            placeholder="Tuliskan alasan yang jelas untuk pengusul proker"
+            helperText="Wajib untuk Tolak dan Minta Revisi; tidak digunakan saat Setujui."
+            onChange={(event) => setAlasan(event.target.value)}
+          />
+        </div>
+      ) : null}
 
       <div className="flex flex-col-reverse gap-2 border-t border-subtle pt-4 sm:flex-row sm:justify-end">
         <Button
           data-testid="approval-tolak"
           variant="danger"
-          disabled={!alasan.trim() || Boolean(aksiAktif) || Boolean(pesanSukses)}
+          disabled={
+            (!sedangMenilaiRevisi && !alasan.trim()) || Boolean(aksiAktif) || Boolean(pesanSukses)
+          }
           loading={aksiAktif === 'reject'}
           onClick={() => void kirimAksi('reject')}
         >
           <XCircle aria-hidden="true" />
           Tolak
         </Button>
-        <Button
-          data-testid="approval-revisi"
-          variant="secondary"
-          disabled={!alasan.trim() || Boolean(aksiAktif) || Boolean(pesanSukses)}
-          loading={aksiAktif === 'revisi'}
-          onClick={() => void kirimAksi('revisi')}
-        >
-          <RotateCcw aria-hidden="true" />
-          Minta revisi
-        </Button>
+        {!sedangMenilaiRevisi ? (
+          <Button
+            data-testid="approval-revisi"
+            variant="secondary"
+            disabled={!alasan.trim() || Boolean(aksiAktif) || Boolean(pesanSukses)}
+            loading={aksiAktif === 'revisi'}
+            onClick={() => void kirimAksi('revisi')}
+          >
+            <RotateCcw aria-hidden="true" />
+            Minta revisi
+          </Button>
+        ) : null}
         <Button
           data-testid="approval-setujui"
           disabled={Boolean(aksiAktif) || Boolean(pesanSukses)}

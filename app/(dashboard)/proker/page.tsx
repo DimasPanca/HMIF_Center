@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { CalendarDays, ClipboardList, ClipboardPlus, LockKeyhole, UnlockKeyhole } from 'lucide-react';
+import {
+  CalendarDays,
+  ClipboardList,
+  ClipboardPlus,
+  LockKeyhole,
+  UnlockKeyhole,
+} from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 
 import { buttonVariants } from '@/components/ui/button';
@@ -15,7 +21,7 @@ import {
 } from '@/components/ui/table';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
-import { daftarProker } from '@/lib/proker/service';
+import { daftarProker, dalamLingkup } from '@/lib/proker/service';
 import { cn } from '@/lib/utils';
 import { formatRentangTanggal } from '@/lib/utils/format-tanggal';
 
@@ -39,6 +45,7 @@ export default async function DaftarProkerPage() {
 
   const proker = await daftarProker(konteks.periodeId);
   const bolehMembuat = can(konteks.roles, 'proker.create');
+  const bolehMenyunting = can(konteks.roles, 'proker.update');
 
   return (
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
@@ -105,7 +112,19 @@ export default async function DaftarProkerPage() {
             <TableBody>
               {proker.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.nama}</TableCell>
+                  <TableCell className="font-medium">
+                    {bolehMenyunting &&
+                    dalamLingkup(konteks, 'proker.update', item.departemen_id) ? (
+                      <Link
+                        href={`/proker/${item.id}`}
+                        className="rounded-xs text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+                      >
+                        {item.nama}
+                      </Link>
+                    ) : (
+                      item.nama
+                    )}
+                  </TableCell>
                   <TableCell>{item.nama_departemen}</TableCell>
                   <TableCell>{LABEL_KATEGORI[item.kategori]}</TableCell>
                   <TableCell className="whitespace-nowrap">
