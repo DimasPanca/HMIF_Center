@@ -17,6 +17,17 @@ const formatPendek = new Intl.DateTimeFormat('id-ID', {
   year: 'numeric',
 });
 
+const formatTanggalDanWaktu = new Intl.DateTimeFormat('id-ID', {
+  timeZone: ZONA_WAKTU,
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZoneName: 'short',
+});
+
 const formatBagianTanggal = new Intl.DateTimeFormat('id-ID', {
   timeZone: ZONA_WAKTU,
   day: 'numeric',
@@ -95,6 +106,10 @@ export function formatTanggalPanjang(input: TanggalInput): string {
 
 export function formatTanggalPendek(input: TanggalInput): string {
   return formatPendek.format(buatTanggal(input));
+}
+
+export function formatTanggalWaktu(input: TanggalInput): string {
+  return formatTanggalDanWaktu.format(buatTanggal(input));
 }
 
 export function formatRentangTanggal(mulai: TanggalInput, selesai: TanggalInput): string {
