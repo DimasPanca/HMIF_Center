@@ -42,12 +42,25 @@ export interface AkunUji {
   nim: string;
   /** false berarti `app_user.is_active = false`. */
   aktif: boolean;
-  /** null berarti akun Supabase Auth dibuat TANPA baris `app_user`. */
-  role: 'KETUA' | 'ANGGOTA' | 'BPH' | 'ADMIN' | null;
+  /**
+   * null berarti akun Supabase Auth dibuat TANPA baris `app_user`. Selain itu,
+   * seluruh delapan `role_code` (PRD §5.1) dapat muncul — T-075 menuntut
+   * dibuktikan kedelapan role melihat Master Gantt yang sama.
+   */
+  role: 'KETUA' | 'WAKIL' | 'SEKUM' | 'BENDUM' | 'KADEPT' | 'ANGGOTA' | 'BPH' | 'ADMIN' | null;
 }
 
 export const AKUN: Record<
-  'aktif' | 'nonaktif' | 'tanpaProfil' | 'bacaSaja' | 'admin' | 'anggota',
+  | 'aktif'
+  | 'nonaktif'
+  | 'tanpaProfil'
+  | 'bacaSaja'
+  | 'admin'
+  | 'anggota'
+  | 'wakil'
+  | 'sekum'
+  | 'bendum'
+  | 'kadept',
   AkunUji
 > = {
   /** Jalur bahagia: masuk, punya peran, punya periode aktif. */
@@ -139,6 +152,48 @@ export const AKUN: Record<
     nim: '3337229005',
     aktif: true,
     role: 'ADMIN',
+  },
+
+  /**
+   * Empat role pimpinan/harian yang melengkapi kedelapan `role_code`.
+   *
+   * Ditambahkan untuk T-075: kriteria pertamanya menuntut dibuktikan bahwa
+   * KEDELAPAN role melihat Master Gantt yang identik (PRD §5.1 memberi
+   * `master_gantt: R` tanpa kecuali). Empat akun di atas hanya meliputi ADMIN,
+   * KETUA, ANGGOTA, dan BPH; tanpa WAKIL, SEKUM, BENDUM, dan KADEPT, gate
+   * hanya dapat menguji separuh matriks.
+   *
+   * WAKIL/SEKUM/BENDUM bersifat lintas-organisasi → tanpa departemen. KADEPT
+   * melekat pada satu departemen (CONSTRAINT `role_dept_wajib`), jadi
+   * `seed-e2e-auth` mengisikan `departemen_id`-nya seperti ANGGOTA.
+   */
+  wakil: {
+    email: 'e2e-wakil@uji.test',
+    namaLengkap: 'Uji E2E Wakil',
+    nim: '3337229007',
+    aktif: true,
+    role: 'WAKIL',
+  },
+  sekum: {
+    email: 'e2e-sekum@uji.test',
+    namaLengkap: 'Uji E2E Sekum',
+    nim: '3337229008',
+    aktif: true,
+    role: 'SEKUM',
+  },
+  bendum: {
+    email: 'e2e-bendum@uji.test',
+    namaLengkap: 'Uji E2E Bendum',
+    nim: '3337229009',
+    aktif: true,
+    role: 'BENDUM',
+  },
+  kadept: {
+    email: 'e2e-kadept@uji.test',
+    namaLengkap: 'Uji E2E Kadept',
+    nim: '3337229010',
+    aktif: true,
+    role: 'KADEPT',
   },
 };
 
