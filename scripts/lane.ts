@@ -148,6 +148,9 @@ const MILIK: Record<Lane, string[]> = {
     // Kontrak edit proker terkunci (T-071): editProkerTerkunci + tolakRevisi +
     // klasifikasi minor/mayor untuk halaman edit & percabangan tolak revisi.
     'docs/ai/EDIT_TERKUNCI_CONTRACT.md',
+    // Kontrak cron harian (T-079): jalankanCronHarian + cronTerotorisasi yang
+    // dipanggil app/api/cron/harian/route.ts milik lane ui.
+    'docs/ai/CRON_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
