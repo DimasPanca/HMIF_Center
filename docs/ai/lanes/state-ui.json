@@ -264,9 +264,10 @@
         "T-051",
         "T-029"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Gate E2E kanban belum ada dan RLS update Anggota belum dibatasi departemen sesuai INV-01; lihat ADR-058"
     },
     {
       "id": "T-081",
