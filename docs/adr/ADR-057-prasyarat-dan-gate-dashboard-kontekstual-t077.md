@@ -1,11 +1,12 @@
 # ADR-057 — Prasyarat dan gate dashboard kontekstual T-077
 
-|                    |                                                                    |
-| ------------------ | ------------------------------------------------------------------ |
-| **Status**         | **Usulan**                                                         |
-| **Tanggal**        | 2026-09-12                                                         |
-| **Ditemukan oleh** | T-077 saat memeriksa panel approval dan alat ukur dashboard        |
-| **Task terkait**   | T-060, T-075, T-076, T-077                                        |
+|                    |                                                             |
+| ------------------ | ----------------------------------------------------------- |
+| **Status**         | **Diterima**                                                |
+| **Tanggal**        | 2026-09-12                                                  |
+| **Disetujui**      | pemilik proyek, 2026-09-12                                  |
+| **Ditemukan oleh** | T-077 saat memeriksa panel approval dan alat ukur dashboard |
+| **Task terkait**   | T-060, T-075, T-076, T-077                                  |
 
 ## Konteks
 
@@ -36,22 +37,21 @@ waktu build atau perkiraan bukan verifikasi yang setara.
 
 ## Keputusan
 
-T-077 diusulkan menunggu sinkronisasi berikut:
+Pemilik proyek memilih pengiriman bertahap dengan destination-gating:
 
-1. Dependency T-060 pada state pelaksana dipulihkan agar sesuai kontrak beku,
-   atau pemilik proyek menyetujui revisi kontrak yang secara eksplisit
-   menghapus panel approval surat dari cakupan T-077.
-2. Bila T-060 tetap menjadi prasyarat, lane data menyelesaikan state machine,
-   antrian, halaman detail, dan route approval surat sebelum T-077 dilanjutkan.
-3. Lane data menyediakan `e2e/dashboard-role.spec.ts` untuk membuktikan tujuh
-   susunan role, gabungan multi-role tanpa kartu duplikat, badge approval, dan
-   navigasi item approval.
-4. Lane data menyediakan `scripts/bench-dashboard.ts` dengan profil jaringan
-   4G yang mengukur waktu dashboard dan Master Gantt siap interaksi.
-5. Bentuk respons `app/api/dashboard/route.ts` ditetapkan sebelum query agregat
-   ditulis, termasuk aturan lingkup departemen untuk Kadept dan identitas user
-   untuk panel Anggota.
-6. T-077 tetap BLOCKED sampai keputusan dependency serta gate di atas tersedia.
+1. T-077 dilanjutkan tanpa menunggu seluruh rantai T-056 → T-058 → T-060.
+2. `approval-antrian` hanya memuat jenis `PROKER`, satu-satunya jenis yang sudah
+   mempunyai tujuan detail dan tindakan approval. Jenis `SURAT` ditambahkan
+   setelah T-060 selesai, melalui satu konstanta `JENIS_BERTUJUAN` pada kontrak
+   data dashboard.
+3. Sekum tetap melihat kartu approval dengan badge 0 sampai tujuan surat ada.
+   Angka itu jujur karena sama dengan jumlah item yang benar-benar dapat dibuka.
+4. Bentuk respons, aturan lingkup, dan deduplikasi mengikuti
+   `docs/ai/DASHBOARD_CONTRACT.md` yang disediakan lane data.
+5. `e2e/dashboard-role.spec.ts` dan `scripts/bench-dashboard.ts` menjadi gate
+   wajib T-077. Keduanya sudah tersedia dari slice data T-077.
+6. T-077 tidak lagi BLOCKED setelah tiga prasyarat data pada butir 4–5 masuk
+   branch integrasi.
 
 ## Konsekuensi implementasi
 
@@ -59,4 +59,5 @@ T-077 diusulkan menunggu sinkronisasi berikut:
 - Badge approval dapat dibandingkan dengan sumber data yang sama melalui gate,
   bukan hanya dinilai secara visual.
 - Query data berlingkup tidak ditentukan sepihak di route UI.
-- Lane UI dapat melanjutkan task READY lain sambil T-060/T-077 diselaraskan.
+- T-060 tetap diperlukan untuk mengaktifkan approval surat, tetapi tidak lagi
+  menahan kartu dashboard lain yang sudah mempunyai data dan tujuan valid.

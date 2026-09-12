@@ -252,10 +252,9 @@
       "depends_on": [
         "T-075"
       ],
-      "status": "BLOCKED",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null,
-      "blocked_reason": "Kontrak masih bergantung pada T-060 yang TODO; halaman/API approval surat, gate dashboard-role, dan bench-dashboard belum tersedia (ADR-057)."
+      "completed_at": "2026-09-12"
     },
     {
       "id": "T-080",
@@ -406,7 +405,7 @@
       "depends_on": [
         "T-076"
       ],
-      "status": "TODO",
+      "status": "READY",
       "completed_at": null
     },
     {
