@@ -522,9 +522,9 @@
       "depends_on": [
         "T-075"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-11"
     },
     {
       "id": "T-079",

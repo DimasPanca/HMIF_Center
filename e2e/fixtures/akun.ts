@@ -48,6 +48,12 @@ export interface AkunUji {
    * dibuktikan kedelapan role melihat Master Gantt yang sama.
    */
   role: 'KETUA' | 'WAKIL' | 'SEKUM' | 'BENDUM' | 'KADEPT' | 'ANGGOTA' | 'BPH' | 'ADMIN' | null;
+  /**
+   * Role tambahan pada periode aktif — untuk menguji pengguna multi-role
+   * (T-077: gabungan panel tanpa kartu duplikat). `seed-e2e-auth` menyisipkan
+   * satu baris `user_role` per role tambahan.
+   */
+  rolesTambahan?: Array<'KETUA' | 'WAKIL' | 'SEKUM' | 'BENDUM' | 'KADEPT' | 'ANGGOTA' | 'BPH' | 'ADMIN'>;
 }
 
 export const AKUN: Record<
@@ -60,7 +66,8 @@ export const AKUN: Record<
   | 'wakil'
   | 'sekum'
   | 'bendum'
-  | 'kadept',
+  | 'kadept'
+  | 'multi',
   AkunUji
 > = {
   /** Jalur bahagia: masuk, punya peran, punya periode aktif. */
@@ -194,6 +201,23 @@ export const AKUN: Record<
     nim: '3337229010',
     aktif: true,
     role: 'KADEPT',
+  },
+
+  /**
+   * Pengguna multi-role KETUA + SEKUM.
+   *
+   * Ditambahkan untuk T-077: kontraknya menuntut dibuktikan bahwa pengguna
+   * multi-role melihat GABUNGAN panel TANPA kartu duplikat. KETUA+SEKUM adalah
+   * kasus kanonis: keduanya menyumbang kartu `approval-antrian` yang harus
+   * muncul sekali, dan gabungan kartu = kartu Ketua ∪ kartu Sekum.
+   */
+  multi: {
+    email: 'e2e-multi@uji.test',
+    namaLengkap: 'Uji E2E Multi',
+    nim: '3337229011',
+    aktif: true,
+    role: 'KETUA',
+    rolesTambahan: ['SEKUM'],
   },
 };
 
