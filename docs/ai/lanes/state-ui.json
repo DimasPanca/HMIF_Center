@@ -267,7 +267,7 @@
       "status": "BLOCKED",
       "butuh_manusia": false,
       "completed_at": null,
-      "blocked_reason": "Gate E2E kanban belum ada dan RLS update Anggota belum dibatasi departemen sesuai INV-01; lihat ADR-058"
+      "blocked_reason": "Master Gantt belum tersambung T-076-UI dan mutasi kanban_card belum menghasilkan peristiwa Realtime untuk progres; lihat ADR-059"
     },
     {
       "id": "T-081",
@@ -406,8 +406,9 @@
       "depends_on": [
         "T-076"
       ],
-      "status": "READY",
-      "completed_at": null
+      "status": "BLOCKED",
+      "completed_at": null,
+      "blocked_reason": "Gate realtime-gantt belum ada pada e2e milik lane data; verifikasi kontrak menghasilkan No tests found"
     },
     {
       "id": "T-079-UI",
