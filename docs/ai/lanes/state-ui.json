@@ -333,9 +333,9 @@
       "depends_on": [
         "T-051"
       ],
-      "status": "READY",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-09-13"
     },
     {
       "id": "T-065-UI",
