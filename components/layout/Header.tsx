@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, PanelLeft, Search, WifiOff } from 'lucide-react';
+import { Menu, PanelLeft, Search, Wifi, WifiOff } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
@@ -9,6 +9,7 @@ import { PeriodeSelector } from '@/components/layout/PeriodeSelector';
 import type { PilihanPeriode } from '@/components/layout/Sidebar';
 import { UserMenu } from '@/components/layout/UserMenu';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { useStatusRealtime } from '@/components/shared/realtime-status';
 import type { RoleCode } from '@/lib/auth/permissions';
 
 interface HeaderProps {
@@ -47,6 +48,7 @@ export function Header({
 }: HeaderProps) {
   const pathname = usePathname();
   const [paletteTerbuka, setPaletteTerbuka] = useState(false);
+  const statusRealtime = useStatusRealtime();
 
   return (
     <>
@@ -87,13 +89,26 @@ export function Header({
 
         <PeriodeSelector periode={periode} periodeAktifId={periodeAktifId} />
 
-        <span
-          className="hidden h-[34px] items-center gap-1.5 rounded-sm px-2 text-[11px] text-secondary sm:inline-flex"
-          title="Status koneksi realtime"
-        >
-          <WifiOff className="size-3.5 text-tertiary" aria-hidden="true" />
-          <span className="hidden xl:inline">Menunggu realtime</span>
-        </span>
+        {pathname === '/' ? (
+          <span
+            className="hidden h-[34px] items-center gap-1.5 rounded-sm px-2 text-[11px] text-secondary sm:inline-flex"
+            title={`Pembaruan langsung: ${statusRealtime}`}
+            role="status"
+          >
+            {statusRealtime === 'terhubung' ? (
+              <Wifi className="size-3.5 text-[var(--success)]" aria-hidden="true" />
+            ) : (
+              <WifiOff className="size-3.5 text-[var(--warning)]" aria-hidden="true" />
+            )}
+            <span className="hidden xl:inline">
+              {statusRealtime === 'terhubung'
+                ? 'Langsung terhubung'
+                : statusRealtime === 'terputus'
+                  ? 'Pembaruan terputus'
+                  : 'Menghubungkan'}
+            </span>
+          </span>
+        ) : null}
 
         <ThemeToggle />
         <UserMenu email={email} nama={nama} roles={roles} />

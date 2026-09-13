@@ -1,14 +1,22 @@
 'use client';
 
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { CalendarRange, Filter, Layers3, RotateCcw } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { GanttChart } from '@/components/gantt/GanttChart';
+import { KoneksiBanner } from '@/components/shared/KoneksiBanner';
+import { aturStatusRealtime } from '@/components/shared/realtime-status';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { transformGanttRows, type MasterGanttRow } from '@/lib/gantt/transform';
 import type { GanttScale } from '@/lib/gantt/geometry';
+import {
+  useMasterGanttRealtime,
+  type StatusKoneksiRealtime,
+} from '@/lib/realtime/use-master-gantt-realtime';
 
 type BarisMasterApi = Omit<
   MasterGanttRow,
@@ -48,10 +56,44 @@ function labelStatus(status: string): string {
   return status === 'DISETUJUI' ? 'Disetujui' : status === 'BERJALAN' ? 'Berjalan' : status;
 }
 
-export function MasterGantt() {
+function LanggananMaster({
+  klien,
+  periodeId,
+  onPerubahan,
+  onStatus,
+}: {
+  klien: SupabaseClient;
+  periodeId: string;
+  onPerubahan: () => void;
+  onStatus: (status: StatusKoneksiRealtime) => void;
+}) {
+  useMasterGanttRealtime({ klien, periodeId, onPerubahan, onStatus });
+  return null;
+}
+
+export function MasterGantt({
+  periodeId,
+  supabaseUrl,
+  supabaseKey,
+}: {
+  periodeId: string;
+  supabaseUrl: string | null;
+  supabaseKey: string | null;
+}) {
   const [baris, setBaris] = useState<BarisMasterApi[]>([]);
   const [memuat, setMemuat] = useState(true);
   const [pesanError, setPesanError] = useState<string | null>(null);
+  const [pesanPembaruanError, setPesanPembaruanError] = useState<string | null>(null);
+  const [koneksi, setKoneksi] = useState<StatusKoneksiRealtime>('menghubungkan');
+  const [klien, setKlien] = useState<SupabaseClient | null>(null);
+  const [highlightedTaskIds, setHighlightedTaskIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const barisRef = useRef<BarisMasterApi[]>([]);
+  const pernahDimuatRef = useRef(false);
+  const requestRef = useRef<AbortController | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aktifRef = useRef(true);
   const [skala, setSkala] = useState<GanttScale>('week');
   const [departemenId, setDepartemenId] = useState(SEMUA);
   const [kategori, setKategori] = useState(SEMUA);
@@ -60,33 +102,91 @@ export function MasterGantt() {
   const [versiPelipatan, setVersiPelipatan] = useState(0);
   const [hariIni] = useState(() => awalHariUtc(new Date()));
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const ubahKoneksi = useCallback((baru: StatusKoneksiRealtime) => {
+    if (!aktifRef.current) return;
+    const statusBaru = baru === 'terhubung' && !navigator.onLine ? 'terputus' : baru;
+    setKoneksi(statusBaru);
+    aturStatusRealtime(statusBaru);
+  }, []);
 
-    async function muat() {
+  const muat = useCallback(async () => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    if (!pernahDimuatRef.current) {
       setMemuat(true);
       setPesanError(null);
-      try {
-        const response = await fetch('/api/gantt/master', {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        const body = (await response.json().catch(() => null)) as ResponsMaster | null;
-        if (!response.ok || body?.ok !== true || !Array.isArray(body.data)) {
-          throw new Error(body?.error?.message ?? 'Master Gantt belum dapat dimuat.');
-        }
-        setBaris(body.data);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        setPesanError(error instanceof Error ? error.message : 'Master Gantt belum dapat dimuat.');
-      } finally {
-        if (!controller.signal.aborted) setMemuat(false);
-      }
     }
+    setPesanPembaruanError(null);
 
-    void muat();
-    return () => controller.abort();
+    try {
+      const response = await fetch('/api/gantt/master', {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      const body = (await response.json().catch(() => null)) as ResponsMaster | null;
+      if (!response.ok || body?.ok !== true || !Array.isArray(body.data)) {
+        throw new Error(body?.error?.message ?? 'Master Gantt belum dapat dimuat.');
+      }
+
+      if (pernahDimuatRef.current) {
+        const idSebelum = new Set(barisRef.current.map((item) => item.proker_id));
+        const idBaru = body.data
+          .map((item) => item.proker_id)
+          .filter((id): id is string => Boolean(id) && !idSebelum.has(id));
+        if (idBaru.length > 0) {
+          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+          setHighlightedTaskIds(new Set(idBaru));
+          flashTimerRef.current = setTimeout(() => {
+            setHighlightedTaskIds(new Set());
+            flashTimerRef.current = null;
+          }, 400);
+        }
+      }
+
+      barisRef.current = body.data;
+      pernahDimuatRef.current = true;
+      setBaris(body.data);
+      setPesanError(null);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      const pesan = error instanceof Error ? error.message : 'Master Gantt belum dapat dimuat.';
+      if (pernahDimuatRef.current) setPesanPembaruanError(pesan);
+      else setPesanError(pesan);
+    } finally {
+      if (!controller.signal.aborted) setMemuat(false);
+    }
   }, []);
+
+  useEffect(() => {
+    aktifRef.current = true;
+    void muat();
+    return () => {
+      aktifRef.current = false;
+      requestRef.current?.abort();
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      aturStatusRealtime('menghubungkan');
+    };
+  }, [muat]);
+
+  useEffect(() => {
+    if (!supabaseUrl || !supabaseKey) {
+      ubahKoneksi('terputus');
+      return;
+    }
+    setKlien(createBrowserClient(supabaseUrl, supabaseKey));
+  }, [supabaseKey, supabaseUrl, ubahKoneksi]);
+
+  useEffect(() => {
+    const terputus = () => ubahKoneksi('terputus');
+    const kembali = () => ubahKoneksi('menghubungkan');
+    window.addEventListener('offline', terputus);
+    window.addEventListener('online', kembali);
+    return () => {
+      window.removeEventListener('offline', terputus);
+      window.removeEventListener('online', kembali);
+    };
+  }, [ubahKoneksi]);
 
   const departemen = useMemo(() => {
     const unik = new Map<string, string>();
@@ -139,6 +239,22 @@ export function MasterGantt() {
 
   return (
     <section data-testid="master-gantt" aria-labelledby="master-gantt-title" className="space-y-3">
+      {klien ? (
+        <LanggananMaster
+          klien={klien}
+          periodeId={periodeId}
+          onPerubahan={() => void muat()}
+          onStatus={ubahKoneksi}
+        />
+      ) : null}
+      <span
+        data-testid="master-gantt-realtime-status"
+        data-state={koneksi}
+        className="sr-only"
+        role="status"
+      >
+        Status pembaruan langsung: {koneksi}
+      </span>
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
         <div className="flex items-start gap-3">
           <span
@@ -188,6 +304,13 @@ export function MasterGantt() {
           </Button>
         </div>
       </div>
+
+      <KoneksiBanner terputus={koneksi === 'terputus'} />
+      {pesanPembaruanError ? (
+        <p role="alert" className="text-[12px] text-danger">
+          Pembaruan belum dapat dimuat: {pesanPembaruanError}
+        </p>
+      ) : null}
 
       <div
         data-testid="master-gantt-filter"
@@ -276,6 +399,7 @@ export function MasterGantt() {
           <GanttChart
             key={`${skala}-${departemenId}-${kategori}-${status}-${versiPelipatan}`}
             model={model}
+            highlightedTaskIds={highlightedTaskIds}
             maxHeight="calc(100vh - 320px)"
             ariaLabel="Master Gantt program kerja HMIF"
           />

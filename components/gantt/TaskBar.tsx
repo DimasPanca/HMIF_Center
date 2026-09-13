@@ -11,6 +11,7 @@ interface TaskBarProps {
   rect: GanttBarRect;
   hariHRect?: { x: number; width: number };
   active?: boolean;
+  highlighted?: boolean;
   onHoverStart?: (event: React.PointerEvent<SVGGElement>) => void;
   onHoverMove?: (event: React.PointerEvent<SVGGElement>) => void;
   onHoverEnd?: () => void;
@@ -28,6 +29,7 @@ function TaskBar({
   rect,
   hariHRect,
   active = false,
+  highlighted = false,
   onHoverStart,
   onHoverMove,
   onHoverEnd,
@@ -55,6 +57,7 @@ function TaskBar({
       aria-pressed={active}
       className={cn('hmif-gantt-bar', className)}
       data-active={active ? 'true' : 'false'}
+      data-highlighted={highlighted ? 'true' : 'false'}
       data-slot="gantt-task-bar"
       onClick={onActivate}
       onKeyDown={handleKeyDown}
@@ -62,6 +65,7 @@ function TaskBar({
       onPointerLeave={onHoverEnd}
       onPointerMove={onHoverMove}
       role="button"
+      style={highlighted ? { filter: 'drop-shadow(0 0 5px var(--warning))' } : undefined}
       tabIndex={0}
     >
       <title>{title}</title>

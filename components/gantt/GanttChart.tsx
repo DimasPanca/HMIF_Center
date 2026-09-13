@@ -29,6 +29,7 @@ type GanttChartProps = {
   maxHeight?: number | string;
   onGroupToggle?: (groupId: string, collapsed: boolean) => void;
   onTaskSelect?: (task: GanttTaskVM) => void;
+  highlightedTaskIds?: ReadonlySet<string>;
 };
 
 type GroupLayout = {
@@ -242,6 +243,7 @@ function GanttChart({
   maxHeight = 520,
   onGroupToggle,
   onTaskSelect,
+  highlightedTaskIds,
 }: GanttChartProps) {
   const rootRef = React.useRef<HTMLElement>(null);
   const verticalScrollRef = React.useRef<HTMLDivElement>(null);
@@ -574,6 +576,7 @@ function GanttChart({
                     rect={rect}
                     hariHRect={row.hariHRect}
                     active={selectedItem?.id === task.id}
+                    highlighted={highlightedTaskIds?.has(task.id)}
                     onHoverStart={(event) => scheduleTooltip(item, event)}
                     onHoverMove={moveTooltipAnchor}
                     onHoverEnd={hideTooltip}
