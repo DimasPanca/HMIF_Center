@@ -2,7 +2,8 @@
 
 /**
  * useMasterGanttRealtime — berlangganan kanal `proker:{periode_id}` dan memberi
- * tahu pemanggil setiap proker/proker_lock berubah, plus status koneksinya.
+ * tahu pemanggil setiap proker/proker_lock atau progres kartu berubah, plus
+ * status koneksinya.
  *
  * ===========================================================================
  * INJEKSI KLIEN, BUKAN MEMBUATNYA SENDIRI
@@ -26,7 +27,7 @@ import { useEffect, useRef } from 'react';
 
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
-import { TABEL_KANAL_PROKER, kanalProker } from './channels';
+import { TABEL_KANAL_PROKER, TABEL_SINYAL_PROGRES, kanalProker } from './channels';
 
 export type StatusKoneksiRealtime = 'menghubungkan' | 'terhubung' | 'terputus';
 
@@ -35,7 +36,7 @@ export interface OpsiMasterGanttRealtime {
   klien: SupabaseClient;
   /** Periode aktif; `null` menunda langganan hingga tersedia. */
   periodeId: string | null;
-  /** Dipanggil saat ada perubahan proker/proker_lock — pemanggil me-refetch. */
+  /** Dipanggil saat proker/lock/progres kartu berubah — pemanggil me-refetch. */
   onPerubahan: () => void;
   /** Perubahan status koneksi (untuk banner & indikator header). */
   onStatus?: (status: StatusKoneksiRealtime) => void;
@@ -62,12 +63,23 @@ export function useMasterGanttRealtime({
     const channel: RealtimeChannel = klien.channel(kanalProker(periodeId));
 
     for (const tabel of TABEL_KANAL_PROKER) {
-      channel.on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: tabel },
-        () => perubahanRef.current(),
+      channel.on('postgres_changes', { event: '*', schema: 'public', table: tabel }, () =>
+        perubahanRef.current(),
       );
     }
+
+    // UPDATE signal dikirim hanya kepada sesi yang lolos RLS. Filter periode
+    // membatasi trafik sebelum callback; payload tak pernah memuat isi kartu.
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: TABEL_SINYAL_PROGRES,
+        filter: `periode_id=eq.${periodeId}`,
+      },
+      () => perubahanRef.current(),
+    );
 
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') statusRef.current?.('terhubung');

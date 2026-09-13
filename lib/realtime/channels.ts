@@ -40,6 +40,9 @@ export function kanalNota(kepanitiaanId: string): string {
  */
 export const TABEL_KANAL_PROKER = ['proker', 'proker_lock'] as const;
 
+/** Sinyal progres per proker tanpa payload kartu (migrasi 025). */
+export const TABEL_SINYAL_PROGRES = 'proker_progress_signal' as const;
+
 /** Kunci React Query Master Gantt — target invalidasi hook realtime. */
 export function kunciMasterGantt(periodeId: string): readonly [string, string] {
   return ['master-gantt', periodeId] as const;
