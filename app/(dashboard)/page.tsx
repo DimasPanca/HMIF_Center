@@ -47,7 +47,12 @@ export default async function BerandaPage() {
 
   return (
     <main className="min-h-dvh space-y-8 bg-app p-4 text-primary sm:p-6">
-      <MasterGantt />
+      <MasterGantt
+        key={konteks.periodeId}
+        periodeId={konteks.periodeId}
+        supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? null}
+        supabaseKey={process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? null}
+      />
 
       <div data-testid="dashboard" className="space-y-8">
         {daftarPanel.map((nama) => {

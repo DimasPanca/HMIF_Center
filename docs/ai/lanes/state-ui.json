@@ -406,9 +406,8 @@
       "depends_on": [
         "T-076"
       ],
-      "status": "BLOCKED",
-      "completed_at": null,
-      "blocked_reason": "Gate realtime-gantt belum ada pada e2e milik lane data; verifikasi kontrak menghasilkan No tests found"
+      "status": "DONE",
+      "completed_at": "2026-09-13"
     },
     {
       "id": "T-079-UI",
