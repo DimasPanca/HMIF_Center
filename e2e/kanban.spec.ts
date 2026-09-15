@@ -134,6 +134,14 @@ test('drag keyboard memakai Tab, Space, panah dan Space', async ({ page, kanban 
   await tabKe(page, handle(page, id));
   await page.keyboard.press('Space');
   await page.keyboard.press('ArrowRight');
+  // Beri koordinat keyboard + collision dnd-kit settle sebelum menjatuhkan.
+  // ArrowRight menghitung ulang posisi lalu `over` diperbarui pada siklus
+  // pengukuran berikutnya; menjatuhkan (Space) seketika membuat selesaiDrag
+  // menerima `over` yang belum menjadi IN_PROGRESS → tak ada PATCH. Emulasi
+  // mobile lebih lambat menetap sehingga deterministik gagal tanpa jeda ini;
+  // pengguna keyboard sungguhan pun tak menekan panah lalu Space dalam mili-
+  // detik yang sama.
+  await page.waitForTimeout(400);
   const respons = page.waitForResponse(
     (r) => r.url().endsWith(endpoint(id)) && r.request().method() === 'PATCH',
   );
