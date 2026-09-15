@@ -100,6 +100,12 @@ function ambilBagian(tanggal: Date) {
   return bagian;
 }
 
+/** Tanggal kalender hari ini dalam zona aplikasi, untuk membandingkan deadline DATE. */
+export function tanggalHariIniJakarta(): string {
+  const { year, month, day } = ambilBagian(new Date());
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export function formatTanggalPanjang(input: TanggalInput): string {
   return formatPanjang.format(buatTanggal(input));
 }

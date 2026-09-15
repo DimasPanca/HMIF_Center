@@ -264,7 +264,7 @@
         "T-051",
         "T-029"
       ],
-      "status": "BLOCKED",
+      "status": "IN_PROGRESS",
       "butuh_manusia": false,
       "completed_at": null,
       "blocked_reason": "Master Gantt belum tersambung T-076-UI dan mutasi kanban_card belum menghasilkan peristiwa Realtime untuk progres; lihat ADR-059"

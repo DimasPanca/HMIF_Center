@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   formatRentangTanggal,
   formatTanggalPanjang,
   formatTanggalPendek,
   formatTanggalWaktu,
+  tanggalHariIniJakarta,
 } from '@/lib/utils/format-tanggal';
 
 const zonaWaktuAwal = process.env.TZ;
@@ -56,5 +57,17 @@ describe('format tanggal Indonesia', () => {
 
     expect(hasilUtc).toBe('Senin, 06 Oktober 2025');
     expect(hasilJakarta).toBe(hasilUtc);
+  });
+
+  it('menghitung hari deadline menurut Jakarta, bukan tanggal UTC mesin', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2025-10-05T16:59:00.000Z'));
+      expect(tanggalHariIniJakarta()).toBe('2025-10-05');
+      vi.setSystemTime(new Date('2025-10-05T17:01:00.000Z'));
+      expect(tanggalHariIniJakarta()).toBe('2025-10-06');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
