@@ -85,12 +85,23 @@ test.afterAll(async () => {
   await sql.end();
 });
 
+// Akun per-project: desktop & mobile berjalan paralel dan submit lintas-tab
+// menulis draft proker per-PENGGUNA. Memakai akun sama membuat kedua project
+// saling menimpa draft → gate flaky. Akun berbeda memberi tiap project draft
+// sendiri. Keduanya berhak membuat proker (ADMIN & KETUA punya proker.create).
+function akunProyek() {
+  return test.info().project.name === 'mobile' ? AKUN.aktif : AKUN.admin;
+}
+
 async function masuk(page: Page): Promise<void> {
   await page.goto('/login', { waitUntil: 'load' });
-  await page.getByLabel(/email/i).fill(AKUN.admin.email);
+  await page.getByLabel(/email/i).fill(akunProyek().email);
   await page.getByLabel(/password|kata sandi/i).fill(PASSWORD_UJI);
   await page.getByRole('button', { name: /masuk|login/i }).click();
-  await page.waitForLoadState('networkidle');
+  // Tunggu redirect keluar dari /login, BUKAN networkidle: MasterGantt membuka
+  // WebSocket realtime yang tetap hidup, jadi 'networkidle' tak pernah tercapai
+  // dan menggantung sampai timeout tes. Sesi terpasang saat redirect terjadi.
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 });
 }
 
 async function bukaMaster(page: Page): Promise<void> {
@@ -111,40 +122,51 @@ test('bar baru dari tab lain muncul dalam kurang dari 3 detik', async ({ page, c
   const tabLain = await context.newPage();
   await tabLain.goto('/', { waitUntil: 'load' });
   const nama = `${namaFixture(test.info().project.name)} lintas-tab ${Date.now()}`;
-  // Tab kedua menyimpan draft lalu submit BERKALA. Kategori ini langsung
-  // DISETUJUI dan tanggal eksplisit membuat bar terlihat pada timeline.
-  const hasil = await tabLain.evaluate(
-    async ({ dept, namaProker, mulai, hariH, akhir }) => {
-      const draft = await fetch('/api/proker/draft', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          langkah: 6,
-          data: {
-            departemen_id: dept,
-            nama: namaProker,
-            kategori: 'BERKALA',
-            tanggal_mulai_persiapan: mulai,
-            tanggal_hari_h_mulai: hariH,
-            tanggal_hari_h_selesai: akhir,
-            pola_ulang: { frekuensi: 'MINGGUAN', hari: ['SENIN'], mulai, selesai: akhir },
-          },
-        }),
-      });
-      if (!draft.ok) throw new Error(`simpan draft: HTTP ${draft.status}`);
-      const submit = await fetch('/api/proker/submit', { method: 'POST' });
-      const body = await submit.json();
-      if (!submit.ok || !body.ok)
-        throw new Error(`submit proker: HTTP ${submit.status} ${JSON.stringify(body.error ?? {})}`);
-      return { id: body.data.proker_id as string, status: body.data.status as string };
-    },
-    { dept: deptId, namaProker: nama, mulai: tanggal(10), hariH: tanggal(30), akhir: tanggal(32) },
-  );
-  expect(hasil.status).toBe('DISETUJUI');
-  const mulaiTunggu = Date.now();
-  await expect(page.getByTestId(`gantt-bar-${hasil.id}`)).toBeVisible({ timeout: 3_000 });
-  expect(Date.now() - mulaiTunggu, 'bar muncul sesudah commit lintas tab').toBeLessThan(3_000);
-  await tabLain.close();
+  // SERIALISASI LINTAS-PROJECT. desktop & mobile berjalan paralel; dua submit
+  // proker yang bersamaan berebut kunci di alur submit dan saling menggantung
+  // (masing-masing LULUS saat dijalankan sendiri). Advisory lock sesi bersifat
+  // global seluruh cluster, jadi ia memaksa satu project menuntaskan submit +
+  // verifikasi bar sebelum yang lain mulai. Tiap project tetap menguji jalur
+  // realtime penuh, hanya tak lagi tumpang-tindih.
+  await sql`SELECT pg_advisory_lock(76076)`;
+  try {
+    // Tab kedua menyimpan draft lalu submit BERKALA. Kategori ini langsung
+    // DISETUJUI dan tanggal eksplisit membuat bar terlihat pada timeline.
+    const hasil = await tabLain.evaluate(
+      async ({ dept, namaProker, mulai, hariH, akhir }) => {
+        const draft = await fetch('/api/proker/draft', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            langkah: 6,
+            data: {
+              departemen_id: dept,
+              nama: namaProker,
+              kategori: 'BERKALA',
+              tanggal_mulai_persiapan: mulai,
+              tanggal_hari_h_mulai: hariH,
+              tanggal_hari_h_selesai: akhir,
+              pola_ulang: { frekuensi: 'MINGGUAN', hari: ['SENIN'], mulai, selesai: akhir },
+            },
+          }),
+        });
+        if (!draft.ok) throw new Error(`simpan draft: HTTP ${draft.status}`);
+        const submit = await fetch('/api/proker/submit', { method: 'POST' });
+        const body = await submit.json();
+        if (!submit.ok || !body.ok)
+          throw new Error(`submit proker: HTTP ${submit.status} ${JSON.stringify(body.error ?? {})}`);
+        return { id: body.data.proker_id as string, status: body.data.status as string };
+      },
+      { dept: deptId, namaProker: nama, mulai: tanggal(10), hariH: tanggal(30), akhir: tanggal(32) },
+    );
+    expect(hasil.status).toBe('DISETUJUI');
+    const mulaiTunggu = Date.now();
+    await expect(page.getByTestId(`gantt-bar-${hasil.id}`)).toBeVisible({ timeout: 3_000 });
+    expect(Date.now() - mulaiTunggu, 'bar muncul sesudah commit lintas tab').toBeLessThan(3_000);
+  } finally {
+    await sql`SELECT pg_advisory_unlock(76076)`;
+    await tabLain.close();
+  }
 });
 
 test('koneksi putus menampilkan banner, chart dan data terakhir tetap ada', async ({

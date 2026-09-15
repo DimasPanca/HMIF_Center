@@ -58,38 +58,61 @@ export function useMasterGanttRealtime({
 
   useEffect(() => {
     if (!periodeId) return;
+    let dibuang = false;
+    let channel: RealtimeChannel | null = null;
 
-    statusRef.current?.('menghubungkan');
-    const channel: RealtimeChannel = klien.channel(kanalProker(periodeId));
+    const pasang = async (): Promise<void> => {
+      // OTORISASI SOCKET REALTIME DENGAN JWT SESI — wajib, dan tak dilakukan
+      // createBrowserClient secara otomatis. Realtime menghormati RLS proker
+      // (butuh pengguna terautentikasi); tanpa token ini socket berjalan
+      // sebagai anon, RLS memfilter SELURUH postgres_changes, dan kanal tampak
+      // SUBSCRIBED ('terhubung') tetapi tak pernah mengirim satu event pun —
+      // bar baru tak akan muncul.
+      const { data } = await klien.auth.getSession();
+      if (dibuang) return;
+      void klien.realtime.setAuth(data.session?.access_token ?? null);
 
-    for (const tabel of TABEL_KANAL_PROKER) {
-      channel.on('postgres_changes', { event: '*', schema: 'public', table: tabel }, () =>
-        perubahanRef.current(),
-      );
-    }
+      statusRef.current?.('menghubungkan');
+      channel = klien.channel(kanalProker(periodeId));
 
-    // UPDATE signal dikirim hanya kepada sesi yang lolos RLS. Filter periode
-    // membatasi trafik sebelum callback; payload tak pernah memuat isi kartu.
-    channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: TABEL_SINYAL_PROGRES,
-        filter: `periode_id=eq.${periodeId}`,
-      },
-      () => perubahanRef.current(),
-    );
-
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') statusRef.current?.('terhubung');
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        statusRef.current?.('terputus');
+      for (const tabel of TABEL_KANAL_PROKER) {
+        channel.on('postgres_changes', { event: '*', schema: 'public', table: tabel }, () =>
+          perubahanRef.current(),
+        );
       }
+
+      // Sinyal progres kartu — difilter periode; payload tak memuat isi kartu.
+      channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: TABEL_SINYAL_PROGRES,
+          filter: `periode_id=eq.${periodeId}`,
+        },
+        () => perubahanRef.current(),
+      );
+
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') statusRef.current?.('terhubung');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          statusRef.current?.('terputus');
+        }
+      });
+    };
+
+    // Token JWT berumur pendek; saat di-refresh, token socket harus ikut
+    // diperbarui atau realtime berhenti menerima event begitu token lama habis.
+    const { data: langganan } = klien.auth.onAuthStateChange((_peristiwa, sesi) => {
+      void klien.realtime.setAuth(sesi?.access_token ?? null);
     });
 
+    void pasang();
+
     return () => {
-      void klien.removeChannel(channel);
+      dibuang = true;
+      langganan.subscription.unsubscribe();
+      if (channel) void klien.removeChannel(channel);
     };
   }, [klien, periodeId]);
 }
