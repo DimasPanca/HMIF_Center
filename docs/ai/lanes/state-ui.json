@@ -275,9 +275,10 @@
       "depends_on": [
         "T-080"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Kontrak mewajibkan template checklist tersimpan dan gate e2e/checklist.spec.ts, tetapi main hanya memiliki checklist_item tanpa penyimpanan template/service/kontrak API; npm run test:e2e -- checklist gagal: No tests found."
     },
     {
       "id": "T-082",
@@ -286,9 +287,10 @@
       "depends_on": [
         "T-080"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Kontrak mewajibkan lampiran, arsip full-text, eskalasi Realtime <3 detik, dan gate e2e/kendala.spec.ts, tetapi main hanya memiliki tabel dasar tanpa service/kontrak API, kontrak storage/realtime, atau gate; npm run test:e2e -- kendala gagal: No tests found."
     },
     {
       "id": "T-106",
