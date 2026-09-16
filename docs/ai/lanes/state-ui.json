@@ -275,9 +275,10 @@
       "depends_on": [
         "T-080"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Kontrak mewajibkan template checklist tersimpan dan gate e2e/checklist.spec.ts, tetapi main hanya memiliki checklist_item tanpa penyimpanan template/service/kontrak API; npm run test:e2e -- checklist gagal: No tests found."
     },
     {
       "id": "T-082",
