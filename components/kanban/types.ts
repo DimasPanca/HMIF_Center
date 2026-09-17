@@ -25,3 +25,21 @@ export interface KartuKanban {
   checklist_selesai: number;
   checklist_total: number;
 }
+
+export interface ItemChecklistKanban {
+  id: string;
+  card_id: string;
+  teks: string;
+  selesai: boolean;
+  assignee_id: string | null;
+  assignee_nama: string | null;
+  deadline: string | null;
+  urutan: number;
+}
+
+export interface TemplateChecklistKanban {
+  id: string;
+  nama: string;
+  departemen_id: string;
+  jumlah_item: number;
+}
