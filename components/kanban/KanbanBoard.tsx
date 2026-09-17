@@ -15,6 +15,7 @@ import { Plus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { CardDialog } from '@/components/kanban/CardDialog';
+import { ChecklistPanel } from '@/components/kanban/ChecklistPanel';
 import { KanbanKolom } from '@/components/kanban/KanbanKolom';
 import { KOLOM_KANBAN, type KartuKanban, type KolomKanban } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
@@ -42,10 +43,26 @@ function Board({ departemenId, bolehUbah, daftarProker, pengurus }: BoardProps) 
   const [memuat, setMemuat] = useState(true);
   const [pesan, setPesan] = useState<string | null>(null);
   const [dialogTerbuka, setDialogTerbuka] = useState(false);
+  const [kartuTerpilih, setKartuTerpilih] = useState<KartuKanban | null>(null);
   const [filterAssignee, setFilterAssignee] = useState('');
   const [filterProker, setFilterProker] = useState('');
   const [filterPrioritas, setFilterPrioritas] = useState('');
   const [filterDeadline, setFilterDeadline] = useState('');
+
+  const perbaruiProgressChecklist = useCallback((selesai: number, total: number) => {
+    const cardId = kartuTerpilih?.id;
+    if (!cardId) return;
+    setKartu((daftar) =>
+      daftar.map((item) =>
+        item.id === cardId
+          ? { ...item, checklist_selesai: selesai, checklist_total: total }
+          : item,
+      ),
+    );
+    setKartuTerpilih((item) =>
+      item ? { ...item, checklist_selesai: selesai, checklist_total: total } : item,
+    );
+  }, [kartuTerpilih?.id]);
 
   const muat = useCallback(async () => {
     const response = await fetch(`/api/kanban?departemen_id=${encodeURIComponent(departemenId)}`, {
@@ -168,11 +185,27 @@ function Board({ departemenId, bolehUbah, daftarProker, pengurus }: BoardProps) 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={selesaiDrag}>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {KOLOM_KANBAN.map(({ kode, label }) => (
-            <KanbanKolom key={kode} kode={kode} label={label} kartu={tersaring.filter((item) => item.kolom === kode)} bolehUbah={bolehUbah} />
+            <KanbanKolom
+              key={kode}
+              kode={kode}
+              label={label}
+              kartu={tersaring.filter((item) => item.kolom === kode)}
+              bolehUbah={bolehUbah}
+              onOpenCard={setKartuTerpilih}
+            />
           ))}
         </div>
       </DndContext>
       {dialogTerbuka ? <CardDialog departemenId={departemenId} daftarProker={daftarProker} pengurus={pengurus} onClose={() => setDialogTerbuka(false)} onSaved={() => { setDialogTerbuka(false); void muat(); }} /> : null}
+      {kartuTerpilih ? (
+        <ChecklistPanel
+          kartu={kartuTerpilih}
+          bolehUbah={bolehUbah}
+          pengurus={pengurus}
+          onClose={() => setKartuTerpilih(null)}
+          onProgressChange={perbaruiProgressChecklist}
+        />
+      ) : null}
     </main>
   );
 }

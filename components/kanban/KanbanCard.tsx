@@ -15,7 +15,15 @@ const WARNA_PRIORITAS: Record<KartuKanban['prioritas'], string> = {
   KRITIS: 'var(--danger)',
 };
 
-export function KanbanCard({ kartu, bolehUbah }: { kartu: KartuKanban; bolehUbah: boolean }) {
+export function KanbanCard({
+  kartu,
+  bolehUbah,
+  onOpen,
+}: {
+  kartu: KartuKanban;
+  bolehUbah: boolean;
+  onOpen: () => void;
+}) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
     useSortable({ id: kartu.id, disabled: !bolehUbah });
   const lewat = kartu.deadline !== null && kartu.deadline < tanggalHariIniJakarta();
@@ -24,7 +32,14 @@ export function KanbanCard({ kartu, bolehUbah }: { kartu: KartuKanban; bolehUbah
     <article
       ref={setNodeRef}
       data-testid={`kanban-card-${kartu.id}`}
-      className={`rounded-sm border border-default border-l-[3px] bg-panel p-3 shadow-sm ${isDragging ? 'z-10 shadow-md' : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Buka detail kartu ${kartu.judul}`}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') onOpen();
+      }}
+      className={`cursor-pointer rounded-sm border border-default border-l-[3px] bg-panel p-3 shadow-sm outline-none focus-visible:ring-3 focus-visible:ring-[var(--border-focus)] ${isDragging ? 'z-10 shadow-md' : ''}`}
       style={{
         borderLeftColor: WARNA_PRIORITAS[kartu.prioritas],
         transform: CSS.Transform.toString(transform),
@@ -39,6 +54,8 @@ export function KanbanCard({ kartu, bolehUbah }: { kartu: KartuKanban; bolehUbah
             data-testid={`kanban-drag-${kartu.id}`}
             aria-label={`Pindahkan kartu ${kartu.judul}`}
             className="flex size-[34px] shrink-0 items-center justify-center rounded-sm text-secondary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
             {...attributes}
             {...listeners}
           >
@@ -58,7 +75,7 @@ export function KanbanCard({ kartu, bolehUbah }: { kartu: KartuKanban; bolehUbah
             {lewat ? 'Terlambat · ' : ''}{formatTanggalPendek(kartu.deadline)}
           </span>
         ) : null}
-        <span className="inline-flex items-center gap-1">
+        <span data-testid={`kanban-card-progress-${kartu.id}`} className="inline-flex items-center gap-1">
           <CheckSquare2 className="size-3.5" aria-hidden="true" />
           {kartu.checklist_selesai}/{kartu.checklist_total}
         </span>

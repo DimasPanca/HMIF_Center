@@ -11,11 +11,13 @@ export function KanbanKolom({
   label,
   kartu,
   bolehUbah,
+  onOpenCard,
 }: {
   kode: KolomKanban;
   label: string;
   kartu: KartuKanban[];
   bolehUbah: boolean;
+  onOpenCard: (kartu: KartuKanban) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `kolom-${kode}` });
   return (
@@ -34,7 +36,7 @@ export function KanbanKolom({
       <SortableContext items={kartu.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2">
           {kartu.map((item) => (
-            <KanbanCard key={item.id} kartu={item} bolehUbah={bolehUbah} />
+          <KanbanCard key={item.id} kartu={item} bolehUbah={bolehUbah} onOpen={() => onOpenCard(item)} />
           ))}
           {kartu.length === 0 ? (
             <p className="px-2 py-4 text-center text-[12px] text-secondary">Belum ada kartu</p>
