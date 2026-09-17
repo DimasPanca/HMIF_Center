@@ -104,6 +104,31 @@ test.afterAll(async () => {
   }
 });
 
+/**
+ * Suite ini serial dan memakai kartu fixture yang SAMA; tanpa reset, keadaan
+ * bocor antar-test (mis. test 1 menyimpan 3/8 sehingga test rollback tak lagi
+ * mulai dari 2/8). beforeEach mengembalikan baseline eksak: 8 item pada kartu
+ * utama dengan item[0]&item[1] tercentang (2/8), urutan 0..7, tanpa item/temp
+ * tambahan; kartu target kosong; item kartu asing tak tercentang.
+ */
+async function aturUlangFixture(): Promise<void> {
+  await sql`DELETE FROM checklist_item WHERE card_id = ${cardTarget}::uuid`;
+  await sql`DELETE FROM checklist_item WHERE card_id = ${cardUtama}::uuid AND id <> ALL(${itemIds}::uuid[])`;
+  await sql`DELETE FROM checklist_template WHERE nama LIKE ${prefix() + ' %'}`;
+  await sql`
+    UPDATE checklist_item AS ci SET urutan = ord.n - 1
+    FROM unnest(${itemIds}::uuid[]) WITH ORDINALITY AS ord(id, n)
+    WHERE ci.id = ord.id AND ci.card_id = ${cardUtama}::uuid`;
+  await sql`
+    UPDATE checklist_item SET selesai = (id = ANY(${[itemIds[0]!, itemIds[1]!]}::uuid[]))
+    WHERE card_id = ${cardUtama}::uuid AND id = ANY(${itemIds}::uuid[])`;
+  await sql`UPDATE checklist_item SET selesai = false WHERE card_id = ${cardAsing}::uuid`;
+}
+
+test.beforeEach(async () => {
+  await aturUlangFixture();
+});
+
 async function masuk(page: Page, akun = AKUN.anggota): Promise<void> {
   await page.goto('/login', { waitUntil: 'load' });
   await page.getByLabel(/email/i).fill(akun.email);
@@ -133,10 +158,15 @@ test('mencentang item memperbarui progres kartu dan panel 2/8 → 3/8 tanpa relo
   await page.getByTestId(`checklist-check-${itemIds[2]!}`).click();
   await expect(page.getByTestId('checklist-progress')).toHaveText(/3\s*\/\s*8/);
   await expect(page.getByTestId(`kanban-card-progress-${cardUtama}`)).toHaveText(/3\s*\/\s*8/);
-  // Tanpa reload: kembali dari DB juga 3.
-  expect(
-    Number((await sql`SELECT count(*)::int n FROM checklist_item WHERE card_id=${cardUtama}::uuid AND selesai`)[0]!.n),
-  ).toBe(3);
+  // Persistensi: tunggu PATCH mendarat (optimistik tampil lebih dulu daripada
+  // commit server), lalu DB juga 3.
+  await expect
+    .poll(async () =>
+      Number(
+        (await sql`SELECT count(*)::int n FROM checklist_item WHERE card_id=${cardUtama}::uuid AND selesai`)[0]!.n,
+      ),
+    )
+    .toBe(3);
 });
 
 // ---------------------------------------------------------------------------
