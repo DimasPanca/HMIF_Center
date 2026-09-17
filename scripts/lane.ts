@@ -87,6 +87,9 @@ const MILIK: Record<Lane, string[]> = {
     // Service checklist Kanban (T-081): aturan bisnis & skema milik lane data;
     // komponen di components/kanban (lane ui) memakainya lewat impor.
     'lib/kanban/**',
+    // Service notulensi (T-106): sanitasi TipTap, DOCX, aturan bisnis & skema;
+    // komponen di components/notulensi (lane ui) memakainya lewat impor.
+    'lib/notulensi/**',
     'lib/deadline.ts',
     'lib/import/**',
     'lib/security/**',
@@ -163,6 +166,9 @@ const MILIK: Record<Lane, string[]> = {
     // Kontrak checklist kartu Kanban (T-081): service lib/kanban/checklist.ts +
     // skema + lingkup RLS, dibaca route & komponen checklist milik lane ui.
     'docs/ai/CHECKLIST_CONTRACT.md',
+    // Kontrak notulensi (T-106): service lib/notulensi/** + skema + sanitasi +
+    // DOCX + lingkup RLS, dibaca route & komponen notulensi milik lane ui.
+    'docs/ai/NOTULENSI_CONTRACT.md',
 
     // Kontrak antar-lane untuk T-065, mengikuti pola AUTH_CONTRACT.md persis:
     // lane data memiliki lib/proker/**, lane ui memanggilnya dari
