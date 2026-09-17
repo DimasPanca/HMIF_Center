@@ -299,9 +299,10 @@
         "T-051",
         "T-080"
       ],
-      "status": "READY",
+      "status": "BLOCKED",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": null,
+      "blocked_reason": "Kontrak membutuhkan service/kontrak notulensi, sanitasi TipTap, generate DOCX, lampiran, action-item ke Kanban, dan e2e/notulensi.spec.ts; semuanya belum ada. Dependency TipTap tabel/task-list dan sanitizer juga belum tersedia langsung; npm run test:e2e -- notulensi gagal: No tests found."
     },
     {
       "id": "T-107",
