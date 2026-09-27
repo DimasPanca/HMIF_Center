@@ -1,105 +1,128 @@
-# CLAUDE.md — Instruksi untuk Claude Code
+# CLAUDE.md — Instruksi Agent untuk HMIF Center
 
-## Kamu adalah agent lane `data`
-
-Project ini dikerjakan **dua agent sekaligus**. Kamu memegang **lane `data`**; Codex memegang lane `ui` di direktori terpisah. Kalian tidak boleh saling menimpa.
+Kamu satu-satunya agent yang mengerjakan project ini. Tidak ada pembagian lane
+data/ui — semua file boleh kamu sentuh selama aturan di bawah ditepati.
 
 | | |
 |---|---|
-| **Lane** | `data` — DATA & PLATFORM |
-| **Branch** | `lane/data` |
+| **Repo** | https://github.com/DimasPanca/HMIF_Center |
+| **Branch kerja** | `main` (atau `feat/T-XXX` untuk task besar; merge sendiri) |
 | **Direktori** | `J:\Software\Web_Project\HMIF_Center` |
-| **Rentang ADR** | ADR-020 … ADR-039 |
-
-**Periksa dulu sebelum bekerja:**
-
-```bash
-git branch --show-current      # harus: lane/data
-```
-
-Kalau yang muncul `lane/ui`, kamu berada di direktori yang salah. **Berhenti dan lapor.**
+| **Framework** | Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4 |
+| **Database** | Supabase (Postgres 16) · Prisma · RLS ganda-lapis |
 
 ---
 
-## Baca ini dulu, urut
+## Baca ini dulu, dalam urutan
 
-1. **`docs/ai/PARALLEL_PROTOCOL.md`** — kenapa ada dua lane, apa yang boleh disentuh
-2. **`docs/ai/lanes/LANE-DATA.md`** — daftar task dan aturan lane kamu
-3. **`docs/ai/AGENT_RULES.md`** — 12 aturan proses, 30 invariant, 15 konvensi kode
-4. Kontrak task di `docs/ai/tasks/P{fase}-*.md` — **hanya task yang sedang dikerjakan**
+1. **`docs/ai/HANDOFF.md`** — state terakhir project, apa yang baru saja selesai, blocker aktif, dan langkah berikutnya. **Selalu baca ini di awal sesi.**
+2. **`docs/ai/ARCHITECTURE.md`** — di mana kode apa. Peta direktori + pola per lapisan (DB → service → route → komponen).
+3. **`docs/ai/AGENT_RULES.md`** — 12 aturan proses, 30 invariant domain, 15 konvensi kode. **Wajib.**
+4. Kontrak task di `docs/ai/tasks/P{fase}-*.md` — **hanya task yang sedang dikerjakan**.
+5. Kontrak fitur di `docs/ai/*_CONTRACT.md` bila menyentuh area itu (mis. `AUTH_CONTRACT.md` saat menambah endpoint terautentikasi).
 
-Jangan membaca keempat dokumen produk (PRD, SYSTEM_DESIGN, USER_FLOW, DESIGN_SYSTEM) sekaligus. Setiap task menyebut bagian mana yang perlu dibaca di field **Baca**.
+**Jangan** membaca PRD, SYSTEM_DESIGN, USER_FLOW, DESIGN_SYSTEM sekaligus. Setiap kontrak task menyebut bagian mana yang perlu dibaca di field **Baca**.
 
 ---
 
-## Loop kerja
+## Loop kerja satu task
 
 ```bash
-npx tsx scripts/lane.ts status data           # 1. task berikutnya
-npx tsx scripts/lane.ts claim  data T-0XX     # 2. ambil satu task
-                                              # 3. baca kontrak, kerjakan
-                                              # 4. jalankan verifikasi kontrak
-npx tsx scripts/lane.ts guard  data           # 5. WAJIB — exit 1 = jangan commit
-npx tsx scripts/lane.ts done   data T-0XX     # 6. tutup
-git add -A && git commit -m "T-0XX: <judul>"  # 7. satu task satu commit
+# 1. Ambil task berikutnya dari HANDOFF.md atau docs/ai/tasks.json
+# 2. Baca kontraknya di docs/ai/tasks/P{fase}-*.md
+# 3. Kerjakan (kode + test + migrasi bila perlu)
+
+# 4. Verifikasi — WAJIB, jangan pernah dilewati
+npm run verify              # typecheck + lint + secret-scan + unit
+npm run db:test             # bila menyentuh migrasi/RLS
+npm run test:e2e -- <fitur> # bila ada gate e2e yang relevan
+
+# 5. Update tasks.json — status -> DONE, isi completed_at
+
+# 6. Commit + push
+git add -A
+git commit -m "T-0XX: <judul task>"
+git push
 ```
 
-**Langkah 5 tidak boleh dilewati.** `guard` membaca `git status` dan menolak bila kamu menyentuh file milik lane `ui`. Itu satu-satunya hal yang mencegah dua agent saling merusak.
+**Satu task = satu commit.** Jangan menggabung dua task dalam satu commit.
+
+Untuk task besar/berisiko, buat branch `feat/T-XXX`, buka PR, lalu merge sendiri
+setelah CI hijau. Task kecil (bugfix, doc, refactor lokal) langsung ke `main`.
 
 ---
 
 ## Batas keras
 
-**Boleh kamu ubah:**
+**Boleh diubah:** semua kode di `app/**`, `components/**`, `lib/**`, `supabase/**`,
+`prisma/**`, `scripts/**`, `e2e/**`, konfigurasi (`package.json`, `next.config.ts`,
+dll.), dokumentasi di `docs/ai/**`.
+
+**Tidak boleh diubah tanpa permintaan eksplisit** — dokumen produk beku:
+
 ```
-supabase/**  prisma/**  lib/db/**  lib/storage/**  lib/images/**  lib/auth/**
-scripts/**  package.json  package-lock.json  next.config.ts
-eslint.config.mjs  .prettierrc  vitest.config.ts  playwright.config.ts
-docs/ai/lanes/state-data.json
+docs/PRD.md              docs/SYSTEM_DESIGN.md    docs/USER_FLOW.md
+docs/DESIGN_SYSTEM.md    docs/AI_EXECUTION_PLAN.md
+docs/ai/AGENT_RULES.md   docs/ai/tasks.json       docs/ai/tasks/**
+docs/adr/README.md
+README.md   Design/**   Template/**
 ```
 
-**Tidak boleh kamu sentuh** — milik lane `ui`:
-```
-app/**  components/**  lib/utils/**  lib/theme.ts  lib/gantt/**
-tailwind.config.ts  postcss.config.mjs  components.json
-```
-
-**Beku untuk semua agent:**
-```
-docs/PRD.md  docs/SYSTEM_DESIGN.md  docs/USER_FLOW.md  docs/DESIGN_SYSTEM.md
-docs/AI_EXECUTION_PLAN.md  docs/ai/AGENT_RULES.md  docs/ai/PARALLEL_PROTOCOL.md
-docs/ai/tasks.json  docs/ai/tasks/**  docs/adr/README.md
-CLAUDE.md  AGENTS.md  README.md  Design/**  Template/**
-```
-
-Butuh mengubah sesuatu di luar lane kamu? **Berhenti, lapor ke manusia sebagai sync point.** Jangan pernah mengedit lintas lane, sekecil apa pun.
+Bila menemukan pertentangan antar-dokumen produk → **tulis ADR baru di
+`docs/adr/`** (nomor ADR-020…059 tersedia), jangan diam-diam memutuskan.
 
 ---
 
-## Yang khusus untuk lane ini
+## Standing rules (jangan pernah dilanggar)
 
-- **Hanya kamu yang boleh menyentuh database.** Migrasi ganda dari dua agent merusak state migrasi permanen.
-- **Hanya kamu yang boleh mengubah `package.json`.** Kalau menambah dependency, sebutkan di laporan supaya lane `ui` menjalankan `npm install` setelah sync.
-- Setiap migrasi wajib jalan **dari database kosong**. Jalankan `npm run db:reset` setelah setiap task migrasi.
-- Jangan commit ke `main`. `main` hanya diperbarui manusia di sync point.
+Ringkasan cepat; sumber otoritatif = `docs/ai/AGENT_RULES.md`.
 
-## Berhenti dan lapor bila
+- **K-02** — Semua respons API `{ok:true,data}` / `{ok:false,error:{code,message,details?}}`. Pakai `lib/http/respond.ts` (`sukses`, `gagal`).
+- **K-04** — Satu skema Zod dipakai form + validasi server (skema di service, di-export, dipakai ulang route + form).
+- **K-09** — Setiap mutasi lewat `withAuditContext(req, (tx) => …)`; kalau tidak, `app.ip`/`user_agent`/`periode_id` hilang di baris audit.
+- **INV-01/02** — RLS + guard aplikasi, dua lapis. Klien tidak pernah menentukan role.
+- **INV-06/07** — `audit_log` append-only. Semua mutasi meninggalkan jejak.
+- **INV-08** — Semua data ber-scope periode. Query lintas periode hanya arsip (read-only).
+- **Migrasi wajib idempotent dari kosong** — setelah migrasi baru: `npm run db:reset && npm run seed:e2e-auth` untuk verifikasi.
+- **Jangan** menambah dependency di luar SYSTEM_DESIGN §2 tanpa ADR.
+- **Jangan** commit `.env*`, dump DB, atau file generate ke repo.
+- **Jangan** commit `main` yang gagal `npm run verify`. Kalau butuh WIP, pakai branch fitur.
 
-1. `guard` melaporkan pelanggaran yang tidak kamu mengerti
-2. Task yang kamu butuhkan ada di lane `ui`
-3. Verifikasi gagal 2× dengan penyebab sama (AGENT_RULES P-04)
-4. Butuh dependency di luar SYSTEM_DESIGN §2
-5. Menemukan pertentangan antar-dokumen → tulis ADR di rentang **ADR-020 … ADR-039** berstatus *Usulan*, lalu lapor
-6. Mencapai sync point **S1** (setelah T-011), **S2** (T-043), atau **S3** (T-044)
+---
+
+## Environment
+
+`.env.local` sudah tersedia di root (tidak di git). Berisi kredensial Supabase,
+DB URL, secret sesi. **Jangan pernah cetak/echo isinya ke chat atau commit.**
+
+Cek awal sebelum kerja berat:
+
+```bash
+npm run check:env    # variabel env lengkap?
+npm run db:ping      # DB terjangkau?
+```
+
+Rincian per variabel: `docs/ai/ENV_SETUP.md`.
+
+---
 
 ## Format laporan setiap task
 
 ```
 Task      : T-0XX <judul>
 File      : daftar file yang dibuat/diubah
-Verifikasi: perintah yang dijalankan + output NYATA
-guard     : hasil npx tsx scripts/lane.ts guard data
-Catatan   : penyimpangan, ADR baru, atau blocker
+Verifikasi: perintah + output NYATA (bukan asumsi)
+Catatan   : penyimpangan, ADR baru, blocker
 ```
 
-Jangan melaporkan sukses tanpa output verifikasi nyata.
+Jangan pernah melaporkan sukses tanpa output verifikasi nyata.
+
+---
+
+## Berhenti dan lapor bila
+
+1. Verifikasi gagal 2× berturut-turut dengan penyebab sama (AGENT_RULES P-04).
+2. Task yang mau dikerjakan `depends_on`-nya belum DONE — cek di tasks.json.
+3. Butuh dependency di luar SYSTEM_DESIGN §2.
+4. Menemukan pertentangan antar-dokumen produk → tulis ADR *Usulan* lalu lapor.
+5. Kontrak task bertentangan dengan dirinya sendiri.
