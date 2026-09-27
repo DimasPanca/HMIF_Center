@@ -25,6 +25,6 @@ export async function POST(request: Request) {
   if (!guard.ok) return responsGuard(guard.nilai);
 
   const body = await bacaBody(request);
-  const hasil = await withAuditContext(request, (tx) => buatNotulensi(tx, guard.konteks, body));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => buatNotulensi(tx, guard.konteks, body));
   return responsNotulensi(hasil, 201);
 }

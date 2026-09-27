@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   }
 
   const hasil = await simpanImportPengguna(
-    (fn) => withAuditContext(request, fn),
+    (fn) => withAuditContext(request, guard.konteks, fn),
     guard.konteks,
     matriks.nilai,
     { petaManual: peta, lewati },

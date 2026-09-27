@@ -45,7 +45,7 @@ export async function PUT(request: Request) {
     });
   }
 
-  const hasil = await withAuditContext(request, (tx) =>
+  const hasil = await withAuditContext(request, guard.konteks, (tx) =>
     simpanDraft(
       tx,
       guard.konteks,
@@ -66,7 +66,7 @@ export async function DELETE(request: Request) {
   const guard = await requirePermission('proker.create');
   if (!guard.ok) return guard.nilai;
 
-  const hasil = await withAuditContext(request, (tx) => hapusDraft(tx, guard.konteks));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => hapusDraft(tx, guard.konteks));
   return hasil.ok
     ? sukses(hasil.nilai, { headers: TANPA_CACHE })
     : gagal(hasil.kode, hasil.pesan, {

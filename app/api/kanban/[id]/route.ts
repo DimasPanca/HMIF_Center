@@ -28,7 +28,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!input.success) {
     return gagal('TIDAK_VALID', 'Perubahan kartu tidak valid.', { status: 400, details: input.error.issues });
   }
-  const hasil = await withAuditContext(request, async (tx) => {
+  const hasil = await withAuditContext(request, guard.konteks, async (tx) => {
     const kartu = await tx.kanban_card.findUnique({
       where: { id },
       select: {

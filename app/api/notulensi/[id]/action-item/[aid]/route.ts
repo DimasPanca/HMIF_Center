@@ -14,6 +14,6 @@ export async function DELETE(request: Request, context: RouteContext) {
   const { id, aid } = await context.params;
   if (!idSah(id, aid)) return idTidakValid();
 
-  const hasil = await withAuditContext(request, (tx) => hapusActionItem(tx, guard.konteks, aid));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => hapusActionItem(tx, guard.konteks, aid));
   return responsNotulensi(hasil);
 }

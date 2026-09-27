@@ -150,7 +150,7 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
    T-107 siap dikerjakan — kecuali bagian "generate massal Surat Aktif
    Organisasi" (ADR-052) yang butuh T-064 dari rantai surat yang ditunda.
    Putuskan: T-107 dikerjakan tanpa bagian itu (tulis ADR), atau menunggu.
-3. **`audit_log.user_id` selalu NULL untuk mutasi aplikasi (INV-07).**
+3. **[DIPERBAIKI 2026-09-27 — migrasi 028 + `withAuditContext(req, pelaku, fn)`; `db:reset` dari kosong BELUM dijalankan]** `audit_log.user_id` selalu NULL untuk mutasi aplikasi (INV-07).
    Ditemukan 2026-09-27: `fn_audit` membaca pelaku dari `auth.uid()`, tetapi
    `withAuditContext` hanya menyetel `app.ip`/`user_agent`/`periode_id`. Semua
    baris audit trigger (proker, app_user, user_role, periode) tanpa pelaku.
@@ -196,7 +196,7 @@ Tujuh hal yang tidak obvious dari kode:
 
 ## 5. Langkah berikutnya (rekomendasi)
 
-1. **Perbaiki `audit_log.user_id`** (blocker #3) — pelanggaran invariant yang
+1. **Jalankan `npm run db:reset && npm run seed:e2e-auth`** untuk verifikasi migrasi 028 dari kosong (menghapus isi DB dev). Perbaikan `audit_log.user_id` — pelanggaran invariant yang
    diam-diam, makin banyak baris audit tanpa pelaku setiap hari.
 2. **T-107 Data pengurus** — pakai ulang `ImportPreview` dan pola
    `import-pengguna.ts`. Ini yang membuat daftar hadir notulensi berisi. Bagian

@@ -39,7 +39,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!SkemaId.safeParse(id).success) return idTidakValid();
 
   const body: unknown = await request.json().catch(() => null);
-  const hasil = await withAuditContext(request, (tx) => ubahPeriode(tx, id, body));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => ubahPeriode(tx, id, body));
   if (!hasil.ok) return responsGagal(hasil);
 
   return sukses(hasil.nilai, { headers: HEADER_TANPA_CACHE });
@@ -52,7 +52,7 @@ export async function DELETE(request: Request, context: RouteContext) {
   const { id } = await context.params;
   if (!SkemaId.safeParse(id).success) return idTidakValid();
 
-  const hasil = await withAuditContext(request, (tx) => hapusPeriode(tx, id));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => hapusPeriode(tx, id));
   if (!hasil.ok) return responsGagal(hasil);
 
   return sukses(hasil.nilai, { headers: HEADER_TANPA_CACHE });

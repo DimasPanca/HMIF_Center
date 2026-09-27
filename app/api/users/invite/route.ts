@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const badan: unknown = await request.json().catch(() => null);
   const asal = new URL(request.url).origin;
 
-  const hasil = await withAuditContext(request, (tx) => undang(tx, guard.konteks, badan, asal));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => undang(tx, guard.konteks, badan, asal));
   return hasil.ok
     ? sukses(hasil.nilai, { status: 201, headers: TANPA_CACHE })
     : gagal(hasil.kode, hasil.pesan, {

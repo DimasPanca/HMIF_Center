@@ -82,7 +82,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const perubahan = body as Record<string, unknown>;
-  const hasil = await withAuditContext(request, async (tx) => {
+  const hasil = await withAuditContext(request, guard.konteks, async (tx) => {
     const proker = await detailProker(id, tx);
     if (!proker || proker.periode_id !== guard.konteks.periodeId) {
       return {

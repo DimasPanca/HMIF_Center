@@ -33,7 +33,7 @@ export async function POST(request: Request, context: RouteContext) {
     typeof body === 'object' && body !== null && 'catatan' in body && typeof body.catatan === 'string'
       ? body.catatan
       : '';
-  const hasil = await withAuditContext(request, (tx) => mintaRevisi(tx, id, catatan));
+  const hasil = await withAuditContext(request, konteks, (tx) => mintaRevisi(tx, id, catatan));
   if (!hasil.ok) {
     return gagal(hasil.kode, hasil.pesan, {
       status: STATUS_GAGAL[hasil.kode],

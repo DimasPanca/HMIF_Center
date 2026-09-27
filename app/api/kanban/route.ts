@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     return gagal('TIDAK_VALID', 'Data kartu tidak valid.', { status: 400, details: input.error.issues });
   }
   const { departemen_id, proker_id, judul, deskripsi, prioritas, assignee_id, deadline } = input.data;
-  const hasil = await withAuditContext(request, async (tx) => {
+  const hasil = await withAuditContext(request, guard.konteks, async (tx) => {
     const dept = await tx.departemen.findUnique({ where: { id: departemen_id }, select: { id: true } });
     if (!dept) return { ok: false as const, code: 'TIDAK_DITEMUKAN', status: 404 };
     if (proker_id) {

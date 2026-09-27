@@ -28,7 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  const hasil = await withAuditContext(request, (tx) => setujuiProker(tx, konteks, id));
+  const hasil = await withAuditContext(request, konteks, (tx) => setujuiProker(tx, konteks, id));
   if (!hasil.ok) {
     return gagal(hasil.kode, hasil.pesan, {
       status: STATUS_GAGAL[hasil.kode],

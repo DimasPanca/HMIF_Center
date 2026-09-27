@@ -34,6 +34,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!idSah(id)) return idTidakValid();
 
   const body = await bacaBody(request);
-  const hasil = await withAuditContext(request, (tx) => perbaruiNotulensi(tx, guard.konteks, id, body));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => perbaruiNotulensi(tx, guard.konteks, id, body));
   return responsNotulensi(hasil);
 }

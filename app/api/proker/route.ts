@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   if (!guard.ok) return responsGuard(guard.nilai);
 
   const body: unknown = await request.json().catch(() => null);
-  const hasil = await withAuditContext(request, (tx) => buatProker(tx, guard.konteks, body));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => buatProker(tx, guard.konteks, body));
 
   if (!hasil.ok) return responsGagal(hasil);
   return jsonTanpaCache({ ok: true, data: hasil.nilai }, { status: 201 });

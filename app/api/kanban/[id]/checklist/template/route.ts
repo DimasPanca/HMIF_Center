@@ -39,6 +39,6 @@ export async function POST(request: Request, context: RouteContext) {
       headers: TANPA_CACHE,
     });
   }
-  const hasil = await withAuditContext(request, (tx) => simpanTemplate(tx, guard.konteks, id, input.data));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => simpanTemplate(tx, guard.konteks, id, input.data));
   return responsChecklist(hasil, 201);
 }

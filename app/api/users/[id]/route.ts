@@ -19,7 +19,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const badan: unknown = await request.json().catch(() => null);
-  const hasil = await withAuditContext(request, (tx) => ubahPengguna(tx, guard.konteks, id, badan));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => ubahPengguna(tx, guard.konteks, id, badan));
   return hasil.ok
     ? sukses(hasil.nilai)
     : gagal(hasil.kode, hasil.pesan, { status: STATUS_GAGAL[hasil.kode], details: hasil.isu });

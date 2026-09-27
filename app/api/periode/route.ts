@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   if (!guard.ok) return tanpaCache(guard.nilai);
 
   const body: unknown = await request.json().catch(() => null);
-  const hasil = await withAuditContext(request, async (tx) => {
+  const hasil = await withAuditContext(request, guard.konteks, async (tx) => {
     const dibuat = await buatPeriode(tx, body);
     if (!dibuat.ok) return dibuat;
 

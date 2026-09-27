@@ -15,6 +15,6 @@ export async function POST(request: Request, context: RouteContext) {
   if (!idSah(id, aid)) return idTidakValid();
 
   const body = await bacaBody(request);
-  const hasil = await withAuditContext(request, (tx) => konversiActionItem(tx, guard.konteks, aid, body));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => konversiActionItem(tx, guard.konteks, aid, body));
   return responsNotulensi(hasil);
 }

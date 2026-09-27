@@ -35,7 +35,7 @@ export async function POST(request: Request, context: RouteContext) {
       ? body.alasan
       : '';
 
-  const hasil = await withAuditContext(request, async (tx) => {
+  const hasil = await withAuditContext(request, konteks, async (tx) => {
     const proker = await detailProker(id, tx);
     if (!proker || proker.periode_id !== konteks.periodeId) {
       return {

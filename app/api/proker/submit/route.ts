@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const guard = await requirePermission('proker.create');
   if (!guard.ok) return guard.nilai;
 
-  const hasil = await withAuditContext(request, (tx) => submitWizard(tx, guard.konteks));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => submitWizard(tx, guard.konteks));
   if (!hasil.ok) {
     return gagal(hasil.kode, hasil.pesan, {
       status: STATUS_GAGAL[hasil.kode],

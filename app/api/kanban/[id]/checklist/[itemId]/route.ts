@@ -30,7 +30,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       headers: TANPA_CACHE,
     });
   }
-  const hasil = await withAuditContext(request, (tx) => ubahChecklist(tx, guard.konteks, itemId, input.data));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => ubahChecklist(tx, guard.konteks, itemId, input.data));
   return responsChecklist(hasil);
 }
 
@@ -41,6 +41,6 @@ export async function DELETE(request: Request, context: RouteContext) {
   if (!idValid(id, itemId)) {
     return gagal('TIDAK_VALID', 'ID kartu atau item tidak valid.', { status: 422, headers: TANPA_CACHE });
   }
-  const hasil = await withAuditContext(request, (tx) => hapusChecklist(tx, guard.konteks, itemId));
+  const hasil = await withAuditContext(request, guard.konteks, (tx) => hapusChecklist(tx, guard.konteks, itemId));
   return responsChecklist(hasil);
 }

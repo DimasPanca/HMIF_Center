@@ -8,7 +8,7 @@ const TANPA_CACHE = { 'Cache-Control': 'no-store' };
 
 export async function POST(request: Request) {
   const badan: unknown = await request.json().catch(() => null);
-  const hasil = await withAuditContext(request, (tx) => aktivasi(tx, badan));
+  const hasil = await withAuditContext(request, null, (tx) => aktivasi(tx, badan));
   return hasil.ok
     ? sukses({ email: hasil.nilai.email }, { headers: TANPA_CACHE })
     : gagal(hasil.kode, hasil.pesan, {

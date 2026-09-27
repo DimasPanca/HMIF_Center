@@ -58,6 +58,7 @@ function permintaan(headers: Record<string, string>): Request {
 }
 
 interface BarisAudit {
+  user_id: string | null;
   ip_address: string | null;
   user_agent: string | null;
   periode_id: string | null;
@@ -66,7 +67,8 @@ interface BarisAudit {
 
 async function auditTerakhir(entitasId: string): Promise<BarisAudit | undefined> {
   const baris = await db.$queryRaw<BarisAudit[]>`
-    SELECT host(ip_address) AS ip_address, user_agent, periode_id::text AS periode_id, aksi
+    SELECT user_id::text AS user_id, host(ip_address) AS ip_address, user_agent,
+           periode_id::text AS periode_id, aksi
     FROM audit_log
     WHERE entitas = 'proker' AND entitas_id = ${entitasId}
     ORDER BY created_at DESC, id DESC
@@ -78,6 +80,8 @@ async function auditTerakhir(entitasId: string): Promise<BarisAudit | undefined>
 let periodeId: string;
 let departemenId: string;
 let penggunaId: string;
+/** Bentuk yang sama dengan `guard.konteks` — yang diteruskan route. */
+const pelaku = () => ({ sesi: { userId: penggunaId } });
 /** true bila periode aktif dibuat oleh test ini, bukan sudah ada sebelumnya. */
 let periodeMilikTest = false;
 
@@ -141,6 +145,7 @@ describe.skipIf(!adaDb)('withAuditContext', () => {
   it('mencatat IP dan user agent nyata dari request ke audit_log', async () => {
     const id = await withAuditContext(
       permintaan({ 'x-forwarded-for': IP, 'user-agent': UA }),
+      pelaku(),
       (tx) => buatProker(tx, `${PENANDA} A`),
     );
 
@@ -157,6 +162,7 @@ describe.skipIf(!adaDb)('withAuditContext', () => {
     // klien aslinya. Mengambil yang terakhir berarti mencatat alamat proxy.
     const id = await withAuditContext(
       permintaan({ 'x-forwarded-for': `${IP}, 10.0.0.1, 10.0.0.2`, 'user-agent': UA }),
+      pelaku(),
       (tx) => buatProker(tx, `${PENANDA} B`),
     );
 
@@ -168,6 +174,7 @@ describe.skipIf(!adaDb)('withAuditContext', () => {
     // dan itu menyesatkan justru saat jejak audit paling dibutuhkan.
     const id = await withAuditContext(
       permintaan({ 'user-agent': UA }),
+      pelaku(),
       (tx) => buatProker(tx, `${PENANDA} C`),
     );
 
@@ -176,9 +183,31 @@ describe.skipIf(!adaDb)('withAuditContext', () => {
     expect(audit!.user_agent).toBe(UA);
   });
 
+  it('INV-07: mencatat pelaku dari sesi ke audit_log.user_id (migrasi 028)', async () => {
+    // Sebelum 028 kolom ini SELALU NULL untuk mutasi lewat aplikasi: fn_audit
+    // hanya membaca auth.uid(), dan koneksi aplikasi tidak membawa JWT.
+    const id = await withAuditContext(
+      permintaan({ 'x-forwarded-for': IP, 'user-agent': UA }),
+      pelaku(),
+      (tx) => buatProker(tx, `${PENANDA} G`),
+    );
+    expect((await auditTerakhir(id))!.user_id).toBe(penggunaId);
+  });
+
+  it('pelaku null (jalur publik tanpa sesi) tercatat NULL, bukan pelaku sebelumnya', async () => {
+    // app.user_id transaction-local: transaksi sebelumnya di koneksi pool yang
+    // sama tidak boleh "mewariskan" pelakunya.
+    await withAuditContext(permintaan({ 'user-agent': UA }), pelaku(), (tx) => buatProker(tx, `${PENANDA} H1`));
+    const id = await withAuditContext(permintaan({ 'user-agent': UA }), null, (tx) =>
+      buatProker(tx, `${PENANDA} H2`),
+    );
+    expect((await auditTerakhir(id))!.user_id).toBeNull();
+  });
+
   it('mengembalikan nilai dari fn apa adanya', async () => {
     const hasil = await withAuditContext(
       permintaan({ 'user-agent': UA }),
+      pelaku(),
       async () => ({ angka: 42, teks: 'halo' }),
     );
     expect(hasil).toEqual({ angka: 42, teks: 'halo' });
@@ -187,7 +216,7 @@ describe.skipIf(!adaDb)('withAuditContext', () => {
   it('membatalkan seluruh mutasi bila fn melempar', async () => {
     const nama = `${PENANDA} D`;
     await expect(
-      withAuditContext(permintaan({ 'user-agent': UA }), async (tx) => {
+      withAuditContext(permintaan({ 'user-agent': UA }), pelaku(), async (tx) => {
         await buatProker(tx, nama);
         throw new Error('sengaja gagal');
       }),
@@ -210,6 +239,7 @@ describe.skipIf(!adaDb)('withAuditContext', () => {
     // produksi — hanya jejak audit yang diam-diam kehilangan isinya.
     const id = await withAuditContext(
       permintaan({ 'x-forwarded-for': IP, 'user-agent': UA }),
+      pelaku(),
       async () => buatProker(db, `${PENANDA} E`),   // sengaja `db`, bukan `tx`
     );
 
@@ -227,5 +257,6 @@ describe.skipIf(!adaDb)('withServiceContext', () => {
     expect(audit!.user_agent).toBe('sistem');
     expect(audit!.ip_address).toBeNull();
     expect(audit!.periode_id).toBe(periodeId);
+    expect(audit!.user_id).toBeNull();
   });
 });

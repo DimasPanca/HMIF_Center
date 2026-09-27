@@ -44,7 +44,15 @@ interface Konteks {
   ip: string;
   userAgent: string;
   periodeId: string | null;
+  userId: string | null;
 }
+
+/**
+ * Siapa yang melakukan mutasi — cukup bentuk `{ sesi: { userId } }` supaya
+ * `guard.konteks` dapat diteruskan apa adanya. `null` HANYA untuk jalur yang
+ * memang tanpa sesi (aktivasi undangan publik).
+ */
+export type Pelaku = { sesi: { userId: string } } | null;
 
 /**
  * IP peminta dari header proxy.
@@ -81,14 +89,20 @@ async function pasangKonteks(tx: TxKlien, k: Konteks): Promise<void> {
   await tx.$executeRaw`SELECT set_config('app.ip', ${k.ip}, true)`;
   await tx.$executeRaw`SELECT set_config('app.user_agent', ${k.userAgent}, true)`;
   await tx.$executeRaw`SELECT set_config('app.periode_id', ${k.periodeId ?? ''}, true)`;
+  // Dibaca konteks_user_id() (migrasi 028): koneksi aplikasi tidak membawa JWT,
+  // jadi tanpa ini audit_log.user_id selalu NULL (INV-07).
+  await tx.$executeRaw`SELECT set_config('app.user_id', ${k.userId ?? ''}, true)`;
 }
 
 /**
  * Menjalankan mutasi dengan konteks audit dari sebuah request.
  *
- *     await withAuditContext(req, async (tx) => {
+ *     await withAuditContext(req, guard.konteks, async (tx) => {
  *       await tx.proker.update({ where: { id }, data: { nama } });
  *     });
+ *
+ * `pelaku` WAJIB dan tidak opsional: parameter opsional adalah cara bug lama
+ * terulang — setiap route yang lupa mengisinya menulis audit tanpa pelaku.
  *
  * `tx` WAJIB dipakai untuk seluruh kueri di dalamnya. Memakai `db` global di
  * sana berarti kueri berjalan di koneksi lain tanpa konteks audit — dan
@@ -96,14 +110,16 @@ async function pasangKonteks(tx: TxKlien, k: Konteks): Promise<void> {
  */
 export async function withAuditContext<T>(
   req: Request,
+  pelaku: Pelaku,
   fn: (tx: TxKlien) => Promise<T>,
 ): Promise<T> {
   const ip = ambilIp(req);
   const userAgent = req.headers.get('user-agent') ?? '';
+  const userId = pelaku?.sesi.userId ?? null;
 
   return db.$transaction(async (tx) => {
     const periodeId = await idPeriodeAktif(tx);
-    await pasangKonteks(tx, { ip, userAgent, periodeId });
+    await pasangKonteks(tx, { ip, userAgent, periodeId, userId });
     return fn(tx);
   });
 }
@@ -116,14 +132,14 @@ export async function withAuditContext<T>(
  * cron memang tidak datang dari alamat mana pun, dan mengarang '0.0.0.0'
  * hanya menyamarkan ketiadaan itu.
  *
- * `user_id` pada baris audit akan NULL karena tidak ada JWT. Itu bukan
+ * `user_id` pada baris audit akan NULL karena tidak ada pelaku. Itu bukan
  * kegagalan melainkan keterangan bahwa pelakunya sistem — lihat
  * `konteks_user_id()` di migrasi 014c.
  */
 export async function withServiceContext<T>(fn: (tx: TxKlien) => Promise<T>): Promise<T> {
   return db.$transaction(async (tx) => {
     const periodeId = await idPeriodeAktif(tx);
-    await pasangKonteks(tx, { ip: '', userAgent: 'sistem', periodeId });
+    await pasangKonteks(tx, { ip: '', userAgent: 'sistem', periodeId, userId: null });
     return fn(tx);
   });
 }

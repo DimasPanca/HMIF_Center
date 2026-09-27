@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     await storage.put(key, buffer, 'image/png', { upsert: true });
 
     try {
-      await withAuditContext(request, (tx) =>
+      await withAuditContext(request, konteks, (tx) =>
         tx.signature.upsert({
           where: { user_id: konteks.sesi.userId },
           create: { user_id: konteks.sesi.userId, storage_key: key },

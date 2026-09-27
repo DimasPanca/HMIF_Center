@@ -54,7 +54,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
   }
 
-  const hasil = await withAuditContext(request, (tx) =>
+  const hasil = await withAuditContext(request, guard.konteks, (tx) =>
     aktifkanPeriode(tx, id, parsed.data.konfirmasi),
   );
   if (!hasil.ok) return responsGagal(hasil);
