@@ -20,7 +20,6 @@
     "db:test": "tsx scripts/db-test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lane": "tsx scripts/lane.ts",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "rls:coverage": "tsx scripts/rls-coverage.ts",
