@@ -48,7 +48,12 @@ merakit halaman, editor, dan route tipis.
 | `generateDocxNotulensi(konteks,id,klien?)` | `{nama_berkas, docx: Buffer}` |
 
 Skema diekspor: `SkemaBuatNotulensi`, `SkemaPerbaruiNotulensi`,
-`SkemaActionItemInput`, `SkemaKehadiran`, `SkemaKonversi`.
+`SkemaActionItemInput`, `SkemaKehadiran`, `SkemaKonversi`. Definisinya di
+`lib/notulensi/skema.ts` (modul murni, aman diimpor komponen klien); `service.ts`
+mengekspor ulang skema yang sama (ADR-025).
+
+Helper lingkup (ADR-025): `departemenBacaNotulensi(konteks)`,
+`bolehTulisNotulensi(klien,konteks,departemenId)`, `tujuanTulisNotulensi(konteks)`.
 
 ## 2. Bentuk data (ringkas)
 
@@ -83,6 +88,10 @@ departemennya. Sub-elemen (kehadiran, action item, lampiran) mengikuti hak TULIS
 notulensi induk + periode aktif. BPH tak pernah menulis. Guard route:
 `notulensi.read`/`create`/`update`/`delete`.
 
+**Baca** (ADR-025): ANGGOTA `R*` / KADEPT `CRU*` hanya notulensi departemennya —
+daftar disaring, detail di luar lingkup = 404. Notulensi himpunan tidak terlihat
+oleh pembaca berlingkup. Role tanpa `*` (termasuk BPH, BENDUM) membaca semua.
+
 ## 5. Endpoint (dirakit lane ui) — pemetaan yang disarankan
 
 Semua tipis: guard → `withAuditContext((tx)=>fungsi)` → `sukses`/`gagal(kode,
@@ -95,13 +104,14 @@ pesan,{status:STATUS_GAGAL_NOTULENSI[kode],details})`.
 | `GET /api/notulensi/pengurus?departemen_id=` | `daftarPengurus` |
 | `GET /api/notulensi/[id]` | `detailNotulensi` |
 | `PATCH /api/notulensi/[id]` | `perbaruiNotulensi` |
-| `DELETE /api/notulensi/[id]` | (hapus; guard `notulensi.delete`) |
+| `DELETE /api/notulensi/[id]` | **belum dibuat** — tak ada di kontrak T-106; lihat BACKLOG |
 | `POST /api/notulensi/[id]/action-item` | `tambahActionItem` → 201 |
 | `DELETE /api/notulensi/[id]/action-item/[aid]` | `hapusActionItem` |
 | `POST /api/notulensi/[id]/action-item/[aid]/convert` | `konversiActionItem` |
 | `POST /api/notulensi/[id]/generate` | `generateDocxNotulensi` (DOCX attachment) |
 
-Route `app/api/notulensi/**` MILIK LANE UI. Lane data TIDAK membuatnya.
+Semua route di atas (kecuali DELETE notulensi) sudah ada per T-106 UI, beserta
+`GET /api/notulensi/pengurus`. Helper respons bersama: `app/api/notulensi/_respons.ts`.
 
 ## 6. data-testid WAJIB (agar UI tak menebak selector; dipakai gate)
 

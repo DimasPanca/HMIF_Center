@@ -378,6 +378,49 @@
   text-align: right;
 }
 
+/* Isi editor notulensi (TipTap). Preflight Tailwind menghapus gaya bawaan elemen. */
+.notulensi-prosa .ProseMirror {
+  min-height: 12rem;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.notulensi-prosa .ProseMirror > * + * { margin-top: 0.6em; }
+.notulensi-prosa h1 { font-size: 1.375rem; font-weight: 600; }
+.notulensi-prosa h2 { font-size: 1.175rem; font-weight: 600; }
+.notulensi-prosa h3 { font-size: 1rem; font-weight: 600; }
+.notulensi-prosa ul { list-style: disc; padding-left: 1.5rem; }
+.notulensi-prosa ol { list-style: decimal; padding-left: 1.5rem; }
+.notulensi-prosa ul[data-type="taskList"] { list-style: none; padding-left: 0.25rem; }
+.notulensi-prosa ul[data-type="taskList"] li { display: flex; gap: 0.5rem; align-items: flex-start; }
+.notulensi-prosa ul[data-type="taskList"] li > label { margin-top: 0.2rem; }
+.notulensi-prosa ul[data-type="taskList"] li > div { flex: 1; }
+.notulensi-prosa blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.75rem;
+  color: var(--text-secondary);
+}
+.notulensi-prosa code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-xs);
+  padding: 0 0.25rem;
+}
+.notulensi-prosa a { color: var(--text-link); text-decoration: underline; }
+.notulensi-prosa hr { border: 0; border-top: 1px solid var(--border-default); }
+.notulensi-prosa table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.notulensi-prosa th,
+.notulensi-prosa td {
+  border: 1px solid var(--border-default);
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.notulensi-prosa th { background: var(--bg-subtle); font-weight: 600; text-align: left; }
+.notulensi-prosa .selectedCell { background: var(--primary-subtle); }
+.notulensi-prosa .tableWrapper { overflow-x: auto; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

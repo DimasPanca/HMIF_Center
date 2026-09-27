@@ -35,7 +35,13 @@ akurat daripada `tasks.json` (yang dibekukan selama fase paralel).
 
 Aplikasi **sudah bisa login**, sudah punya kerangka navigasi
 (`app/(dashboard)/layout.tsx`), dan sudah menjalankan alur inti: proker, kanban,
-notulensi (fondasi data), surat, RAB.
+Gantt, dashboard, notulensi (lengkap sejak T-106 UI).
+
+**Koreksi 2026-09-27:** versi sebelumnya berkas ini menyebut "surat" sudah
+berjalan — **salah**. Seluruh rantai surat T-054…T-062 belum dikerjakan
+(`lib/surat/`, `lib/documents/` masih kerangka T-011). Pemilik produk memutuskan
+rantai ini dikerjakan **belakangan** (ADR-025). T-077 juga sudah punya commit
+`1c3f8c8` (dengan destination-gate badge surat), bukan lagi blocked.
 
 ### Gate hijau saat konsolidasi
 
@@ -57,7 +63,25 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ---
 
-## 2. Yang paling baru selesai (T-106 · fondasi data notulensi)
+## 2. Yang paling baru selesai
+
+### T-106 UI · notulensi rapat (2026-09-27)
+
+Routes `app/api/notulensi/**` (daftar/buat, detail/ubah, pengurus, action item
+tambah/hapus/konversi, generate DOCX), halaman `app/(dashboard)/sekretariat/
+notulensi/{page,baru,[id]}`, komponen `components/notulensi/*` (editor TipTap,
+daftar hadir, keputusan, action item, form). Gate `notulensi` 14/14.
+
+Keputusan yang lahir di sini (ADR-025):
+- T-106 dikerjakan mendahului T-061 atas persetujuan pemilik produk; pengecualian
+  **tidak** berlaku untuk task surat/dokumen lain.
+- Lingkup baca notulensi (`R*`/`CRU*`) kini ditegakkan di service.
+- Skema Zod notulensi pindah ke `lib/notulensi/skema.ts` (aman untuk klien).
+
+Sisa di luar kontrak (hapus notulensi, lampiran, pengetatan RLS SELECT) →
+`docs/ai/BACKLOG.md`.
+
+### T-106 · fondasi data notulensi
 
 Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
@@ -84,26 +108,23 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 - `package.json` — tambah `@tiptap/extension-{table,-row,-cell,-header,
   task-list,task-item}@3.31.0` (pin exact karena peer-dep ke `@tiptap/core`).
 
-### Yang menunggu
-
-**T-106 UI** — routes `app/api/notulensi/**` dan komponen
-`components/notulensi/*` + halaman sekretariat. Data-testid wajib ada di
-kontrak §6. Setelah UI ada, gate `notulensi` (8 skenario) otomatis aktif.
-
 ---
 
 ## 3. Blocker aktif
 
-**T-077 (dashboard) blocked** — menunggu T-060 (chain surat) selesai. Data prep
-sudah ada; jalur teraman = destination-gate badge sampai T-060 dibuat.
-
-Tidak ada blocker lain per 2026-09-27.
+1. **Rantai surat ditunda (keputusan, bukan kebuntuan).** T-054, T-055, T-056
+   READY; T-058 → T-060 → T-061 berurutan. Yang ikut menunggu: T-063, T-064,
+   T-095 (TOR), T-096 (Proposal), T-105 (LPJ), T-108 (Peminjaman ruangan), dan
+   T-113…T-116. Jangan terapkan pengecualian ADR-025 ke task-task ini.
+2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
+   baris; T-107 (Data pengurus) yang mengisinya, dan T-107 menunggu **T-048**
+   yang baru separuh (UI blocked oleh ADR-054 berstatus *Usulan*).
 
 ---
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Lima hal yang tidak obvious dari kode:
+Tujuh hal yang tidak obvious dari kode:
 
 1. **Koneksi app bypass RLS.** `withAuditContext()` set audit config
    (`app.ip`/`user_agent`/`periode_id`) tapi **tidak** set
@@ -120,20 +141,27 @@ Lima hal yang tidak obvious dari kode:
 5. **Realtime butuh JWT.** `klien.realtime.setAuth(access_token)` +
    `onAuthStateChange` diperlukan supaya RLS aktif di realtime channel
    (`lib/realtime/use-master-gantt-realtime.ts`).
+6. **Gate e2e gagal di jalan pertama pada dev server dingin.** Halaman berat
+   (mis. editor TipTap) dikompilasi saat diminta pertama kali dan bisa melewati
+   batas 30 dtk/test. Jalankan ulang sekali sebelum menganggapnya bug; kalau
+   gagal lagi, itu nyata.
+7. **Tombol toolbar editor wajib `onMouseDown={e => e.preventDefault()}`.**
+   Tanpa itu tombol mencuri fokus dan TipTap memulihkannya lewat
+   `requestAnimationFrame`, yang tak berjalan di tab tak terlihat — teks jatuh di
+   luar node yang baru dibuat.
 
 ---
 
 ## 5. Langkah berikutnya (rekomendasi)
 
-Urutan yang masuk akal setelah konsolidasi:
+1. **T-048 → T-107** — selesaikan import massal (putuskan ADR-054 dulu), lalu
+   Data pengurus. Ini yang membuat daftar hadir notulensi benar-benar berisi.
+2. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
+   T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
+   `depends_on`-nya DONE.
+3. **Rantai surat** T-054/T-055/T-056 → T-058 → T-060 → T-061 → T-062, lalu
+   turunannya (ADR-025).
 
-1. **Verifikasi checkout baru berfungsi** — `npm install`, `npm run verify`,
-   `npm run db:ping`. Bila hijau, lanjut.
-2. **T-106 UI** — routes + komponen notulensi. Kontrak lengkap di
-   `NOTULENSI_CONTRACT.md`. Setelah selesai, gate `notulensi` harus 8/0/0.
-3. **T-077 dashboard** — kalau T-060 sudah selesai, lanjut; kalau belum, buat
-   destination-gate badge sesuai catatan di memory `t077-blocked-t060`.
-4. **Cek `docs/ai/BACKLOG.md`** untuk ide-ide yang ditulis selama fase paralel.
-
-Ambil task berikutnya dari `docs/ai/tasks.json` (status `READY` yang
-`depends_on`-nya sudah DONE). Baca kontrak di `docs/ai/tasks/P{fase}-*.md`.
+`tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
+paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah
+dependency DONE. Baca kontrak di `docs/ai/tasks/P{fase}-*.md`.

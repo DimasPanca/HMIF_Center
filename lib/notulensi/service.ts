@@ -23,17 +23,26 @@
 import { z } from 'zod';
 
 import type { Konteks } from '@/lib/auth/guard';
+import { lingkupUntuk } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
 
 import { buatDocxNotulensi, type DataDocxNotulensi } from './docx';
 import { ekstrakBlok, ekstrakTeks, sanitasiKonten, type NodeProseMirror } from './sanitasi';
+import {
+  SkemaActionItemInput,
+  SkemaBuatNotulensi,
+  SkemaKehadiran,
+  SkemaKonversi,
+  SkemaPerbaruiNotulensi,
+  type StatusKehadiran,
+} from './skema';
 
 // ---------------------------------------------------------------------------
 // Bentuk data
 // ---------------------------------------------------------------------------
 
-export type StatusKehadiran = 'HADIR' | 'IZIN' | 'SAKIT' | 'ALFA';
+export type { StatusKehadiran };
 
 export interface RingkasNotulensi {
   id: string;
@@ -117,55 +126,10 @@ const gagal = (kode: KodeGagalNotulensi, pesan: string, details?: unknown): Gaga
   details === undefined ? { ok: false, kode, pesan } : { ok: false, kode, pesan, details };
 
 // ---------------------------------------------------------------------------
-// Skema (K-04) — diekspor agar route lane ui memvalidasi bentuk yang sama
+// Skema (K-04) — didefinisikan di ./skema (aman untuk klien), diekspor ulang
 // ---------------------------------------------------------------------------
 
-const tanggal = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Tanggal harus YYYY-MM-DD.');
-const jam = z.string().regex(/^\d{2}:\d{2}$/, 'Waktu harus HH:MM.');
-const teksSingkat = z.string().trim().min(1).max(500);
-
-export const SkemaKehadiran = z.object({
-  user_id: z.uuid(),
-  status: z.enum(['HADIR', 'IZIN', 'SAKIT', 'ALFA']),
-});
-export const SkemaActionItemInput = z.object({
-  tugas: teksSingkat,
-  pic_id: z.uuid().nullish(),
-  deadline: tanggal.nullish(),
-  departemen_id: z.uuid().nullish(),
-});
-export const SkemaBuatNotulensi = z
-  .object({
-    judul: z.string().trim().min(1).max(300),
-    tanggal,
-    waktu_mulai: jam.nullish(),
-    waktu_selesai: jam.nullish(),
-    tempat: z.string().trim().max(300).nullish(),
-    pemimpin_id: z.uuid().nullish(),
-    notulis_id: z.uuid().nullish(),
-    departemen_id: z.uuid().nullable(),
-    konten: z.unknown().optional(),
-    keputusan: z.array(z.string().trim().min(1)).default([]),
-    kehadiran: z.array(SkemaKehadiran).default([]),
-    action_items: z.array(SkemaActionItemInput).default([]),
-  })
-  .refine((v) => !(v.waktu_mulai && v.waktu_selesai) || v.waktu_selesai > v.waktu_mulai, {
-    message: 'Waktu selesai harus setelah waktu mulai.',
-    path: ['waktu_selesai'],
-  });
-export const SkemaPerbaruiNotulensi = z.object({
-  judul: z.string().trim().min(1).max(300).optional(),
-  tanggal: tanggal.optional(),
-  waktu_mulai: jam.nullish(),
-  waktu_selesai: jam.nullish(),
-  tempat: z.string().trim().max(300).nullish(),
-  pemimpin_id: z.uuid().nullish(),
-  notulis_id: z.uuid().nullish(),
-  konten: z.unknown().optional(),
-  keputusan: z.array(z.string().trim().min(1)).optional(),
-  kehadiran: z.array(SkemaKehadiran).optional(),
-});
-export const SkemaKonversi = z.object({ departemen_id: z.uuid().nullish() });
+export { SkemaActionItemInput, SkemaBuatNotulensi, SkemaKehadiran, SkemaKonversi, SkemaPerbaruiNotulensi };
 
 // ---------------------------------------------------------------------------
 // Lingkup
@@ -173,8 +137,8 @@ export const SkemaKonversi = z.object({ departemen_id: z.uuid().nullish() });
 
 const PERAN_GLOBAL = ['ADMIN', 'KETUA', 'WAKIL', 'SEKUM'] as const;
 
-async function bolehTulisNotulensi(
-  tx: TxKlien,
+export async function bolehTulisNotulensi(
+  tx: TxKlien | typeof db,
   konteks: Konteks,
   departemenId: string | null,
 ): Promise<boolean> {
@@ -187,6 +151,32 @@ async function bolehTulisNotulensi(
       AND role = 'KADEPT' AND departemen_id = ${departemenId}::uuid
     LIMIT 1`;
   return rows.length > 0;
+}
+
+/** Tujuan yang boleh dipilih saat membuat notulensi: himpunan dan/atau departemen tertentu. */
+export async function tujuanTulisNotulensi(
+  konteks: Konteks,
+  klien: TxKlien | typeof db = db,
+): Promise<{ himpunan: boolean; departemenIds: string[] | 'SEMUA' }> {
+  if (!konteks.periodeId) return { himpunan: false, departemenIds: [] };
+  if (konteks.roles.some((r) => (PERAN_GLOBAL as readonly string[]).includes(r))) {
+    return { himpunan: true, departemenIds: 'SEMUA' };
+  }
+  const rows = await klien.$queryRaw<{ departemen_id: string }[]>`
+    SELECT DISTINCT departemen_id FROM user_role
+    WHERE user_id = ${konteks.sesi.userId}::uuid AND periode_id = ${konteks.periodeId}::uuid
+      AND role = 'KADEPT' AND departemen_id IS NOT NULL`;
+  return { himpunan: false, departemenIds: rows.map((r) => r.departemen_id) };
+}
+
+/**
+ * Departemen yang boleh DIBACA, atau `null` bila seluruh organisasi.
+ * PRD §5.1: ANGGOTA `R*` / KADEPT `CRU*` terbatas departemen sendiri. RLS SELECT
+ * notulensi (015b) `USING (true)` lebih longgar, jadi batas ini hanya ditegakkan
+ * di sini — lihat ADR-025.
+ */
+export function departemenBacaNotulensi(konteks: Konteks): string[] | null {
+  return lingkupUntuk(konteks.roles, 'notulensi.read') === 'DEPARTEMEN' ? konteks.departemenIds : null;
 }
 
 async function ringkasKehadiran(klien: TxKlien | typeof db, id: string): Promise<RingkasKehadiran> {
@@ -211,8 +201,9 @@ export async function daftarNotulensi(
   klien: TxKlien | typeof db = db,
 ): Promise<RingkasNotulensi[]> {
   if (!konteks.periodeId) return [];
-  const q = opsi.q?.trim();
+  const q = opsi.q?.trim() || null;
   const dep = opsi.departemenId ?? null;
+  const lingkup = departemenBacaNotulensi(konteks);
   return klien.$queryRaw<RingkasNotulensi[]>`
     SELECT n.id, n.judul, to_char(n.tanggal, 'YYYY-MM-DD') AS tanggal, n.tempat,
            n.departemen_id, d.nama AS nama_departemen
@@ -220,6 +211,7 @@ export async function daftarNotulensi(
     LEFT JOIN departemen d ON d.id = n.departemen_id
     WHERE n.periode_id = ${konteks.periodeId}::uuid
       AND (${dep}::uuid IS NULL OR n.departemen_id = ${dep}::uuid)
+      AND (${lingkup === null}::boolean OR n.departemen_id = ANY(${lingkup ?? []}::uuid[]))
       AND (${q ?? null}::text IS NULL OR n.cari_tsv @@ plainto_tsquery('indonesian', ${q ?? null}))
     ORDER BY n.tanggal DESC, n.created_at DESC`;
 }
@@ -247,6 +239,9 @@ export async function detailNotulensi(
     LEFT JOIN app_user nu ON nu.id = n.notulis_id
     WHERE n.id = ${id}::uuid`;
   if (!n) return null;
+  // Di luar lingkup baca dijawab sama dengan "tidak ada" agar keberadaannya tidak bocor.
+  const lingkup = departemenBacaNotulensi(konteks);
+  if (lingkup && !(n.departemen_id && lingkup.includes(n.departemen_id))) return null;
 
   const kehadiran = await klien.$queryRaw<BarisKehadiran[]>`
     SELECT a.user_id, u.nama_lengkap AS nama, a.status
