@@ -65,6 +65,17 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-048 · import massal pengguna (2026-09-27)
+
+Kontrak batch ADR-054 dibangun: `lib/auth/import-pengguna.ts` (pratinjau hanya
+SELECT; simpan per baris dengan laporan berhasil/gagal/dilewati), route
+`api/users/bulk-import` (multipart, mode pratinjau|simpan), komponen generik
+`components/shared/ImportPreview.tsx` (pemetaan kolom, ringkasan, lewati per
+baris, unduh laporan) — **siap dipakai ulang T-092 dan T-107** — dan
+`DialogImportPengguna` di halaman Admin. Keputusan penting: **parsial per
+baris, bukan atomik** (akun Supabase Auth tak bisa di-rollback transaksi
+Postgres); konfirmasi mengirim ulang berkas, bukan data baris.
+
 ### T-047 UI · undangan & manajemen pengguna (2026-09-27)
 
 Halaman `admin/pengguna` (tabel + saring, dialog undang dengan tautan
@@ -135,13 +146,18 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
    T-095 (TOR), T-096 (Proposal), T-105 (LPJ), T-108 (Peminjaman ruangan), dan
    T-113…T-116. Jangan terapkan pengecualian ADR-025 ke task-task ini.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
-   baris; T-107 (Data pengurus) yang mengisinya, dan T-107 menunggu **T-048**
-   yang baru separuh. Prasyarat halaman T-048 (`admin/pengguna`) kini ada;
-   yang tersisa adalah kontrak batch ADR-054 (*Usulan*): service pratinjau +
-   simpan batch transaksional. Di mode single-agent keduanya bisa dibangun
-   sekaligus. Catatan: bagian "generate massal surat" T-107 (ADR-052) butuh
-   T-064 dari rantai surat yang ditunda.
-3. **Pola blocker lama "menunggu lane lain".** Banyak task (T-078, T-082, T-107…)
+   baris; T-107 (Data pengurus) yang mengisinya. T-048 kini selesai, jadi
+   T-107 siap dikerjakan — kecuali bagian "generate massal Surat Aktif
+   Organisasi" (ADR-052) yang butuh T-064 dari rantai surat yang ditunda.
+   Putuskan: T-107 dikerjakan tanpa bagian itu (tulis ADR), atau menunggu.
+3. **`audit_log.user_id` selalu NULL untuk mutasi aplikasi (INV-07).**
+   Ditemukan 2026-09-27: `fn_audit` membaca pelaku dari `auth.uid()`, tetapi
+   `withAuditContext` hanya menyetel `app.ip`/`user_agent`/`periode_id`. Semua
+   baris audit trigger (proker, app_user, user_role, periode) tanpa pelaku.
+   Butuh migrasi `konteks_user_id()` + `set_config('app.user_id')` di
+   `withAuditContext` + ubah semua pemanggil. Sudah diajukan sebagai task
+   terpisah.
+4. **Pola blocker lama "menunggu lane lain".** Banyak task (T-078, T-082, T-107…)
    ditandai blocked di era dua-lane karena satu sisi menunggu sisi lain. Di mode
    single-agent periksa ulang: sering kali blocker-nya sudah hilang (seperti
    ADR-053).
@@ -180,14 +196,15 @@ Tujuh hal yang tidak obvious dari kode:
 
 ## 5. Langkah berikutnya (rekomendasi)
 
-1. **T-048 → T-107** — import massal pengguna (bangun kontrak batch ADR-054:
-   pratinjau tanpa tulis, simpan batch, laporan per baris, tautan undangan
-   sekali-tampil), lalu Data pengurus. Ini yang membuat daftar hadir notulensi
-   benar-benar berisi.
-2. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
+1. **Perbaiki `audit_log.user_id`** (blocker #3) — pelanggaran invariant yang
+   diam-diam, makin banyak baris audit tanpa pelaku setiap hari.
+2. **T-107 Data pengurus** — pakai ulang `ImportPreview` dan pola
+   `import-pengguna.ts`. Ini yang membuat daftar hadir notulensi berisi. Bagian
+   surat massal menunggu T-064 (lihat blocker #2).
+3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-3. **Rantai surat** T-054/T-055/T-056 → T-058 → T-060 → T-061 → T-062, lalu
+4. **Rantai surat** T-054/T-055/T-056 → T-058 → T-060 → T-061 → T-062, lalu
    turunannya (ADR-025).
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase

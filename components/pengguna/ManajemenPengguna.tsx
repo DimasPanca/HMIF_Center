@@ -1,8 +1,9 @@
 'use client';
 
-import { Pencil, Power, PowerOff, Search, UserPlus, Users } from 'lucide-react';
+import { FileUp, Pencil, Power, PowerOff, Search, UserPlus, Users } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
+import { DialogImportPengguna } from '@/components/pengguna/DialogImportPengguna';
 import { DialogUbahPengguna } from '@/components/pengguna/DialogUbahPengguna';
 import { DialogUndang } from '@/components/pengguna/DialogUndang';
 import type { OpsiDepartemen } from '@/components/pengguna/EditorPeran';
@@ -38,6 +39,7 @@ function Manajemen({ awal, departemen, userIdSaya, bolehUndang, bolehUbah }: Man
   const [q, setQ] = useState('');
   const [keadaan, setKeadaan] = useState<KeadaanPengguna | ''>('');
   const [undangTerbuka, setUndangTerbuka] = useState(false);
+  const [importTerbuka, setImportTerbuka] = useState(false);
   const [diubah, setDiubah] = useState<RingkasPengguna | null>(null);
   const [akanDinonaktifkan, setAkanDinonaktifkan] = useState<RingkasPengguna | null>(null);
   const [sibuk, setSibuk] = useState<string | null>(null);
@@ -111,10 +113,16 @@ function Manajemen({ awal, departemen, userIdSaya, bolehUndang, bolehUbah }: Man
           </Select>
         </div>
         {bolehUndang ? (
-          <Button data-testid="undang-buka" onClick={() => setUndangTerbuka(true)}>
-            <UserPlus aria-hidden="true" />
-            Undang pengurus
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" data-testid="import-buka" onClick={() => setImportTerbuka(true)}>
+              <FileUp aria-hidden="true" />
+              Import massal
+            </Button>
+            <Button data-testid="undang-buka" onClick={() => setUndangTerbuka(true)}>
+              <UserPlus aria-hidden="true" />
+              Undang pengurus
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -206,6 +214,15 @@ function Manajemen({ awal, departemen, userIdSaya, bolehUndang, bolehUbah }: Man
           </TableBody>
         </Table>
       </Card>
+
+      {bolehUndang ? (
+        <DialogImportPengguna
+          open={importTerbuka}
+          onOpenChange={setImportTerbuka}
+          contohDepartemen={departemen[0]?.nama}
+          onSelesai={() => void muatUlang()}
+        />
+      ) : null}
 
       {bolehUndang ? (
         <DialogUndang

@@ -56,3 +56,26 @@ T-048-UI diusulkan menunggu kontrak batch dengan ketentuan berikut:
   pengguna.
 - Kegagalan tengah batch serta tautan undangan sekali-tampil mempunyai perilaku
   yang dapat diuji dan tidak ditentukan secara kebetulan oleh loop di route.
+
+## Catatan penerapan (2026-09-27, mode single-agent)
+
+Status tetap *Usulan* sampai diterima pemilik produk; isinya diterapkan sebagai
+berikut di `lib/auth/import-pengguna.ts` + `app/api/users/bulk-import/route.ts`:
+
+1. **Service pratinjau & simpan** — `pratinjauImportPengguna` (hanya dua kueri
+   SELECT: departemen dan NIM/email yang sudah ada) dan `simpanImportPengguna`.
+2. **Parsial per baris, bukan atomik** — dipilih eksplisit: tiap undangan
+   membuat akun Supabase Auth lewat HTTP yang tak dapat digulung balik oleh
+   transaksi Postgres. Tiap baris = satu `withAuditContext` dengan kompensasi
+   `undang()`. Laporan per nomor baris berkas: `berhasil` (+tautan), `gagal`
+   (+alasan), `dilewati` (+alasan). Tiga kegagalan sistem beruntun menghentikan
+   percobaan sisa baris. Batas 200 baris/berkas (`maxDuration` 60 dtk).
+3. **Tautan sekali-tampil** — dikembalikan hanya di respons simpan
+   (`Cache-Control: no-store`); disalin/diunduh sebagai CSV yang dibuat di
+   browser. Token mentah tidak disimpan.
+4. Halaman target `admin/pengguna` tersedia sejak T-047 UI.
+5. **Gate** — unit test `lib/auth/__tests__/import-pengguna.test.ts`: pratinjau
+   hanya menjalankan SELECT dan tidak memanggil `undang()`; batch 100 baris
+   menghasilkan laporan tepat (94/4/2) dengan satu transaksi per baris.
+   Konfirmasi mengirim ulang BERKAS, bukan data baris, sehingga server mem-parse
+   ulang dengan aturan yang sama.

@@ -6,6 +6,8 @@
 
 import { z } from 'zod';
 
+import type { DefinisiKolom } from '@/lib/import/parse-tabel';
+
 import { ROLES } from './permissions';
 
 /**
@@ -131,3 +133,14 @@ export const SkemaUbahPengguna = z
   });
 
 export type InputUbahPengguna = z.infer<typeof SkemaUbahPengguna>;
+
+/** Kolom berkas import massal pengguna (T-048) — dipakai parser server dan pratinjau klien. */
+export const KOLOM_IMPORT_PENGGUNA: DefinisiKolom[] = [
+  { kunci: 'nama_lengkap', label: 'Nama Lengkap', alias: ['Nama'], wajib: true },
+  { kunci: 'nim', label: 'NIM', wajib: true },
+  { kunci: 'email', label: 'Email', alias: ['Alamat Email', 'E-mail'], wajib: true },
+  { kunci: 'angkatan', label: 'Angkatan' },
+  { kunci: 'peran', label: 'Peran', alias: ['Role'], wajib: true },
+  { kunci: 'departemen', label: 'Departemen', alias: ['Dept'] },
+  { kunci: 'no_hp', label: 'No HP', alias: ['Nomor HP', 'HP', 'No WA', 'WhatsApp'] },
+];

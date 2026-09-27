@@ -330,9 +330,22 @@ maupun pengguna.
 
 | | |
 |---|---|
+| **Status** | **SELESAI 2026-09-27** — lihat catatan penerapan ADR-054 |
+| **Service batch** | `lib/auth/import-pengguna.ts` (`pratinjauImportPengguna`, `simpanImportPengguna`) |
 | **Task turunan ui** | `T-048-UI` |
 | **Verifikasi lane data** | `npm run test -- import` — 42 lulus |
-| **Berkas ui** | `app/api/users/bulk-import/route.ts` · `components/shared/ImportPreview.tsx` |
+| **Berkas ui** | `app/api/users/bulk-import/route.ts` · `components/shared/ImportPreview.tsx` · `components/pengguna/DialogImportPengguna.tsx` |
+
+**Kolom berkas** (`KOLOM_IMPORT_PENGGUNA` di `lib/auth/skema-pengguna.ts`): Nama
+Lengkap*, NIM*, Email*, Angkatan, Peran* (label atau kode, boleh beberapa
+dipisah `,`/`;`), Departemen (kode atau nama; wajib bila peran KADEPT/ANGGOTA),
+No HP. Tiap baris lalu divalidasi `SkemaUndang` yang sama dengan undangan
+satuan. Duplikat NIM/email (dalam berkas atau terhadap sistem) = PERINGATAN;
+baris yang sudah terdaftar dicentang "lewati" otomatis di pratinjau.
+
+`POST /api/users/bulk-import` (multipart: `berkas`, `mode` = `pratinjau` |
+`simpan`, `peta` JSON opsional, `lewati` JSON nomor baris opsional). Guard
+`user.create`.
 
 ### Alur yang harus dibangun lane ui
 
