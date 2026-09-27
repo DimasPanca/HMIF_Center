@@ -65,6 +65,24 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-047 UI · undangan & manajemen pengguna (2026-09-27)
+
+Halaman `admin/pengguna` (tabel + saring, dialog undang dengan tautan
+sekali-tampil, dialog ubah, nonaktif/aktifkan kembali), halaman publik
+`undangan/[token]`, route `api/users/{,invite,[id]}` dan `api/auth/activate`.
+Gate `undangan` 26/26. Blocker ADR-053 ternyata sudah terselesaikan oleh
+`99a361e`; catatan penerapan ditambahkan di ADR itu.
+
+Perubahan di lapisan data:
+- Skema dipindah ke `lib/auth/skema-pengguna.ts` (aman untuk klien, K-04).
+- `SkemaUbahPengguna` kini memeriksa aturan peran yang sama dengan undangan —
+  sebelumnya KADEPT tanpa departemen lolos skema lalu jatuh 500 di CHECK DB.
+- `ubahPengguna` menolak menonaktifkan akun sendiri.
+- `daftarPenggunaTerlingkup` menegakkan `user: R*` untuk KADEPT/ANGGOTA.
+
+Celah yang dicatat di BACKLOG: **undang ulang** untuk undangan kedaluwarsa belum
+ada — pengguna seperti itu buntu.
+
 ### T-106 UI · notulensi rapat (2026-09-27)
 
 Routes `app/api/notulensi/**` (daftar/buat, detail/ubah, pengurus, action item
@@ -118,7 +136,15 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
    T-113…T-116. Jangan terapkan pengecualian ADR-025 ke task-task ini.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
    baris; T-107 (Data pengurus) yang mengisinya, dan T-107 menunggu **T-048**
-   yang baru separuh (UI blocked oleh ADR-054 berstatus *Usulan*).
+   yang baru separuh. Prasyarat halaman T-048 (`admin/pengguna`) kini ada;
+   yang tersisa adalah kontrak batch ADR-054 (*Usulan*): service pratinjau +
+   simpan batch transaksional. Di mode single-agent keduanya bisa dibangun
+   sekaligus. Catatan: bagian "generate massal surat" T-107 (ADR-052) butuh
+   T-064 dari rantai surat yang ditunda.
+3. **Pola blocker lama "menunggu lane lain".** Banyak task (T-078, T-082, T-107…)
+   ditandai blocked di era dua-lane karena satu sisi menunggu sisi lain. Di mode
+   single-agent periksa ulang: sering kali blocker-nya sudah hilang (seperti
+   ADR-053).
 
 ---
 
@@ -154,8 +180,10 @@ Tujuh hal yang tidak obvious dari kode:
 
 ## 5. Langkah berikutnya (rekomendasi)
 
-1. **T-048 → T-107** — selesaikan import massal (putuskan ADR-054 dulu), lalu
-   Data pengurus. Ini yang membuat daftar hadir notulensi benar-benar berisi.
+1. **T-048 → T-107** — import massal pengguna (bangun kontrak batch ADR-054:
+   pratinjau tanpa tulis, simpan batch, laporan per baris, tautan undangan
+   sekali-tampil), lalu Data pengurus. Ini yang membuat daftar hadir notulensi
+   benar-benar berisi.
 2. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.

@@ -51,3 +51,15 @@ T-047-UI diusulkan dilanjutkan dengan penyelarasan berikut:
 - Route aktivasi publik dapat dibuat tanpa pelanggaran cakupan tersembunyi.
 - T-048-UI menunggu halaman Admin T-047-UI agar target **Ubah**-nya benar-benar
   tersedia.
+
+## Catatan penerapan (2026-09-27, mode single-agent)
+
+Status dokumen ini tetap *Usulan* sampai pemilik produk menerimanya, tetapi
+isinya sudah terwujud di kode:
+
+- Butir 1–3 (K-02 ketat, gate membaca `body.data.*`/`body.error.*`): diterapkan
+  lewat commit `99a361e` (perbaikan K-02 menyeluruh), sebelum T-047 UI dimulai.
+- Butir 4 (`app/api/auth/activate/route.ts` masuk cakupan): dibuat bersama
+  T-047 UI.
+- Butir 5–6 (pembagian lane, status BLOCKED): tidak relevan lagi sejak mode
+  single-agent; T-047 UI selesai dengan gate `undangan` 26/26.

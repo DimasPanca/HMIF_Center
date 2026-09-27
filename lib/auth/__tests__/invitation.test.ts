@@ -282,6 +282,18 @@ describe('SkemaUbahPengguna', () => {
   it('angkatan null diterima — itu "kosongkan", bukan "jangan sentuh"', () => {
     expect(SkemaUbahPengguna.safeParse({ angkatan: null }).success).toBe(true);
   });
+
+  // Tanpa aturan ini pelanggaran baru ditolak CHECK role_dept_wajib sebagai error 500.
+  it('KADEPT tanpa departemen ditolak dengan isu per baris', () => {
+    const h = SkemaUbahPengguna.safeParse({ roles: [{ role: 'SEKUM' }, { role: 'KADEPT' }] });
+    expect(h.success).toBe(false);
+    expect(h.error?.issues.some((i) => i.path.join('.') === 'roles.1.departemen_id')).toBe(true);
+  });
+
+  it('peran ganda yang sama ditolak sebelum menabrak user_role_unik', () => {
+    const h = SkemaUbahPengguna.safeParse({ roles: [{ role: 'BENDUM' }, { role: 'BENDUM' }] });
+    expect(h.success).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -540,6 +552,16 @@ describe('ubahPengguna', () => {
     const hapus = k.panggilan.find((p) => p.sql.includes('DELETE FROM user_role'))!;
     expect(hapus.params).toContain(KONTEKS.periodeId);
     expect(k.panggilan.filter((p) => p.sql.includes('INSERT INTO user_role'))).toHaveLength(2);
+  });
+
+  it('Admin tidak dapat menonaktifkan akunnya sendiri', async () => {
+    const k = klienTiruan([[TERSIMPAN], []]);
+    const h = await ubahPengguna(k.tx, konteks(), KONTEKS.sesi.userId, { is_active: false });
+
+    expect(h.ok).toBe(false);
+    if (h.ok) return;
+    expect(h.kode).toBe('TIDAK_VALID');
+    expect(k.panggilan.some((p) => p.sql.includes('UPDATE app_user'))).toBe(false);
   });
 
   it('pengguna yang tidak ada menghasilkan TIDAK_DITEMUKAN', async () => {

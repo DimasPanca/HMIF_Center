@@ -22,14 +22,21 @@ lane data — sudah selesai, jangan disentuh lane ui
   e2e/undangan.spec.ts       gate, sudah ada dan melewati dirinya sampai ui siap
   e2e/fixtures/akun.ts       akun uji, termasuk e2e-admin@uji.test
 
-lane ui — T-047-UI, belum ada
-  app/(dashboard)/admin/pengguna/page.tsx
+lane ui — T-047-UI, SELESAI 2026-09-27
+  app/(dashboard)/admin/pengguna/page.tsx  (+ components/pengguna/*)
   app/(auth)/undangan/[token]/page.tsx
   app/api/users/route.ts               GET  daftar
   app/api/users/invite/route.ts        POST undang
   app/api/users/[id]/route.ts          PATCH ubah
   app/api/auth/activate/route.ts       POST aktivasi
 ```
+
+**Skema** (`kataSandi`, `SkemaUndang`, `SkemaAktivasi`, `SkemaUbahPengguna`)
+kini didefinisikan di `lib/auth/skema-pengguna.ts` — modul murni yang aman
+diimpor form klien (K-04). `invitation.ts` mengekspor ulang yang sama.
+`SkemaUbahPengguna` memakai aturan peran yang sama dengan `SkemaUndang`
+(departemen wajib/dilarang, peran ganda), sehingga pelanggarannya menjadi 422
+berpesan, bukan 500 dari CHECK `role_dept_wajib`.
 
 **Akun uji baru:** `e2e-admin@uji.test` berperan **ADMIN**, password sama dengan
 akun uji lainnya. Ia satu-satunya yang berhak mengundang — matriks PRD §5.1
@@ -68,7 +75,11 @@ yang sedikit berbeda persis cara celah terbentuk.
 ```ts
 periksaUndangan(token: string): Promise<Hasil<UndanganDibuka>>
 daftarPengguna(periodeId, filter?, klien?): Promise<RingkasPengguna[]>
+daftarPenggunaTerlingkup(konteks, filter?, klien?): Promise<RingkasPengguna[]>
 ```
+
+Route dan halaman memakai `daftarPenggunaTerlingkup`: KADEPT/ANGGOTA (`user: R*`)
+hanya melihat pengguna yang berperan di departemennya.
 
 `periksaUndangan` **tidak butuh sesi** — halaman aktivasi memang dibuka orang
 yang belum punya akun.
@@ -197,6 +208,12 @@ maksudnya (PRD F-1.2 AC 4): proker, surat, dan nota yang pernah dibuatnya tetap
 punya pemilik agar jejak audit utuh. **Jangan** membuat endpoint DELETE untuk
 pengguna — ia akan memutus seluruh foreign key itu.
 
+### Tidak dapat menonaktifkan diri sendiri
+
+`ubahPengguna` menolak `is_active: false` untuk `konteks.sesi.userId` dengan
+`TIDAK_VALID` — mencegah satu-satunya Admin mengunci dirinya keluar. Halaman
+Admin juga tidak merender tombol Nonaktifkan pada baris sendiri.
+
 ### `roles` mengganti, bukan menambah
 
 Mengirim `roles` akan **menghapus seluruh peran pengguna pada periode aktif**
@@ -288,6 +305,19 @@ keadaan        -> MENUNGGU_AKTIVASI -> AKTIF -> NONAKTIF
 aktivasi ke-2  -> TOKEN_TERPAKAI          (sekali pakai benar-benar bekerja)
 ubah nama      -> angkatan 2022 tetap utuh
 ```
+
+---
+
+### Setelah T-047 UI (2026-09-27)
+
+```
+npm run test -- invitation          50 lulus (+3: aturan peran saat ubah, nonaktifkan diri)
+npm run test:e2e -- undangan        26 lulus (13 skenario × desktop+mobile), 0 dilewati
+npm run verify                      582 lulus
+```
+
+Belum ada: **undang ulang** untuk pengguna berundangan kedaluwarsa — `undang()`
+menolak email yang sudah ada (`EMAIL_TERDAFTAR`). Lihat `docs/ai/BACKLOG.md`.
 
 ---
 

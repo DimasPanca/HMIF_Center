@@ -53,12 +53,11 @@
 
 import crypto from 'node:crypto';
 
-import { z } from 'zod';
-
 import type { TxKlien } from '@/lib/db/with-audit-context';
 import { db } from '@/lib/db/client';
 import type { Konteks } from './guard';
-import { ROLES, type RoleCode } from './permissions';
+import { lingkupUntuk, type RoleCode } from './permissions';
+import { SkemaAktivasi, SkemaUbahPengguna, SkemaUndang } from './skema-pengguna';
 
 if (typeof window !== 'undefined') {
   throw new Error('lib/auth/invitation.ts adalah modul server-only.');
@@ -68,122 +67,18 @@ if (typeof window !== 'undefined') {
 const BERLAKU_HARI = 7;
 
 // ---------------------------------------------------------------------------
-// Skema — dipakai form klien DAN validasi server (K-04)
+// Skema — didefinisikan di ./skema-pengguna (aman untuk klien), diekspor ulang
 // ---------------------------------------------------------------------------
 
-/**
- * Aturan password PRD F-1.1: minimal 8 karakter, mengandung huruf dan angka.
- *
- * Ditulis sebagai dua `regex` terpisah, bukan satu regex gabungan, supaya
- * pesan yang muncul menyebut syarat mana yang belum terpenuhi. Satu regex
- * gabungan hanya bisa mengatakan "password tidak valid".
- */
-export const kataSandi = z
-  .string()
-  .min(8, 'Password minimal 8 karakter.')
-  .regex(/[A-Za-z]/, 'Password harus mengandung huruf.')
-  .regex(/[0-9]/, 'Password harus mengandung angka.');
-
-const peran = z.object({
-  role: z.enum(ROLES),
-  /** Wajib untuk KADEPT dan ANGGOTA, dilarang untuk peran lain. */
-  departemen_id: z.uuid().optional(),
-});
-
-/**
- * Form undangan (PRD F-1.2, USER_FLOW §2.1).
- *
- * Aturan departemen di bawah menyalin CHECK `role_dept_wajib` migrasi 003 apa
- * adanya. Yang ditambahkan di sini bukan penjaminan melainkan pesan: Admin
- * berhak tahu peran mana yang kurang departemennya sebelum menekan kirim,
- * bukan menerima kegagalan constraint berbahasa Postgres sesudahnya.
- */
-export const SkemaUndang = z
-  .object({
-    nama_lengkap: z.string().trim().min(3, 'Nama minimal 3 karakter.').max(150),
-    nim: z
-      .string()
-      .trim()
-      .regex(/^\d{8,12}$/, 'NIM harus 8-12 digit angka.'),
-    email: z.email('Format email tidak valid.').transform((v) => v.trim().toLowerCase()),
-    angkatan: z.int().min(2000).max(2100).optional(),
-    no_hp: z
-      .string()
-      .trim()
-      .regex(/^[0-9+\-\s]{8,20}$/, 'Nomor HP tidak valid.')
-      .optional(),
-    roles: z.array(peran).min(1, 'Pilih minimal satu peran.'),
-  })
-  .superRefine((v, ctx) => {
-    v.roles.forEach((r, i) => {
-      const butuh = r.role === 'KADEPT' || r.role === 'ANGGOTA';
-      if (butuh && !r.departemen_id) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['roles', i, 'departemen_id'],
-          message: `Peran ${r.role} wajib memiliki departemen.`,
-        });
-      }
-      if (!butuh && r.departemen_id) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['roles', i, 'departemen_id'],
-          message: `Peran ${r.role} bersifat lintas-himpunan dan tidak boleh berdepartemen.`,
-        });
-      }
-    });
-
-    // Duplikat ditolak di sini supaya pesannya menyebut peran yang mana.
-    // `user_role_unik` di database juga menolaknya, tetapi dengan pesan yang
-    // menyebut nama constraint alih-alih nama perannya.
-    const kunci = v.roles.map((r) => `${r.role}:${r.departemen_id ?? ''}`);
-    kunci.forEach((k, i) => {
-      if (kunci.indexOf(k) !== i) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['roles', i],
-          message: 'Peran ini sudah dipilih.',
-        });
-      }
-    });
-  });
-
-export type InputUndang = z.infer<typeof SkemaUndang>;
-
-/** Form aktivasi (USER_FLOW §2.2). */
-export const SkemaAktivasi = z
-  .object({
-    token: z.string().min(20, 'Token undangan tidak lengkap.'),
-    password: kataSandi,
-    konfirmasi: z.string(),
-  })
-  .refine((v) => v.password === v.konfirmasi, {
-    message: 'Konfirmasi password tidak sama.',
-    path: ['konfirmasi'],
-  });
-
-export type InputAktivasi = z.infer<typeof SkemaAktivasi>;
-
-/** Perubahan yang boleh dilakukan Admin atas seorang pengguna. */
-export const SkemaUbahPengguna = z
-  .object({
-    nama_lengkap: z.string().trim().min(3).max(150).optional(),
-    angkatan: z.int().min(2000).max(2100).nullable().optional(),
-    no_hp: z.string().trim().max(20).nullable().optional(),
-    is_active: z.boolean().optional(),
-    /**
-     * Bila diisi, SELURUH peran pengguna pada periode aktif diganti dengan ini.
-     *
-     * `.min(1)` bukan formalitas: daftar peran kosong akan menghapus seluruh
-     * `user_role` pengguna itu pada periode aktif, dan `daftarPengguna()`
-     * menyaring berdasarkan peran — penggunanya lenyap dari halaman Admin dan
-     * tidak ada lagi cara memulihkannya lewat antarmuka.
-     */
-    roles: z.array(peran).min(1, 'Pengguna harus punya minimal satu peran.').optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, { message: 'Tidak ada perubahan.' });
-
-export type InputUbahPengguna = z.infer<typeof SkemaUbahPengguna>;
+export {
+  kataSandi,
+  SkemaAktivasi,
+  SkemaUbahPengguna,
+  SkemaUndang,
+  type InputAktivasi,
+  type InputUbahPengguna,
+  type InputUndang,
+} from './skema-pengguna';
 
 // ---------------------------------------------------------------------------
 // Bentuk hasil
@@ -699,6 +594,22 @@ export async function daftarPengguna(
 }
 
 /**
+ * `daftarPengguna` dengan lingkup baca pemanggil. PRD §5.1 memberi KADEPT dan
+ * ANGGOTA `user: R*` — hanya pengguna yang berperan di departemennya sendiri.
+ * Koneksi aplikasi melewati RLS, jadi batas itu ditegakkan di sini.
+ */
+export async function daftarPenggunaTerlingkup(
+  konteks: Konteks,
+  filter: Parameters<typeof daftarPengguna>[1] = {},
+  klien: TxKlien | typeof db = db,
+): Promise<RingkasPengguna[]> {
+  const semua = await daftarPengguna(konteks.periodeId, filter, klien);
+  if (lingkupUntuk(konteks.roles, 'user.read') !== 'DEPARTEMEN') return semua;
+  const boleh = new Set(konteks.departemenIds);
+  return semua.filter((u) => u.roles.some((r) => r.departemen_id !== null && boleh.has(r.departemen_id)));
+}
+
+/**
  * Mengubah data atau peran seorang pengguna.
  *
  * `is_active = false` HANYA mengubah kolom itu. Tidak ada baris lain yang
@@ -727,6 +638,16 @@ export async function ubahPengguna(
     };
   }
   const v = parsed.data;
+
+  // Menonaktifkan diri sendiri bisa mengunci satu-satunya Admin keluar sistem.
+  if (userId === konteks.sesi.userId && v.is_active === false) {
+    return {
+      ok: false,
+      kode: 'TIDAK_VALID',
+      pesan: 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
+      isu: [{ path: 'is_active', pesan: 'Minta Admin lain bila akun ini memang harus dinonaktifkan.' }],
+    };
+  }
 
   if (!konteks.periodeId) {
     return {

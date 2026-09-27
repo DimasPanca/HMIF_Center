@@ -36,3 +36,15 @@ memperlihatkannya sebagai rancangan navigasi awal.
 - **`kota: 'Cilegon'`** di `generateDocxNotulensi` sebaiknya dibaca dari
   `app_config` (larangan keras #5 berlaku untuk komponen, tetapi sumbernya sama).
 - **Migrasi generator DOCX notulensi ke Document Engine** setelah T-061 (ADR-025).
+
+## Pengguna — undang ulang (dicatat 2026-09-27, T-047)
+
+PRD F-1.2 AC 2 menampilkan "Undangan kedaluwarsa, hubungi Admin", dan kontrak
+undangan §5 menyebut tindakan Admin untuk `UNDANGAN_KEDALUWARSA` adalah "undang
+ulang". Tetapi `undang()` menolak email/NIM yang sudah ada (`EMAIL_TERDAFTAR`),
+dan tidak ada service yang menerbitkan token baru untuk `app_user` yang belum
+pernah aktif. Akibatnya pengguna dengan undangan kedaluwarsa **buntu**: tidak
+bisa diaktifkan, tidak bisa diundang ulang. Usulan: `undangUlang(tx, konteks,
+userId, asalUrl)` — tandai undangan lama terpakai/batal, buat baris
+`invitation` baru, tanpa membuat akun auth baru — plus tombol di baris
+`UNDANGAN_KEDALUWARSA`/`MENUNGGU_AKTIVASI` halaman Admin.
