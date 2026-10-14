@@ -63,10 +63,20 @@ export async function bacaPresetTujuan(): Promise<PresetTujuan[]> {
  * yang dipakai yang paling awal didaftarkan supaya pratinjau tidak berganti-ganti.
  */
 export async function bacaKetuaHimpunan(periodeId: string): Promise<{ nama: string; nim: string } | null> {
+  const k = await bacaPenandatanganKetua(periodeId);
+  return k ? { nama: k.nama, nim: k.nim } : null;
+}
+
+/**
+ * Sama seperti `bacaKetuaHimpunan`, ditambah `userId` untuk mengambil gambar
+ * tanda tangannya — dipakai generator DOCX (T-061). Dipisah supaya id pengguna
+ * tidak ikut terkirim ke komponen klien pratinjau.
+ */
+export async function bacaPenandatanganKetua(periodeId: string): Promise<{ userId: string; nama: string; nim: string } | null> {
   const r = await db.user_role.findFirst({
     where: { periode_id: periodeId, role: 'KETUA', app_user: { is_active: true } },
     orderBy: { created_at: 'asc' },
-    select: { app_user: { select: { nama_lengkap: true, nim: true } } },
+    select: { app_user: { select: { id: true, nama_lengkap: true, nim: true } } },
   });
-  return r ? { nama: r.app_user.nama_lengkap, nim: r.app_user.nim } : null;
+  return r ? { userId: r.app_user.id, nama: r.app_user.nama_lengkap, nim: r.app_user.nim } : null;
 }

@@ -227,6 +227,8 @@ function jenisDari(kode: string, varian: string | null): JenisSurat | null {
 
 export interface DetailSurat extends DetailDraft {
   kode_surat: string;
+  /** Baris versi template yang dipakai; NULL untuk surat generik (ADR-028). */
+  template_id: string | null;
   nomor_lengkap: string | null;
   alasan_penolakan: string | null;
   alasan_pembatalan: string | null;
@@ -291,6 +293,7 @@ export async function muatSurat(konteks: Konteks, id: string, konfig?: KonfigSur
     nilai: nilai as SuratFormInput,
     masalah: periksaKelengkapan(k, nilai),
     kode_surat: s.kode_surat,
+    template_id: s.template_id,
     nomor_lengkap: s.nomor_lengkap,
     alasan_penolakan: s.alasan_penolakan,
     alasan_pembatalan: s.alasan_pembatalan,

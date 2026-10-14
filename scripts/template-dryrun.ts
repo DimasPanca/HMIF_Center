@@ -83,6 +83,8 @@ const WAJIB = [
   'proposal.docx',
   'lpj.docx',
   'notulensi.docx',
+  // Bukan bagian §17: template umum untuk kode 01/06/07/09 (ADR-028, ADR-029).
+  'surat-umum.docx',
 ] as const;
 
 /**
@@ -129,6 +131,9 @@ const DUMMY: Record<string, unknown> = {
   tujuan_jabatan: 'Fakultas Teknik UNTIRTA',
   tujuan_alamat: 'di Tempat',
   isi_paragraf: 'Paragraf isi surat, hasil konversi dari isi_html.',
+  // Template umum: satu paragraf dokumen per paragraf isi, dan baris instansi opsional.
+  paragraf_isi: teks(2),
+  ada_tujuan_jabatan: true,
 
   // --- surat: data_dinamis ---
   nama_kegiatan: 'AKSARA',

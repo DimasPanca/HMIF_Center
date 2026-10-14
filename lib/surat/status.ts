@@ -24,7 +24,8 @@ import { z } from 'zod';
 
 import type { Konteks } from '@/lib/auth/guard';
 import { db } from '@/lib/db/client';
-import type { TxKlien } from '@/lib/db/with-audit-context';
+import { withAuditContext, type TxKlien } from '@/lib/db/with-audit-context';
+import { storage } from '@/lib/storage';
 import type { HasilSurat, KodeGagalSurat } from '@/lib/surat/draft';
 import { muatSurat } from '@/lib/surat/draft';
 import { generateDokumenSurat } from '@/lib/surat/generator';
@@ -152,13 +153,38 @@ export async function setujuiSurat(
   // hanya bila diminta eksplisit, supaya approver kedua yang terlambat menekan
   // "Setujui" mendapat pesan "sudah disetujui", bukan diam-diam ikut men-generate.
   if (s.status === 'DISETUJUI' && opsi.terbitkanUlang && s.nomor_lengkap) {
+    await pasangTemplateAktif(tx, id);
     return { ok: true, nilai: { status: 'DISETUJUI', nomor: s.nomor_lengkap } };
   }
   if (!bolehTransisi(s.status, 'DISETUJUI')) return salahStatus(s, 'disetujui');
 
   const r = await alokasiNomor(tx, konteks, id);
   if (!r.ok) return { ok: false, kode: r.kode, pesan: r.pesan };
+  await pasangTemplateAktif(tx, id);
   return { ok: true, nilai: { status: 'DISETUJUI', nomor: r.nomor } };
+}
+
+/**
+ * Versi template surat DITETAPKAN saat disetujui, bukan saat draft dibuat.
+ *
+ * Draft mencatat versi yang aktif ketika ia dibuat — cukup untuk skema field,
+ * tetapi berkas DOCX versi itu bisa sudah diganti sebelum surat terbit (T-061
+ * mengganti seluruh versi lama yang memuat tanda tangan contoh). Surat yang
+ * belum pernah di-generate karena itu dipindah ke versi aktif untuk kode dan
+ * varian yang sama; sesudah terbit, versinya tidak pernah berubah lagi dan
+ * generate ulang memakai template aslinya (ADR-027, ADR-029). Surat generik
+ * (template_id NULL) tidak tersentuh.
+ */
+async function pasangTemplateAktif(tx: TxKlien, id: string): Promise<void> {
+  await tx.$executeRaw`
+    UPDATE surat s SET template_id = baru.id
+    FROM surat_template lama, surat_template baru
+    WHERE s.id = ${id}::uuid
+      AND lama.id = s.template_id
+      AND baru.kode_surat = lama.kode_surat AND baru.varian = lama.varian
+      AND baru.is_active AND baru.id <> lama.id
+      AND NOT EXISTS (SELECT 1 FROM dokumen d WHERE d.surat_id = s.id)
+  `;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,13 +198,49 @@ export type HasilTerbit =
 /**
  * Dipanggil SETELAH transaksi approval commit. Gagal di sini tidak menyentuh
  * nomor: surat tetap DISETUJUI dan dapat diterbitkan ulang (kontrak butir 5).
+ *
+ * Berkas diunggah lebih dulu (generator), baru baris `dokumen` dan status TERBIT
+ * ditulis dalam SATU transaksi beraudit. Transaksi itu gagal → berkasnya
+ * dihapus lagi, sehingga tidak ada berkas yatim maupun baris tanpa berkas
+ * (kontrak T-061).
  */
-export async function terbitkanSurat(id: string): Promise<HasilTerbit> {
-  const hasil = await generateDokumenSurat(id);
+export async function terbitkanSurat(request: Request, konteks: Konteks, id: string): Promise<HasilTerbit> {
+  const hasil = await generateDokumenSurat(konteks, id);
   if (!hasil.ok) return { ok: false, status: 'DISETUJUI', pesan: hasil.pesan };
 
-  // WHERE status = 'DISETUJUI': dua percobaan terbit bersamaan tidak saling menimpa.
-  await db.surat.updateMany({ where: { id, status: 'DISETUJUI' }, data: { status: 'TERBIT', updated_at: new Date() } });
+  try {
+    await withAuditContext(request, konteks, async (tx) => {
+      // WHERE status = 'DISETUJUI': dua percobaan terbit bersamaan tidak saling
+      // menimpa. Yang kalah tidak menulis baris dokumen kedua.
+      const naik = await tx.surat.updateMany({
+        where: { id, status: 'DISETUJUI' },
+        data: { status: 'TERBIT', updated_at: new Date() },
+      });
+      if (naik.count === 0) return;
+      await tx.dokumen.deleteMany({ where: { surat_id: id, jenis: 'SURAT', format: 'DOCX' } });
+      await tx.dokumen.create({
+        data: {
+          surat_id: id,
+          jenis: 'SURAT',
+          format: 'DOCX',
+          storage_key: hasil.key,
+          file_size: BigInt(hasil.ukuran),
+          generated_by: konteks.sesi.userId,
+        },
+      });
+    });
+  } catch (e) {
+    console.error(`[terbit] surat ${id}: gagal mencatat dokumen`, e);
+    // Hanya dihapus bila tidak ada baris yang merujuknya — percobaan terbit lain
+    // yang menang mungkin sudah mencatat key yang sama.
+    const dirujuk = await db.dokumen.count({ where: { storage_key: hasil.key } }).catch(() => 1);
+    if (dirujuk === 0) await storage.delete(hasil.key).catch(() => undefined);
+    return {
+      ok: false,
+      status: 'DISETUJUI',
+      pesan: 'Dokumen gagal dicatat. Nomor surat sudah ditetapkan; dokumen dapat diterbitkan ulang.',
+    };
+  }
   return { ok: true, status: 'TERBIT' };
 }
 

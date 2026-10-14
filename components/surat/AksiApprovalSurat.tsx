@@ -9,12 +9,12 @@
  * adanya: nomor sudah sah dan surat dapat diterbitkan ulang.
  */
 
-import { CheckCircle2, RotateCcw, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, RotateCcw, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { NomorSuratBadge } from '@/components/surat/NomorSuratBadge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { InlineAlert } from '@/components/ui/inline-alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -87,9 +87,16 @@ function Aksi({ suratId, status }: AksiApprovalSuratProps) {
         {hasil.peringatan ? (
           <InlineAlert data-testid="surat-peringatan-terbit" title="Dokumen belum diterbitkan" detail={hasil.peringatan} />
         ) : null}
-        <Button type="button" variant="secondary" onClick={() => router.push('/surat/approval')}>
-          Kembali ke antrian
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {hasil.status === 'TERBIT' ? (
+            <a href={`/api/surat/${suratId}/download`} className={buttonVariants({})} data-testid="surat-unduh-docx" download>
+              <Download aria-hidden="true" /> Unduh DOCX
+            </a>
+          ) : null}
+          <Button type="button" variant="secondary" onClick={() => router.push('/surat/approval')}>
+            Kembali ke antrian
+          </Button>
+        </div>
       </div>
     );
   }

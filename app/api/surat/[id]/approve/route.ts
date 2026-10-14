@@ -28,7 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
   const disetujui = await withAuditContext(request, guard.konteks, (tx) => setujuiSurat(tx, guard.konteks, id, opsi.data));
   if (!disetujui.ok) return responsSurat(disetujui);
 
-  const terbit = await terbitkanSurat(id);
+  const terbit = await terbitkanSurat(request, guard.konteks, id);
   return sukses(
     {
       nomor: disetujui.nilai.nomor,

@@ -15,6 +15,7 @@ DECLARE
   v_surat    UUID;
   v_ditolak  BOOLEAN;
   v_jumlah   INT;
+  v_versi    INT;
 BEGIN
   ---------------------------------------------------------------------------
   -- Data dasar
@@ -161,15 +162,18 @@ BEGIN
   --    Revisi menambah versi baru, tidak menimpa: surat lama harus tetap bisa
   --    di-generate ulang persis seperti aslinya.
   ---------------------------------------------------------------------------
+  -- Versi berikutnya dihitung, bukan ditulis 2: DB dev memuat versi sungguhan
+  -- hasil scripts/upload-templates.ts (T-061 menaikkan template ini ke v2).
+  SELECT max(versi) + 1 INTO v_versi FROM surat_template WHERE kode_surat = '05' AND varian = 'PEMINJAMAN_RUANGAN';
   INSERT INTO surat_template (kode_surat, varian, nama, storage_key, field_schema, versi, is_active)
   VALUES ('05', 'PEMINJAMAN_RUANGAN', 'Surat Peminjaman Ruangan (revisi)',
-          'template/surat-05-peminjaman-ruangan_v2.docx', '{"fields":[]}'::JSONB, 2, true);
+          format('template/uji-009_v%s.docx', v_versi), '{"fields":[]}'::JSONB, v_versi, true);
 
   v_ditolak := false;
   BEGIN
     INSERT INTO surat_template (kode_surat, varian, nama, storage_key, field_schema, versi)
     VALUES ('05', 'PEMINJAMAN_RUANGAN', 'Duplikat versi',
-            'x.docx', '{}'::JSONB, 2);
+            'x.docx', '{}'::JSONB, v_versi);
   EXCEPTION WHEN unique_violation THEN v_ditolak := true;
   END;
   ASSERT v_ditolak, 'Template dengan kode, varian, dan versi sama DITERIMA';

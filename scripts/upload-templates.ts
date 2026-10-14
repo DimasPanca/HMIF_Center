@@ -43,7 +43,7 @@ function muatEnv(): void {
 
 async function main(): Promise<number> {
   muatEnv();
-  const { storage } = await import('@/lib/storage');
+  const { storage, keys: storageKeys } = await import('@/lib/storage');
   const { klienLangsung } = await import('@/lib/db/connection');
   const reg = await import('@/lib/surat/template-registry');
 
@@ -117,12 +117,13 @@ async function main(): Promise<number> {
     }
 
     // --- 4 template dokumen acara -----------------------------------------
-    for (const t of reg.TEMPLATE_DOKUMEN) {
-      const isi = bacaBerkas(t.slug);
-      const kunci = reg.kunciTemplateDokumen(t.dokumen);
+    for (const t of [...reg.TEMPLATE_DOKUMEN, reg.TEMPLATE_UMUM]) {
+      const b = reg.sebagaiBerversi(t);
+      const isi = bacaBerkas(b.slug);
+      const kunci = storageKeys.template(b.slug, b.versi);
       const rencana = reg.rencanakanDokumen(t, reg.hashIsi(isi), await hashDiStorage(kunci));
       hitung[rencana.aksi] = (hitung[rencana.aksi] ?? 0) + 1;
-      console.log(`  [${rencana.aksi.padEnd(10)}] ${t.dokumen.padEnd(23)} v${t.versi}  ${kunci}`);
+      console.log(`  [${rencana.aksi.padEnd(10)}] ${b.label.padEnd(23)} v${b.versi}  ${kunci}`);
 
       if (rencana.aksi === 'DITOLAK') {
         console.log(`               ${rencana.alasan}`);
@@ -130,6 +131,22 @@ async function main(): Promise<number> {
       } else if (rencana.aksi === 'UNGGAH' && !KERING) {
         // upsert false: versi dokumen yang sudah ada tidak boleh ditimpa.
         await unggahTerverifikasi(kunci, isi, false);
+      }
+    }
+
+    // Aset stempel (SYSTEM_DESIGN §12.2: aset/stempel-hmif.png). Dibaca generator
+    // dari storage, bukan dari public/, supaya tidak bergantung pada berkas apa
+    // yang ikut terbundel ke fungsi serverless.
+    {
+      const isi = fs.readFileSync(path.join(AKAR, 'public', 'stempel-hmif.png'));
+      const kunci = storageKeys.aset('stempel-hmif.png');
+      const sama = (await hashDiStorage(kunci)) === reg.hashIsi(isi);
+      const aksi = sama ? 'TETAP' : 'UNGGAH';
+      hitung[aksi] = (hitung[aksi] ?? 0) + 1;
+      console.log(`  [${aksi.padEnd(10)}] ${'ASET stempel'.padEnd(23)}     ${kunci}`);
+      if (!sama && !KERING) {
+        await storage.put(kunci, isi, 'image/png', { upsert: true });
+        if ((await hashDiStorage(kunci)) !== reg.hashIsi(isi)) throw new Error(`Verifikasi unggahan ${kunci} gagal.`);
       }
     }
   } finally {

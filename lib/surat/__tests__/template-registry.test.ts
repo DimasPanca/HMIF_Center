@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { JENIS_SURAT } from '@/lib/surat/field-schemas';
 import {
   TEMPLATE_DOKUMEN,
+  TEMPLATE_UMUM,
   TEMPLATE_SURAT,
   berkasTemplate,
   fieldSchemaUntuk,
@@ -39,11 +40,11 @@ function keadaan(ubah: Partial<KeadaanSurat> = {}): KeadaanSurat {
 }
 
 describe('daftar template', () => {
-  it('11 berkas di templates/ tercakup tepat sekali', () => {
+  it('12 berkas di templates/ tercakup tepat sekali (11 §17 + template umum ADR-029)', () => {
     const diDisk = fs.readdirSync(path.join(AKAR, 'templates')).filter((f) => f.endsWith('.docx')).sort();
-    const diKode = [...TEMPLATE_SURAT, ...TEMPLATE_DOKUMEN].map((t) => berkasTemplate(t.slug)).sort();
+    const diKode = [...TEMPLATE_SURAT, ...TEMPLATE_DOKUMEN, TEMPLATE_UMUM].map((t) => berkasTemplate(t.slug)).sort();
     expect(diKode).toEqual(diDisk);
-    expect(diKode).toHaveLength(11);
+    expect(diKode).toHaveLength(12);
   });
 
   it('7 template surat = 7 jenis bervarian, dengan kode/varian/nama seperti seed 018', () => {

@@ -66,18 +66,14 @@ plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
 
 ## Persuratan — sisa di luar kontrak T-058 (dicatat 2026-10-14)
 
-- **Template untuk empat kode generik** (01 Pengajuan, 06 Peringatan,
-  07 Keputusan, 09 Piagam). Draftnya sudah dapat dibuat (migrasi 029,
-  ADR-028), tetapi `Template/` tidak punya contoh surat untuk keempatnya,
-  jadi T-061 belum dapat men-generate-nya. Perlu keputusan pemilik produk:
-  satu template generik ber-kop HMIF dengan `{isi_paragraf}`, atau contoh
-  surat asli per jenis.
+- ~~**Template untuk empat kode generik**~~ — **SELESAI T-061**: pemilik
+  memilih satu template umum ber-kop (`templates/surat-umum.docx`, ADR-029).
+  Bila kelak ada contoh surat asli per jenis, tambahkan template bervarian.
 - **Sidebar menyorot dua menu** di `/surat/baru`: "Buat Surat" dan "Arsip
   Surat" (`/surat`) sama-sama aktif, karena pencocokan rute memakai awalan.
   Perilaku lama sidebar, bukan bagian T-058.
-- **Isi surat lebih dari satu paragraf** dicetak lewat satu placeholder
-  `{isi_paragraf}`. Perataan HTML → paragraf DOCX adalah pekerjaan T-061;
-  `teksDariIsiHtml()` sudah memisahkan blok dengan baris baru.
+- ~~**Isi surat lebih dari satu paragraf**~~ — **SELESAI T-061**
+  (`paragrafDariIsiHtml`, ADR-029). Tebal/miring sengaja tidak dibawa.
 
 ## Persuratan — temuan T-059 (dicatat 2026-10-15)
 
@@ -89,3 +85,22 @@ plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
   `{tujuan_nama}`, atau batasi Aspirasi hanya untuk DPM. Bila diganti, ubah
   resep `scripts/build-templates.ts`, kalimat di `lib/surat/render-preview.ts`,
   lalu jalankan `scripts/upload-templates.ts` (naik versi otomatis).
+
+## Persuratan — temuan T-061 (dicatat 2026-10-15)
+
+- **Template dokumen belum diperiksa untuk tanda tangan contoh.** Ketujuh
+  template surat ternyata memuat tanda tangan & stempel asli dari berkas
+  contoh (dibuang di T-061, ADR-029). `tor.docx`/`proposal.docx`/
+  `notulensi.docx` punya 1 gambar badan, `lpj.docx` 6 (plus 22 berkas media).
+  Sebelum generator TOR/Proposal (T-094…T-096) dan LPJ (T-104) dibuat, lihat
+  gambar itu satu per satu; yang berupa tanda tangan/stempel dibuang lewat
+  `{ hapusGambar: n }` di resepnya dan versi `TEMPLATE_DOKUMEN` dinaikkan.
+- **Generate ulang surat generik memakai versi umum saat itu**, bukan versi
+  saat pertama terbit (`TEMPLATE_UMUM` konstanta, tak tercatat per surat).
+  Belum ada jalur generate ulang surat TERBIT; bila dibuat, catat versinya.
+- **Migrasi generator DOCX notulensi ke Document Engine** (ADR-025) kini
+  dapat dikerjakan: `renderDocx` + `muatBerkas(kunciTemplateDokumen('NOTULENSI'))`.
+- **`TEMPLATE_MAPPING.md` §5.1** masih menggambarkan paragraf sisipan
+  `{%ttd}{%stempel}` Keterangan Aktif; kini tag itu di akhir paragraf nama
+  (`{nama}{%ttd}{%stempel}`) karena paragraf sisipan menghasilkan halaman
+  kosong kedua.

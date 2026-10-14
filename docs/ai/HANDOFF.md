@@ -65,6 +65,39 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-061 · Document Engine DOCX (2026-10-15)
+
+`lib/documents/`: `docx-engine.ts` (`renderDocx` — placeholder tanpa data =
+`GalatTemplate`, bukan "undefined"), `data-mapper.ts` (`petakanSurat`,
+`paragrafDariIsiHtml`), `image-module.ts` (modul gambar sendiri +
+`gabungTtdStempel`), `template-loader.ts` (storage + cache memori).
+`lib/surat/generator.ts` kini sungguhan; `terbitkanSurat(request, konteks, id)`
+mencatat baris `dokumen` + TERBIT dalam satu transaksi beraudit.
+`GET /api/surat/[id]/download` (`lib/surat/unduh.ts`). Tombol "Unduh DOCX" di
+hasil approval. Keputusan lengkap: **ADR-029**.
+
+- **Template surat memuat tanda tangan & stempel ASLI orang lain** (sisa
+  T-006) — kini dibuang saat build (`hapusGambar`). Ketujuh template naik versi
+  (02–05 → v2, 08 → v3) dan sudah diunggah; `surat-umum_v1.docx` dan
+  `aset/stempel-hmif.png` juga. `upload-templates --kering` → 13 TETAP.
+- Versi template ditetapkan saat **disetujui** (`pasangTemplateAktif`), jadi
+  draft lama yang menunjuk v1 tidak akan pernah di-generate dari v1.
+- **Ketua tanpa tanda tangan → generate gagal** (DISETUJUI + peringatan).
+  Unggah di `/profil` lalu "Terbitkan ulang". Akun e2e Ketua kini punya
+  tanda tangan dummy dari gate.
+- Tag gambar wajib di AKHIR run-nya (`{nama}{%ttd}`) — teks sesudahnya
+  kehilangan format. Dikunci test.
+- Diperbaiki: `storage.get()` ke bucket publik selalu gagal "Bucket not found"
+  sejak T-044 (lihat jebakan #8). Keterangan Aktif tak lagi dua halaman.
+- **Pemeriksaan Word manual sudah dijalankan** lewat Word 16 COM (lihat
+  jebakan #9) — menemukan dan memperbaiki satu korupsi sungguhan (Default png
+  ganda). Pemilik tetap disarankan membuka satu surat terbit di Word sendiri.
+
+Gate: unit `docx-engine` 26/26 (11 jenis × template sungguhan),
+`template-dryrun` 12/12, `surat-approval` 9 lulus + 3 skip (test tanda tangan
+hanya di project desktop — keadaan global), `surat-form` + `surat-preview`
+26/26, `verify` hijau.
+
 ### T-060 · alur approval surat (2026-10-15)
 
 `lib/surat/status.ts`: `TRANSISI` (state machine USER_FLOW §11.2),
@@ -303,8 +336,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-060
-   selesai; berikutnya T-061 (DOCX) → T-062 (kode saja) → T-063 → T-064.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-061
+   selesai; berikutnya T-062 (kode saja, PDF dilewati) → T-063 → T-064.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -336,7 +369,7 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Delapan hal yang tidak obvious dari kode:
+Sepuluh hal yang tidak obvious dari kode:
 
 0. **Node 22 wajib (`.nvmrc`, `engines.node >=22`).** Di Node 20, 6 test
    storage gagal palsu ("native WebSocket not found", `markAsUncloneable is not
@@ -371,6 +404,17 @@ Delapan hal yang tidak obvious dari kode:
    Tanpa itu tombol mencuri fokus dan TipTap memulihkannya lewat
    `requestAnimationFrame`, yang tak berjalan di tab tak terlihat — teks jatuh di
    luar node yang baru dibuat.
+8. **Bucket publik bernama `public` bentrok dengan rute Storage.**
+   `download()` supabase-js → `/object/public/{key}` = rute objek publik, yang
+   membaca segmen pertama key sebagai nama bucket ("Bucket not found").
+   `SupabaseStorageAdapter.get()` kini membaca bucket publik lewat URL
+   publiknya. Jangan kembalikan ke `download()`.
+9. **Memeriksa DOCX di Word tanpa membukanya manual.** Word 16 terpasang di
+   mesin pengembang; dari PowerShell: `$w = New-Object -ComObject
+   Word.Application; $d = $w.Documents.Open($path, $false, $true)` — berkas
+   korup melempar "The file appears to be corrupted"; `$d.SaveAs2($pdf, 17)`
+   menghasilkan PDF untuk dilihat; `$d.ComputeStatistics(2)` = jumlah halaman.
+   Selalu `$w.Quit()` di `finally`.
 
 ---
 
@@ -384,11 +428,12 @@ Delapan hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-061 (isi `lib/surat/generator.ts`;
-   pakai `formatTanggalSurat`, `templateById` dari `surat.template_id`,
-   template generik baru untuk 01/06/07/09) → T-062 (kode saja, PDF
-   dilewati) → T-063 (arsip + tombol batal) → T-064. Jalankan ulang
-   `stress-nomor-surat.ts` setiap kali `alokasi_nomor_surat` disunting.
+4. **Rantai surat — sedang berjalan.** T-062 (kode saja, PDF dilewati;
+   `PDF_ENABLED=false`) → T-063 (arsip + tombol batal; unduh pakai
+   `/api/surat/[id]/download`) → T-064 (massal: `generateDokumenSurat` per
+   surat). Jalankan ulang `stress-nomor-surat.ts` setiap kali
+   `alokasi_nomor_surat` disunting. Sebelum generator TOR/Proposal/LPJ,
+   periksa gambar badan templatenya (BACKLOG).
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah

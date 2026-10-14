@@ -103,6 +103,20 @@ export class SupabaseStorageAdapter implements StorageAdapter {
   }
 
   async get(key: string): Promise<Buffer> {
+    // Objek bucket publik dibaca lewat URL publiknya, BUKAN `download()`.
+    //
+    // `download()` meminta `/storage/v1/object/{bucket}/{key}`. Bucket publik
+    // HMIF bernama `public`, sehingga jalurnya menjadi `/object/public/aset/…`
+    // — persis rute objek-publik Storage, yang membaca segmen berikutnya
+    // ("aset") sebagai nama bucket dan menjawab "Bucket not found". Ditemukan
+    // T-061 saat generator membaca aset stempel; setiap get() ke bucket publik
+    // gagal dengan cara yang sama sejak T-044.
+    if (bucketUntuk(key) === 'public') {
+      const r = await fetch(this.getPublicUrl(key), { cache: 'no-store' });
+      if (!r.ok) throw new Error(`Gagal mengambil "${key}": HTTP ${r.status}`);
+      return Buffer.from(await r.arrayBuffer());
+    }
+
     const { data, error } = await this.konteks().klien.storage.from(this.bucketNyata(key)).download(key);
     if (error || !data) {
       throw new Error(`Gagal mengambil "${key}": ${error?.message ?? 'objek kosong'}`);

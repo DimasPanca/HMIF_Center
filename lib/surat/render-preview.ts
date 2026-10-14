@@ -212,10 +212,22 @@ function blokIsiSurat(n: Nilai): Blok {
   return teksDariIsiHtml(html) ? { jenis: 'html', html } : { jenis: 'html', html: '', kosong: 'Isi surat' };
 }
 
+/**
+ * Jabatan Ketua Himpunan di blok TTD — bunyinya mengikuti berkas contoh tiap
+ * jenis. Dipakai pratinjau DAN generator DOCX (T-061) supaya keduanya tak
+ * pernah berbeda.
+ */
+export function jabatanKetua(jenis: JenisSurat): string {
+  return jenis === 'KETERANGAN_AKTIF' ? 'Ketua HMIF FT UNTIRTA' : 'Ketua HMIF';
+}
+
+/** Label kolom kanan: "Mengetahui," hanya bila ada penandatangan kolom kiri. */
+export const LABEL_MENGETAHUI = 'Mengetahui,';
+
 function penandaKetua(jenis: JenisSurat, ketua: KetuaHimpunan | null, label?: string): Penanda {
   return {
     label,
-    jabatan: [teks(jenis === 'KETERANGAN_AKTIF' ? 'Ketua HMIF FT UNTIRTA' : 'Ketua HMIF')],
+    jabatan: [teks(jabatanKetua(jenis))],
     nama: [ketua ? teks(ketua.nama) : { t: 'kosong', label: 'Ketua Himpunan belum terdaftar' }],
     nim: [ketua?.nim ? teks(ketua.nim) : { t: 'kosong', label: 'NIM Ketua' }],
     awalanNim: jenis === 'KETERANGAN_AKTIF' ? 'NIM ' : 'NIM. ',
@@ -352,7 +364,7 @@ export function susunPratinjau(nilai: unknown, konfig: KonfigSurat, ketua: Ketua
       labelAtas: bertemplate && jenis !== 'UNDANGAN_SAMBUTAN' ? [isi(d.label_atas, 'Nama panitia')] : undefined,
       kotaTanggalDiAtas: false,
       kiri: kiri ? { ...kiri, label: undefined } : undefined,
-      kanan: penandaKetua(jenis, ketua, kiri ? 'Mengetahui,' : undefined),
+      kanan: penandaKetua(jenis, ketua, kiri ? LABEL_MENGETAHUI : undefined),
     },
     lampiranHalaman:
       jenis === 'UNDANGAN_SAMBUTAN'

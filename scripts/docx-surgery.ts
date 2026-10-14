@@ -510,6 +510,49 @@ export class Dokumen {
     );
   }
 
+  /**
+   * Menghapus SETIAP gambar di badan dokumen beserta berkas medianya.
+   *
+   * Berkas contoh HMIF menyimpan tanda tangan basah orang sungguhan dan cap
+   * stempel sebagai gambar melayang di blok tanda tangan (ditemukan T-061).
+   * Dibiarkan, setiap surat yang dihasilkan ikut memuat tanda tangan pejabat
+   * lama — di atas nama penandatangan yang sama sekali lain. Tanda tangan dan
+   * stempel sah disisipkan saat generate lewat `{%ttd}`, bukan diwarisi contoh.
+   *
+   * Kop surat ada di `header*.xml` dan tidak tersentuh. Relasi dan berkas
+   * `word/media/*` yang tidak lagi dirujuk bagian mana pun ikut dibuang — kalau
+   * tidak, tanda tangan lama tetap dapat diekstrak dari zip walau tak tampil.
+   */
+  hapusGambar(): number {
+    let n = 0;
+    this.xml = this.xml.replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<w:(?:drawing|pict)\b[\s\S]*?<\/w:r>/g, () => {
+      n++;
+      return '';
+    });
+
+    const relsDoc = 'word/_rels/document.xml.rels';
+    const rels = this.zip.file(relsDoc)?.asText() ?? '';
+    const sisa = rels.replace(/<Relationship\b[^>]*\/>/g, (rel) => {
+      const id = /\bId="([^"]+)"/.exec(rel)?.[1];
+      const gambar = /\/relationships\/image"/.test(rel);
+      return gambar && id && !this.xml.includes(`"${id}"`) ? '' : rel;
+    });
+    this.zip.file(relsDoc, sisa);
+
+    // Media yang tidak dirujuk berkas relasi mana pun (header tetap merujuk logonya).
+    const semuaRels = this.zip
+      .file(/\.rels$/)
+      .map((f) => f.asText())
+      .join('\n');
+    for (const f of this.zip.file(/^word\/media\//)) {
+      const nama = f.name.slice('word/'.length);
+      if (!semuaRels.includes(`Target="${nama}"`) && !semuaRels.includes(`Target="/word/${nama}"`)) {
+        this.zip.remove(f.name);
+      }
+    }
+    return n;
+  }
+
   simpan(): Buffer {
     this.zip.file('word/document.xml', this.xml);
     return this.zip.generate({ type: 'nodebuffer' }) as Buffer;

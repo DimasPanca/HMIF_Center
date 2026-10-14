@@ -63,7 +63,12 @@ type Op =
   /** Tulis isi sel tabel, satu untai per paragraf. */
   | { sel: [number, number, number, string[]] }
   /** Isi sebuah bagian: [judul, judul berikutnya, teks pengganti]. */
-  | { isiBagian: [string, string, string] };
+  | { isiBagian: [string, string, string] }
+  /**
+   * Buang seluruh gambar badan dokumen — tanda tangan dan stempel contoh.
+   * Angkanya jumlah gambar yang diharapkan; lihat `Dokumen.hapusGambar`.
+   */
+  | { hapusGambar: number };
 
 interface Resep {
   keluaran: string;
@@ -123,6 +128,8 @@ const RESEP: Resep[] = [
     keluaran: 'surat-02-keterangan-aktif.docx',
     sumber: 'Contoh Surat Aktif Organisasi.docx',
     ops: [
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061).
+      { hapusGambar: 2 },
       { ganti: ['02/274/UN43.3.7/HMIF/VII/2025', '{nomor_lengkap}'] },
       { ganti: ['Nama:', 'Nama: {nama_pemohon}'] },
       { ganti: ['NIM :', 'NIM : {nim_pemohon}'] },
@@ -133,12 +140,24 @@ const RESEP: Resep[] = [
       // Satu penandatangan saja, dan tabelnya cuma satu sel — jadi blok ditulis
       // langsung, bukan lewat ttdDua().
       { ganti: ['Ketua HMIF FT UNTIRTA', '{#kanan}{jabatan}'] },
-      { sisip: ['Dicky Saputra', '{%ttd}{%stempel}'] },
       { ganti: ['Dicky Saputra', '{nama}'] },
 
       // Berkas ini menulis "NIM" tanpa titik, berbeda dari enam surat lain.
       // Dipertahankan apa adanya.
       { ganti: ['NIM 3337220032', 'NIM {nim}{/kanan}'] },
+
+      // Gambar TTD+stempel ditambatkan ke paragraf NAMA dan melayang naik ke
+      // ruang tanda tangan di atasnya — BUKAN di paragraf sisipan baru: satu
+      // paragraf tambahan saja sudah mendorong berkas ini menjadi dua halaman
+      // dengan halaman kedua kosong (diukur di Word, T-061). Paragraf bertek
+      // sel ini: kota-tanggal, jabatan, " ", " ", nama, NIM.
+      //
+      // Tag gambar di AKHIR paragraf: teks sesudah tag gambar dalam satu `<w:t>`
+      // pindah ke run baru tanpa format (lihat lib/documents/image-module.ts),
+      // jadi `{%ttd}{nama}` akan mencetak nama dengan font bawaan Word.
+      {
+        sel: [0, 0, 1, ['{kota}, {tanggal_surat_format}', '{#kanan}{jabatan}', ' ', ' ', '{nama}{%ttd}{%stempel}', 'NIM {nim}{/kanan}']],
+      },
     ],
   },
 
@@ -147,6 +166,8 @@ const RESEP: Resep[] = [
     keluaran: 'surat-03-aspirasi.docx',
     sumber: '018_Surat Aspirasi Keorganisasian Mahasiswa Fakultas Teknik.docx',
     ops: [
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061).
+      { hapusGambar: 2 },
       { ganti: ['03/018/UN43.3.7/HMIF/VIII/2026', '{nomor_lengkap}'] },
       { ganti: ['Cilegon, 19 Agustus 2026', '{kota}, {tanggal_surat_format}'] },
       { ganti: ['1 (satu) Lembar', '{lampiran}'] },
@@ -197,6 +218,9 @@ const RESEP: Resep[] = [
       // "Ketua Pelaksana", "Cilegon, 07 Agustus 2025", dan "AKSARA" semuanya
       // muncul lagi di dalam TOR itu.
       { hapus: ['KERANGKA ACUAN KERJA'] },
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061). Sesudah
+      // TOR di atas dibuang, karena TOR itu membawa gambarnya sendiri.
+      { hapusGambar: 3 },
 
       { ganti: ['04/381/UN43.3.7/KT2HMIF/VIII/2025', '{nomor_lengkap}'] },
       { ganti: ['Cilegon, 07 Agustus 2025', '{kota}, {tanggal_surat_format}'] },
@@ -224,6 +248,8 @@ const RESEP: Resep[] = [
     keluaran: 'surat-04-undangan-sambutan.docx',
     sumber: 'Contoh Surat Undangan dan Sambutan.docx',
     ops: [
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061).
+      { hapusGambar: 3 },
       { ganti: ['04/492/UN43.3.7/MUSMAIF/X/2025', '{nomor_lengkap}'] },
       { ganti: ['Cilegon, 03 Oktober 2025', '{kota}, {tanggal_surat_format}'] },
       { ganti: ['1 (satu) Lembar Susunan Acara', '{lampiran}'] },
@@ -256,6 +282,8 @@ const RESEP: Resep[] = [
     keluaran: 'surat-05-peminjaman-barang.docx',
     sumber: 'Contoh Surat Peminjaman Barang.docx',
     ops: [
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061).
+      { hapusGambar: 3 },
       { ganti: ['05/379/UN43.3.7/KT2HMIF/VIII/2025', '{nomor_lengkap}'] },
       { ganti: ['Senin, 04 Agustus 2025', '{kota}, {tanggal_surat_format}'] },
       { ganti: ['Lampiran  : -', 'Lampiran  : {lampiran}'] },
@@ -282,6 +310,8 @@ const RESEP: Resep[] = [
     keluaran: 'surat-05-peminjaman-ruangan.docx',
     sumber: 'Contoh Surat Peminjaman Ruangan.docx',
     ops: [
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061).
+      { hapusGambar: 3 },
       { ganti: ['05/491/UN43.3.7/MUSMAIF/IX/2025', '{nomor_lengkap}'] },
       { ganti: ['Senin, 29 September 2025', '{kota}, {tanggal_surat_format}'] },
       { ganti: ['Lampiran  : -', 'Lampiran  : {lampiran}'] },
@@ -301,10 +331,49 @@ const RESEP: Resep[] = [
   },
 
   // =========================================================================
+  // Template umum untuk surat tanpa contoh resmi: Pengajuan (01), Peringatan
+  // (06), Keputusan (07), Piagam (09) — ADR-028, ADR-029. Diturunkan dari
+  // Peminjaman Ruangan karena kop, kepala surat, dan blok TTD dua kolomnya
+  // sudah persis bentuk baku HMIF; hanya badannya yang diganti isi bebas.
+  {
+    keluaran: 'surat-umum.docx',
+    sumber: 'Contoh Surat Peminjaman Ruangan.docx',
+    ops: [
+      { hapusGambar: 3 },
+      { ganti: ['05/491/UN43.3.7/MUSMAIF/IX/2025', '{nomor_lengkap}'] },
+      { ganti: ['Senin, 29 September 2025', '{kota}, {tanggal_surat_format}'] },
+      { ganti: ['Lampiran  : -', 'Lampiran  : {lampiran}'] },
+      { ganti: ['Permohonan Peminjaman Ruang Auditorium FT', '{perihal}'] },
+      { ganti: ['Kepala Bagian Sekretariat', '{tujuan_nama}'] },
+
+      // Baris instansi tujuan opsional: paragraf pembuka/penutup kondisi yang
+      // berdiri sendiri dibuang paragraphLoop, jadi tujuan tanpa instansi tidak
+      // menyisakan baris kosong di antara nama dan alamat.
+      { sisip: ['Fakultas Teknik UNTIRTA', '{#ada_tujuan_jabatan}'] },
+      { paragraf: ['Fakultas Teknik UNTIRTA', '{tujuan_jabatan}'] },
+      { sisip: ['di Cilegon', '{/ada_tujuan_jabatan}'] },
+      { ganti: ['di Cilegon', '{tujuan_alamat}'] },
+
+      // Badan surat: satu paragraf template per paragraf isi, sehingga perataan
+      // dan indentasi paragraf contoh diwarisi setiap paragraf isi.
+      { sisip: ['Sehubungan dengan akan diselenggarakannya', '{#paragraf_isi}'] },
+      { paragraf: ['Sehubungan dengan akan diselenggarakannya', '{teks}'] },
+      { sisip: ['Hari, tanggal', '{/paragraf_isi}'] },
+      { hapus: ['Hari, tanggal', 'Demikian surat ini kami sampaikan'] },
+
+      // Tanpa nama panitia di atas blok TTD; baris sel tunggalnya dibuang.
+      { hapusBaris: [0, [0]] },
+      ...ttdDua(0, 0, 1),
+    ],
+  },
+
+  // =========================================================================
   {
     keluaran: 'surat-08-kerja-sama.docx',
     sumber: 'Contoh Surat Permohonan Kerja Sama.docx',
     ops: [
+      // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061).
+      { hapusGambar: 3 },
       { ganti: ['08/376/UN43.3.7/KT2HMIF/VIII/2025', '{nomor_lengkap}'] },
       { ganti: ['Cilegon, 02 Agustus 2025', '{kota}, {tanggal_surat_format}'] },
       { ganti: ['Lampiran  : -', 'Lampiran  : {lampiran}'] },
@@ -800,6 +869,9 @@ function jalankan(resep: Resep): { ok: boolean; pesan: string[] } {
       if (n !== indeks.length) {
         pesan.push(`hapusBaris tabel ${tabel} — diharapkan ${indeks.length}, dapat ${n}`);
       }
+    } else if ('hapusGambar' in op) {
+      const n = dok.hapusGambar();
+      if (n !== op.hapusGambar) pesan.push(`hapusGambar — diharapkan ${op.hapusGambar}, dapat ${n}`);
     } else if ('isiBagian' in op) {
       const [judul, berikut, teks] = op.isiBagian;
       if (!dok.isiBagian(judul, berikut, teks)) {

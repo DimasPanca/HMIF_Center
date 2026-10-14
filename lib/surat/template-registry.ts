@@ -65,6 +65,14 @@ export const TEMPLATE_DOKUMEN: readonly { slug: string; dokumen: JenisDokumen; v
   { slug: 'notulensi', dokumen: 'NOTULENSI', versi: 1 },
 ];
 
+/**
+ * Template umum ber-kop untuk surat tanpa contoh resmi: kode 01, 06, 07, 09
+ * (ADR-028, ADR-029). Tidak punya baris `surat_template` — surat generik
+ * menyimpan `template_id` NULL — jadi versinya konstanta, diperlakukan seperti
+ * TEMPLATE_DOKUMEN: mengubah isinya WAJIB menaikkan `versi`.
+ */
+export const TEMPLATE_UMUM = { slug: 'surat-umum', versi: 1 } as const;
+
 export function berkasTemplate(slug: string): string {
   return `${slug}.docx`;
 }
@@ -151,14 +159,35 @@ export type RencanaDokumen =
   | { aksi: 'TETAP' | 'UNGGAH'; kunci: string }
   | { aksi: 'DITOLAK'; kunci: string; alasan: string };
 
-export function rencanakanDokumen(t: (typeof TEMPLATE_DOKUMEN)[number], hashBerkas: string, hashTersimpan: string | null): RencanaDokumen {
-  const kunci = keys.template(t.slug, t.versi);
+/** Template ber-versi konstanta: TEMPLATE_DOKUMEN dan TEMPLATE_UMUM. */
+export interface TemplateBerversi {
+  slug: string;
+  versi: number;
+  /** Nama untuk pesan, mis. "TOR" atau "SURAT_UMUM". */
+  label: string;
+  /** Konstanta tempat versinya dinaikkan. */
+  konstanta: 'TEMPLATE_DOKUMEN' | 'TEMPLATE_UMUM';
+}
+
+export function sebagaiBerversi(t: (typeof TEMPLATE_DOKUMEN)[number] | typeof TEMPLATE_UMUM): TemplateBerversi {
+  return 'dokumen' in t
+    ? { slug: t.slug, versi: t.versi, label: t.dokumen, konstanta: 'TEMPLATE_DOKUMEN' }
+    : { slug: t.slug, versi: t.versi, label: 'SURAT_UMUM', konstanta: 'TEMPLATE_UMUM' };
+}
+
+export function rencanakanDokumen(
+  t: (typeof TEMPLATE_DOKUMEN)[number] | typeof TEMPLATE_UMUM,
+  hashBerkas: string,
+  hashTersimpan: string | null,
+): RencanaDokumen {
+  const b = sebagaiBerversi(t);
+  const kunci = keys.template(b.slug, b.versi);
   if (hashTersimpan === null) return { aksi: 'UNGGAH', kunci };
   if (hashTersimpan === hashBerkas) return { aksi: 'TETAP', kunci };
   return {
     aksi: 'DITOLAK',
     kunci,
-    alasan: `Isi ${berkasTemplate(t.slug)} berbeda dari ${kunci} yang sudah ada. Naikkan versi ${t.dokumen} di TEMPLATE_DOKUMEN.`,
+    alasan: `Isi ${berkasTemplate(b.slug)} berbeda dari ${kunci} yang sudah ada. Naikkan versi ${b.label} di ${b.konstanta}.`,
   };
 }
 
