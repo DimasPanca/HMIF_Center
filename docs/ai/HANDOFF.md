@@ -65,6 +65,36 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-059 · pratinjau surat langsung (2026-10-15)
+
+`lib/surat/render-preview.ts` (murni): `susunPratinjau(nilai, konfig, ketua)`
+→ model surat; segmen kosong berlabel, isi surat lewat `sanitasiIsiHtml`.
+`components/surat/SuratPreview.tsx`: kertas A4 794×1123 px diskala ke lebar
+panel (ResizeObserver), garis batas halaman, kop UNTIRTA + HMIF
+(`public/kop/`), nomor lewat `NomorSuratBadge` sementara. Isi kertas
+`React.memo` — form re-render tiap ketikan. Kertas disembunyikan sampai
+skalanya terukur (HTML server belum tahu lebar panel). Ketua Himpunan untuk
+kolom kanan dari `bacaKetuaHimpunan(periodeId)`.
+
+Keputusan:
+- **Debounce 200 ms, bukan 250** — render kertas ±45–75 ms di dev server;
+  terukur 249–265 ms dari ketikan terakhir (desktop + mobile).
+- **`formatTanggalSurat()`** (`lib/utils/format-tanggal.ts`) = "02 Agustus
+  2025" tanpa nama hari. **T-061 wajib memakainya untuk
+  `{tanggal_surat_format}`** supaya DOCX = pratinjau.
+- Test membandingkan kalimat baku pratinjau dengan teks `templates/*.docx`
+  (dibuktikan lewat mutasi). Mengubah resep template kini wajib diikuti
+  `render-preview.ts`.
+
+Ditemukan & diperbaiki: template Kerja Sama berbunyi "panitia AKSARA" untuk
+semua surat (sisa T-006). Resep diperbaiki, template naik ke **v2**
+(v1 nonaktif) — jalur VERSI_BARU T-055 terpakai sungguhan pertama kali.
+Catatan: `build-templates.ts` mengubah kesebelas `.docx` meski isinya sama
+(stempel waktu zip) — **commit hanya berkas yang memang berubah**, kalau
+tidak skrip unggah membuat versi baru palsu untuk semuanya.
+
+Gate: `surat-preview` 8/8, `surat-form` 18/18. Temuan Aspirasi→DPM di BACKLOG.
+
 ### T-058 · form surat dinamis (2026-10-14)
 
 Halaman `app/(dashboard)/surat/baru` (`?id=` lanjutkan draft, `?jenis=`
@@ -243,8 +273,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-058
-   selesai; berikutnya T-059 (pratinjau), T-060 (approval) → T-061.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-059
+   selesai; berikutnya T-060 (approval) → T-061 (DOCX) → T-063, T-064.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -324,9 +354,10 @@ Delapan hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-059 (isi panel pratinjau di
-   `SuratForm`) → T-060 (submit/approve, pakai `alokasiNomor`; ganti tombol
-   Ajukan sementara) → T-061 → T-062, lalu turunannya. Jalankan ulang
+4. **Rantai surat — sedang berjalan.** T-060 (submit/approve, pakai
+   `alokasiNomor`; ganti tombol Ajukan sementara) → T-061 (pakai
+   `formatTanggalSurat`, `templateById`, template generik baru) → T-062 (kode
+   saja, PDF dilewati) → T-063 → T-064. Jalankan ulang
    `stress-nomor-surat.ts` setiap kali `alokasi_nomor_surat` disunting.
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase

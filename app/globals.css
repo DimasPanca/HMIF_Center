@@ -186,6 +186,12 @@
   --brand-gray:  #E6EAF2;
   --brand-dark:  #0A0F1F;
 
+  /* Kertas pratinjau surat (T-059). Sengaja TIDAK ditimpa dark mode: surat
+     dicetak di kertas putih, dan pratinjau yang ikut gelap menyesatkan. */
+  --kertas-latar: #FFFFFF;
+  --kertas-tinta: #000000;
+  --kertas-garis: #C9D2DF;
+
   /* Font */
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
     system-ui, sans-serif;
@@ -428,4 +434,41 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Pratinjau surat (T-059) — replika A4 210 × 297 mm pada 96 dpi.
+   --------------------------------------------------------------------------- */
+.kertas-surat {
+  width: 794px;
+  min-height: 1123px;
+  padding: 48px 76px 72px;
+  background: var(--kertas-latar);
+  color: var(--kertas-tinta);
+  font-family: "Times New Roman", Times, serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.kertas-surat p { margin: 0 0 0.6em; text-align: justify; }
+.kertas-surat ul { list-style: disc; padding-left: 1.5em; margin: 0 0 0.6em; }
+.kertas-surat ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 0.6em; }
+.kertas-surat table.tabel-surat { width: 100%; border-collapse: collapse; margin: 0 0 0.8em; }
+.kertas-surat table.tabel-surat th,
+.kertas-surat table.tabel-surat td { border: 1px solid var(--kertas-tinta); padding: 2px 6px; vertical-align: top; }
+.kertas-surat .kop { border-bottom: 3px double var(--kertas-tinta); padding-bottom: 8px; margin-bottom: 16px; }
+.pratinjau-kosong {
+  display: inline;
+  border: 1px dashed var(--kertas-garis);
+  border-radius: 3px;
+  background: var(--brand-gray);
+  color: var(--brand-steel);
+  font-family: var(--font-sans);
+  font-size: 0.8em;
+  padding: 0 4px;
+}
+.batas-halaman {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--kertas-garis);
 }

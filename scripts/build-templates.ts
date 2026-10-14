@@ -313,6 +313,10 @@ const RESEP: Resep[] = [
       { ganti: ['di Tempat', '{tujuan_alamat}'] },
       { ganti: ['AKSARA (Aktualisasi Kepemimpinan Seimbang yang Rasional dan Amanah)', '{nama_kegiatan} ({tema_kegiatan})'] },
       { ganti: ['kerjasama dengan Rumah Sakit Bapak/Ibu/Saudara', 'kerjasama dengan {jenis_mitra} Bapak/Ibu/Saudara'] },
+      // Kalimat ini menyebut nama kegiatan contoh sekali lagi, terpisah dari
+      // "AKSARA (…)" di atas. Tanpa operasi ini setiap surat kerja sama berbunyi
+      // "panitia AKSARA" apa pun kegiatannya (ditemukan T-059, 2026-10-15).
+      { ganti: ['Kami selaku panitia AKSARA bermaksud', 'Kami selaku panitia {nama_kegiatan} bermaksud'] },
       { ganti: ['Selasa - Kamis, 19 - 21 Agustus 2025', '{hari_tanggal}'] },
       { ganti: ['Kampus FT UNTIRTA', '{tempat}'] },
 

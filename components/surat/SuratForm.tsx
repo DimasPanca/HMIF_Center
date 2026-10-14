@@ -23,7 +23,7 @@ import * as React from 'react';
 
 import { FieldRenderer, type CariGalat } from '@/components/surat/FieldRenderer';
 import { IsiSuratEditor } from '@/components/surat/IsiSuratEditor';
-import { NomorSuratBadge } from '@/components/surat/NomorSuratBadge';
+import { SuratPreview } from '@/components/surat/SuratPreview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,8 +46,8 @@ import {
   type MasalahField,
   type SuratFormInput,
 } from '@/lib/surat/field-schemas';
-import { previewNomor } from '@/lib/surat/nomor';
 import { terapkanPreset, type PresetTujuan } from '@/lib/surat/preset-tujuan';
+import type { KetuaHimpunan } from '@/lib/surat/render-preview';
 import { cn } from '@/lib/utils';
 
 export const INTERVAL_AUTOSAVE_MS = 10_000;
@@ -75,6 +75,8 @@ export interface SuratFormProps {
   konfig: KonfigSurat;
   preset: PresetTujuan[];
   awal: { id: string; nilai: SuratFormInput } | null;
+  /** Ketua Himpunan periode aktif — kolom kanan blok tanda tangan di pratinjau. */
+  ketua: KetuaHimpunan | null;
   /** Jenis awal untuk draft baru, mis. dari `?jenis=` atau peminjaman ruangan. */
   jenisAwal?: JenisSurat;
 }
@@ -93,7 +95,7 @@ function idUntukPath(path: string): string {
   return `surat-field-${akar}`;
 }
 
-function Form({ konfig, preset, awal, jenisAwal }: SuratFormProps) {
+function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
   const toast = useToast();
   const [nilai, setNilai] = React.useState<Nilai>(
     () => (awal?.nilai ?? nilaiAwalSurat(konfig, jenisAwal ?? 'PEMINJAMAN_RUANGAN')) as unknown as Nilai,
@@ -271,12 +273,6 @@ function Form({ konfig, preset, awal, jenisAwal }: SuratFormProps) {
     ) : null;
 
   const formatOpsi = opsiFormatOutput(konfig.pdfAktif);
-  const nomor = previewNomor({
-    kodeSurat: infoJenis(jenis).kode,
-    kodeKegiatan: teks(nilai.kode_kegiatan),
-    tanggalSurat: teks(nilai.tanggal_surat),
-    kodeAdministrasi: konfig.kodeAdministrasi,
-  });
 
   return (
     <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
@@ -488,14 +484,8 @@ function Form({ konfig, preset, awal, jenisAwal }: SuratFormProps) {
           <CardHeader>
             <CardTitle>Pratinjau</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="mb-1 text-[12px] font-medium text-secondary">Nomor</p>
-              <NomorSuratBadge nomor={nomor} sementara />
-            </div>
-            <div data-testid="surat-pratinjau" className="rounded-sm border border-dashed border-default p-4 text-[13px] text-tertiary">
-              Pratinjau tata letak surat akan tampil di sini.
-            </div>
+          <CardContent>
+            <SuratPreview nilai={nilai} konfig={konfig} ketua={ketua} />
           </CardContent>
         </Card>
       </aside>

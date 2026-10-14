@@ -54,3 +54,19 @@ export async function bacaPresetTujuan(): Promise<PresetTujuan[]> {
   });
   return baris.length > 0 ? baris : [...PRESET_TUJUAN_BAWAAN];
 }
+
+/**
+ * Ketua Himpunan periode aktif — kolom kanan blok TTD di pratinjau (T-059).
+ *
+ * Hanya untuk ditampilkan. Siapa yang benar-benar menandatangani ditetapkan saat
+ * surat disetujui (ADR-028). Bila periode punya lebih dari satu KETUA (data uji),
+ * yang dipakai yang paling awal didaftarkan supaya pratinjau tidak berganti-ganti.
+ */
+export async function bacaKetuaHimpunan(periodeId: string): Promise<{ nama: string; nim: string } | null> {
+  const r = await db.user_role.findFirst({
+    where: { periode_id: periodeId, role: 'KETUA', app_user: { is_active: true } },
+    orderBy: { created_at: 'asc' },
+    select: { app_user: { select: { nama_lengkap: true, nim: true } } },
+  });
+  return r ? { nama: r.app_user.nama_lengkap, nim: r.app_user.nim } : null;
+}

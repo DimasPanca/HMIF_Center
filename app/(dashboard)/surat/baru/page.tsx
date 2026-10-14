@@ -5,7 +5,7 @@ import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { detailDraft } from '@/lib/surat/draft';
 import { DAFTAR_JENIS, type JenisSurat } from '@/lib/surat/field-schemas';
-import { bacaKonfigSurat, bacaPresetTujuan } from '@/lib/surat/konfig';
+import { bacaKetuaHimpunan, bacaKonfigSurat, bacaPresetTujuan } from '@/lib/surat/konfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,11 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
   if (!can(konteks.roles, 'surat.create')) notFound();
 
   const { id, jenis } = await searchParams;
-  const [konfig, preset] = await Promise.all([bacaKonfigSurat(), bacaPresetTujuan()]);
+  const [konfig, preset, ketua] = await Promise.all([
+    bacaKonfigSurat(),
+    bacaPresetTujuan(),
+    bacaKetuaHimpunan(konteks.periodeId),
+  ]);
 
   let awal = null;
   if (id) {
@@ -47,7 +51,7 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
             Nomor surat ditetapkan saat surat disetujui. Draft tersimpan otomatis.
           </p>
         </header>
-        <SuratForm konfig={konfig} preset={preset} awal={awal} jenisAwal={jenisAwal} />
+        <SuratForm konfig={konfig} preset={preset} awal={awal} jenisAwal={jenisAwal} ketua={ketua} />
       </div>
     </main>
   );

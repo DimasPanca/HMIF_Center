@@ -78,3 +78,14 @@ plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
 - **Isi surat lebih dari satu paragraf** dicetak lewat satu placeholder
   `{isi_paragraf}`. Perataan HTML → paragraf DOCX adalah pekerjaan T-061;
   `teksDariIsiHtml()` sudah memisahkan blok dengan baris baru.
+
+## Persuratan — temuan T-059 (dicatat 2026-10-15)
+
+- **Kalimat baku Surat Aspirasi menyebut DPM.** Paragraf 8 template
+  (`surat-03-aspirasi.docx`) berbunyi "...kami menyampaikan aspirasi kepada
+  Dewan Perwakilan Mahasiswa (DPM) FT-UNTIRTA...", padahal tujuan surat dapat
+  dipilih BEM atau Kepala Bagian Sekretariat. TEMPLATE_MAPPING §5.2 sengaja
+  menjadikannya teks tetap. Perlu keputusan pemilik produk: ganti dengan
+  `{tujuan_nama}`, atau batasi Aspirasi hanya untuk DPM. Bila diganti, ubah
+  resep `scripts/build-templates.ts`, kalimat di `lib/surat/render-preview.ts`,
+  lalu jalankan `scripts/upload-templates.ts` (naik versi otomatis).

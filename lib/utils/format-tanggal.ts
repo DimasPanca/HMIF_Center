@@ -10,6 +10,14 @@ const formatPanjang = new Intl.DateTimeFormat('id-ID', {
   year: 'numeric',
 });
 
+/** Tanpa nama hari — bentuk "Cilegon, 02 Agustus 2025" pada surat resmi HMIF. */
+const formatSurat = new Intl.DateTimeFormat('id-ID', {
+  timeZone: ZONA_WAKTU,
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+});
+
 const formatPendek = new Intl.DateTimeFormat('id-ID', {
   timeZone: ZONA_WAKTU,
   day: '2-digit',
@@ -108,6 +116,18 @@ export function tanggalHariIniJakarta(): string {
 
 export function formatTanggalPanjang(input: TanggalInput): string {
   return formatPanjang.format(buatTanggal(input));
+}
+
+/**
+ * Tanggal di baris "{kota}, {tanggal_surat_format}" — dipakai pratinjau (T-059)
+ * DAN generator DOCX (T-061), supaya keduanya tidak mungkin berbeda.
+ *
+ * Tanpa nama hari: lima dari tujuh surat arsip HMIF menulis "Cilegon, 02 Agustus
+ * 2025". Dua sisanya menulis nama hari TANPA kota; menggabungkan keduanya akan
+ * menghasilkan "Cilegon, Senin, 04 Agustus 2025" yang tidak ada di arsip mana pun.
+ */
+export function formatTanggalSurat(input: TanggalInput): string {
+  return formatSurat.format(buatTanggal(input));
 }
 
 export function formatTanggalPendek(input: TanggalInput): string {
