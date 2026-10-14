@@ -12,7 +12,7 @@
  * Sumber: docs/ai/tasks/P1-fondasi.md T-048 · USER_FLOW §9.1
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import {
@@ -409,6 +409,14 @@ async function buatXlsx(baris: unknown[][]): Promise<Buffer> {
 }
 
 describe('bacaXlsx', () => {
+  // `exceljs` dimuat dinamis oleh bacaXlsx. Pemuatan dinginnya pernah melewati
+  // batas 15 dtk test pertama di blok ini saat CPU sibuk (verify berjalan
+  // bersama dev server) — yang gagal adalah waktu muat modul, bukan logikanya.
+  // Dimuat sekali di sini, dengan batas waktu sendiri.
+  beforeAll(async () => {
+    await import('exceljs');
+  }, 60_000);
+
   it('membaca sheet pertama menjadi matriks teks', async () => {
     const buf = await buatXlsx([
       ['Nama Lengkap', 'NIM', 'Email'],
