@@ -63,3 +63,18 @@ ekspresinya menjadi
 `CASE WHEN v_next < 1000 THEN lpad(v_next::TEXT, 3, '0') ELSE v_next::TEXT END`,
 plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
 (runner menolak migrasi yang berubah, ADR-027).
+
+## Persuratan — sisa di luar kontrak T-058 (dicatat 2026-10-14)
+
+- **Template untuk empat kode generik** (01 Pengajuan, 06 Peringatan,
+  07 Keputusan, 09 Piagam). Draftnya sudah dapat dibuat (migrasi 029,
+  ADR-028), tetapi `Template/` tidak punya contoh surat untuk keempatnya,
+  jadi T-061 belum dapat men-generate-nya. Perlu keputusan pemilik produk:
+  satu template generik ber-kop HMIF dengan `{isi_paragraf}`, atau contoh
+  surat asli per jenis.
+- **Sidebar menyorot dua menu** di `/surat/baru`: "Buat Surat" dan "Arsip
+  Surat" (`/surat`) sama-sama aktif, karena pencocokan rute memakai awalan.
+  Perilaku lama sidebar, bukan bagian T-058.
+- **Isi surat lebih dari satu paragraf** dicetak lewat satu placeholder
+  `{isi_paragraf}`. Perataan HTML → paragraf DOCX adalah pekerjaan T-061;
+  `teksDariIsiHtml()` sudah memisahkan blok dengan baris baru.

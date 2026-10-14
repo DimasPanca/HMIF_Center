@@ -20,6 +20,8 @@
 
 import { z } from 'zod';
 
+import { teksDariIsiHtml } from '@/lib/surat/isi-html';
+
 // ---------------------------------------------------------------------------
 // Katalog jenis surat
 // ---------------------------------------------------------------------------
@@ -493,7 +495,11 @@ function fieldUmum(konfig: KonfigSurat, jenis: JenisSurat) {
       'Alamat tujuan',
     ),
     isi_surat: isiWajib
-      ? m(wajib('Isi surat', 20_000), { label: 'Isi surat', tipe: 'richtext' })
+      ? m(
+          // Editor kosong menghasilkan `<p></p>` — yang wajib adalah teksnya, bukan HTML-nya.
+          wajib('Isi surat', 20_000).refine((v) => teksDariIsiHtml(v).length > 0, 'Isi surat wajib diisi.'),
+          { label: 'Isi surat', tipe: 'richtext' },
+        )
       : m(opsional('Isi surat', 20_000).default(''), { label: 'Isi surat', tipe: 'richtext', tersembunyi: true }),
     /** Selalu Ketua Himpunan, bertanda tangan dan berstempel — tidak dapat diganti (ADR-004). */
     penandatangan_utama: m(z.literal('KETUA', 'Penandatangan utama selalu Ketua Himpunan.').default('KETUA'), {
@@ -669,4 +675,103 @@ export function nilaiAwalSurat(konfig: KonfigSurat, jenis: JenisSurat): SuratFor
   }
   awal.data_dinamis = dinamis;
   return awal as SuratFormInput;
+}
+
+// ---------------------------------------------------------------------------
+// Draft dan kelengkapan — T-058
+// ---------------------------------------------------------------------------
+
+/**
+ * Bentuk yang diterima auto-save: isian SETENGAH JADI harus dapat disimpan,
+ * jadi yang diperiksa di sini hanya tipe dan ukuran, bukan "wajib diisi".
+ *
+ * Ini bukan skema kedua untuk surat (K-04): kelengkapan surat tetap diputuskan
+ * oleh `buatSkemaSurat()` lewat `periksaKelengkapan()`, di klien maupun di
+ * server, dan pengajuan (T-060) menolak apa pun yang belum lolos skema itu.
+ */
+const teksDraft = (maks: number) => z.string({ error: 'Isian harus berupa teks.' }).max(maks, `Maksimal ${maks} karakter.`).optional();
+
+export const SkemaDraftSurat = z.object({
+  jenis: z.enum(DAFTAR_JENIS, { error: 'Jenis surat tidak dikenal.' }),
+  kode_kegiatan: teksDraft(30),
+  tanggal_surat: teksDraft(10),
+  kota: teksDraft(100),
+  lampiran: teksDraft(100),
+  perihal: teksDraft(300),
+  tujuan_preset: teksDraft(150),
+  tujuan_nama: teksDraft(200),
+  tujuan_alamat: teksDraft(150),
+  isi_surat: teksDraft(40_000),
+  penandatangan_tambahan: z
+    .array(
+      z.object({
+        jabatan: teksDraft(150),
+        nama: teksDraft(150),
+        nim: teksDraft(20),
+        user_id: z.uuid().nullish(),
+      }),
+    )
+    .max(1, 'Blok tanda tangan hanya punya satu kolom tambahan.')
+    .optional(),
+  format_output: teksDraft(10),
+  data_dinamis: z
+    .record(z.string(), z.unknown())
+    // Batas kasar supaya auto-save tidak dapat dipakai menimbun JSON raksasa.
+    .refine((v) => JSON.stringify(v).length <= 100_000, 'Isian khusus terlalu besar.')
+    .optional(),
+});
+export type DraftSuratInput = z.infer<typeof SkemaDraftSurat>;
+
+/** Kunci `data_dinamis` yang sah untuk satu jenis — kunci lain dibuang saat simpan. */
+export function kunciKhusus(jenis: JenisSurat): string[] {
+  return Object.keys(skemaKhusus(jenis).shape as Record<string, z.ZodType>);
+}
+
+export interface MasalahField {
+  /** Mis. `perihal`, `data_dinamis.items.0.kebutuhan`. */
+  path: string;
+  /** Label yang dikenali manusia, mis. "Tabel kebutuhan #1 — Kebutuhan". */
+  label: string;
+  pesan: string;
+}
+
+function labelDariPath(konfig: KonfigSurat, jenis: JenisSurat, path: PropertyKey[]): string {
+  const [akar, kunci, indeks, anak] = path.map(String);
+  if (akar === 'data_dinamis' && kunci) {
+    const d = serialisasiFieldSchema(jenis).fields.find((x) => x.key === kunci);
+    if (!d) return kunci;
+    if (indeks === undefined) return d.label;
+    const sub = anak ? d.item?.[anak]?.label : undefined;
+    return `${d.label} #${Number(indeks) + 1}${sub ? ` — ${sub}` : ''}`;
+  }
+  if (akar === 'penandatangan_tambahan') {
+    const sub = anak ? (SkemaPenandatangan.shape as Record<string, z.ZodType>)[anak] : undefined;
+    const label = sub ? (bacaMeta(sub)?.label ?? anak) : undefined;
+    return `Penandatangan kolom kiri${label ? ` — ${label}` : ''}`;
+  }
+  const s = (fieldUmum(konfig, jenis) as Record<string, z.ZodType>)[akar ?? ''];
+  return (s && bacaMeta(s)?.label) || akar || 'Surat';
+}
+
+/**
+ * Field yang masih kurang menurut skema lengkap — satu baris per field.
+ * Dipakai form (daftar di samping tombol Ajukan, kontrak T-058 butir 4) dan
+ * dikembalikan server bersama hasil auto-save.
+ */
+export function periksaKelengkapan(konfig: KonfigSurat, nilai: unknown): MasalahField[] {
+  const r = buatSkemaSurat(konfig).safeParse(nilai);
+  if (r.success) return [];
+  const jenis = (nilai as { jenis?: unknown })?.jenis;
+  if (!DAFTAR_JENIS.includes(jenis as JenisSurat)) {
+    return [{ path: 'jenis', label: 'Jenis surat', pesan: 'Pilih jenis surat.' }];
+  }
+  const terlihat = new Set<string>();
+  const hasil: MasalahField[] = [];
+  for (const i of r.error.issues) {
+    const path = i.path.map(String).join('.');
+    if (terlihat.has(path)) continue;
+    terlihat.add(path);
+    hasil.push({ path, label: labelDariPath(konfig, jenis as JenisSurat, i.path), pesan: i.message });
+  }
+  return hasil;
 }

@@ -828,7 +828,7 @@ model signature {
 model surat {
   id                                      String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   periode_id                              String            @db.Uuid
-  template_id                             String            @db.Uuid
+  template_id                             String?           @db.Uuid
   kode_surat                              String
   nomor_urut                              Int?
   kode_administrasi                       String            @default("UN43.3.7")
@@ -861,7 +861,7 @@ model surat {
   app_user_surat_disetujui_olehToapp_user app_user?         @relation("surat_disetujui_olehToapp_user", fields: [disetujui_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
   kepanitiaan                             kepanitiaan?      @relation(fields: [kepanitiaan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   periode                                 periode           @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  surat_template                          surat_template    @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  surat_template                          surat_template?   @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   surat_signer                            surat_signer[]
 
   @@index([periode_id, status], map: "surat_status_idx")
