@@ -4,7 +4,7 @@
   "private": true,
   "description": "Sistem E-Administrasi Himpunan Mahasiswa Informatika FT UNTIRTA",
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev",
