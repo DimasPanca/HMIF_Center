@@ -116,7 +116,7 @@ describe('katalog jenis surat', () => {
 
   it('7 jenis bertemplate punya field khusus; generik tidak', () => {
     for (const { jenis, varian } of JENIS_SURAT) {
-      const n = serialisasiFieldSchema(KONFIG, jenis).fields.length;
+      const n = serialisasiFieldSchema(jenis).fields.length;
       if (varian) expect(n, jenis).toBeGreaterThan(0);
       else expect(n, jenis).toBe(0);
     }
@@ -291,7 +291,7 @@ describe('penandatangan (ADR-004, ADR-021)', () => {
 
 describe('serialisasi field_schema (bahan T-055)', () => {
   it('setiap field punya label, dan bentuknya sesuai TEMPLATE_MAPPING §6', () => {
-    const ka = serialisasiFieldSchema(KONFIG, 'KETERANGAN_AKTIF');
+    const ka = serialisasiFieldSchema('KETERANGAN_AKTIF');
     expect(ka.fields.map((d) => [d.key, d.label, d.type, d.required])).toEqual([
       ['nama_pemohon', 'Nama mahasiswa', 'text', true],
       ['nim_pemohon', 'NIM', 'text', true],
@@ -303,7 +303,7 @@ describe('serialisasi field_schema (bahan T-055)', () => {
   });
 
   it('daftar repeatable membawa deskripsi item', () => {
-    const asp = serialisasiFieldSchema(KONFIG, 'ASPIRASI');
+    const asp = serialisasiFieldSchema('ASPIRASI');
     const poin = asp.fields.find((d) => d.key === 'poin');
     expect(poin?.type).toBe('list');
     expect(poin?.item).toEqual({
@@ -314,14 +314,14 @@ describe('serialisasi field_schema (bahan T-055)', () => {
   });
 
   it('nilai tetap "Mengetahui," dikirim ke generator tetapi tidak dirender form', () => {
-    const s = serialisasiFieldSchema(KONFIG, 'PEMINJAMAN_BARANG');
+    const s = serialisasiFieldSchema('PEMINJAMAN_BARANG');
     expect(s.tetap).toEqual({ label_kanan: 'Mengetahui,' });
     expect(s.fields.map((d) => d.key)).not.toContain('label_kanan');
   });
 
   it('hasilnya JSON murni, aman disimpan ke kolom JSONB', () => {
     for (const jenis of DAFTAR_JENIS) {
-      const s = serialisasiFieldSchema(KONFIG, jenis);
+      const s = serialisasiFieldSchema(jenis);
       expect(JSON.parse(JSON.stringify(s)), jenis).toEqual(s);
     }
   });
@@ -367,7 +367,7 @@ describe('nama field cocok dengan placeholder template', () => {
   for (const [jenis, berkas] of Object.entries(BERKAS) as [JenisSurat, string][]) {
     it(`${jenis} ↔ ${berkas}`, () => {
       const tag = tagTemplate(berkas);
-      const s = serialisasiFieldSchema(KONFIG, jenis);
+      const s = serialisasiFieldSchema(jenis);
 
       const dariSkema = new Set<string>();
       for (const d of s.fields) {

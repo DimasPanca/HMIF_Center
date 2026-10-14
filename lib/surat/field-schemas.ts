@@ -620,7 +620,12 @@ const PLACEHOLDER_UMUM: Partial<Record<FieldUmum, string>> = {
   isi_surat: 'isi_paragraf',
 };
 
-export function serialisasiFieldSchema(konfig: KonfigSurat, jenis: JenisSurat): FieldSchemaTemplate {
+/**
+ * Tidak menerima `KonfigSurat`, dan itu disengaja: hasilnya disimpan di
+ * `surat_template.field_schema` dan harus sama di setiap lingkungan. Default
+ * yang berasal dari konfigurasi hanya ada di field umum, bukan di sini.
+ */
+export function serialisasiFieldSchema(jenis: JenisSurat): FieldSchemaTemplate {
   const khusus = skemaKhusus(jenis);
   const fields: DeskripsiField[] = [];
   const tetap: Record<string, unknown> = {};

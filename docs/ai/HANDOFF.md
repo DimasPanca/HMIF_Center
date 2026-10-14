@@ -65,6 +65,22 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-055 · registrasi template surat (2026-10-14)
+
+`scripts/upload-templates.ts` (+ `--kering`) mengunggah 11 `.docx` ke
+`template/{slug}_v{n}.docx` di bucket privat dan mengisi 7 baris
+`surat_template` (`storage_key` + `field_schema`). Sudah dijalankan dua kali
+terhadap DB dev: jalan 1 = 7 ADOPSI + 4 UNGGAH, jalan 2 = 11 TETAP.
+`lib/surat/template-registry.ts`: perencanaan murni (`rencanakanSurat`,
+`rencanakanDokumen`) + pembaca runtime `templateAktif(jenis)` /
+`templateById(id)`. Test 16 baru.
+
+Keputusan (ADR-027): 4 template dokumen acara (TOR, Proposal, LPJ, Notulensi)
+diunggah tetapi **tidak** masuk `surat_template` — versinya konstanta di
+`TEMPLATE_DOKUMEN`. Seed 018 tidak disunting (runner migrasi menolak berkas
+yang berubah setelah diterapkan). `serialisasiFieldSchema` kini tanpa argumen
+`konfig`, karena `field_schema` tidak boleh bergantung pada konfigurasi.
+
 ### T-054 · skema field per jenis surat (2026-10-14)
 
 Rantai surat dimulai atas permintaan pemilik produk — penundaan ADR-025
@@ -162,8 +178,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054 selesai;
-   berikutnya T-055 dan T-056 (keduanya READY), lalu T-058 → T-060 → T-061.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054 dan T-055
+   selesai; berikutnya T-056 (READY) dan T-058, lalu T-060 → T-061.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -202,8 +218,10 @@ Delapan hal yang tidak obvious dari kode:
 2. **RLS scope correlation.** Role+departemen harus di baris `user_role` yang
    **sama** — bukan pakai `my_departemen()` set yang mencampur role
    (BPH-with-dept bocor).
-3. **`db:reset` menghapus akun e2e.** Setelah tiap `db:reset`, wajib
-   `npm run seed:e2e-auth` sebelum jalankan test e2e.
+3. **`db:reset` menghapus akun e2e dan mengosongkan `field_schema`.** Setelah
+   tiap `db:reset`, wajib `npm run seed:e2e-auth` dan
+   `npx tsx scripts/upload-templates.ts` sebelum menjalankan test e2e atau
+   form surat (ADR-027).
 4. **TipTap extension peer-dep exact.** Semua `@tiptap/*` harus sama versi
    `@tiptap/core` (saat ini 3.31.0). `^3.6.2` gagal `ERESOLVE`.
 5. **Realtime butuh JWT.** `klien.realtime.setAuth(access_token)` +
@@ -230,9 +248,9 @@ Delapan hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-055 (registrasi template, pakai
-   `serialisasiFieldSchema`) dan T-056 (nomor surat) → T-058 → T-060 → T-061 →
-   T-062, lalu turunannya.
+4. **Rantai surat — sedang berjalan.** T-056 (nomor surat) dan T-058 (form,
+   pakai `bacaKonfigSurat` + `templateAktif`) → T-060 → T-061 → T-062, lalu
+   turunannya.
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah
