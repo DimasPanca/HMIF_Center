@@ -65,6 +65,26 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-057 · uji konkurensi penomoran (2026-10-14)
+
+`scripts/stress-nomor-surat.ts`: 50 klien terpisah lewat transaction pooler
+(DATABASE_URL — jalur produksi), barrier sesudah koneksi hidup, tumpang tindih
+transaksi diukur. Hasil: 50/50 tumpang tindih → 50 nomor unik berurutan
+(1,8 dtk); batch 30 berurutan mengikuti urutan larik; draft dibatalkan tidak
+menaikkan counter; 10 retry serentak pada surat sama → satu nomor. 21/21.
+Data uji `T057` di periode PERSIAPAN, dibersihkan, counter periode AKTIF
+diverifikasi tak tersentuh. **Jangan pernah memanggil `aktifkan_periode` dari
+skrip yang meng-commit data** — ia mengarsipkan periode aktif.
+
+Bukan 50 sesi backend: `max_connections = 60`, ±15 dipakai layanan Supabase;
+barrier yang menunggu 50 transaksi terbuka di session pooler akan macet.
+
+`supabase/tests/020_nomor_konkuren.sql`: advisory lock dipasang (kunci surat
+seed 0 ≠ kunci proker seed 1), counter antar-periode terpisah, nomor terbit
+lalu dibatalkan tidak didaur ulang, batch semua-atau-tidak, index unik menolak
+nomor kembar, counter tak bisa negatif. Dibuktikan lewat mutasi (lock dihapus
+→ test gagal). INV-15 di DB_TEST_MATRIX kini **TERBUKTI**.
+
 ### T-056 · service nomor surat (2026-10-14)
 
 `lib/surat/nomor.ts` (aman untuk klien — tx disuntikkan pemanggil):
@@ -198,9 +218,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054, T-055,
-   T-056 selesai; berikutnya T-057 (uji konkurensi) dan T-058 (form), lalu
-   T-060 → T-061.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-057
+   selesai; berikutnya T-058 (form), lalu T-059, T-060 → T-061.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -269,9 +288,10 @@ Delapan hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-057 (stress 50 approval paralel) dan
-   T-058 (form, pakai `bacaKonfigSurat` + `templateAktif` + `previewNomor`) →
-   T-060 (pakai `alokasiNomor`) → T-061 → T-062, lalu turunannya.
+4. **Rantai surat — sedang berjalan.** T-058 (form, pakai `bacaKonfigSurat` +
+   `templateAktif` + `previewNomor`) → T-059 → T-060 (pakai `alokasiNomor`) →
+   T-061 → T-062, lalu turunannya. Jalankan ulang `stress-nomor-surat.ts`
+   setiap kali `alokasi_nomor_surat` disunting.
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah

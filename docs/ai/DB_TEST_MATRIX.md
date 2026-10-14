@@ -51,7 +51,7 @@ Lapisan penegakan disingkat: **DB** = constraint atau fungsi database,
 | # | Inti invariant | Lapis | Status | Bukti / pemilik celah |
 |---|---|---|---|---|
 | INV-14 | Nomor dialokasikan saat approval, bukan saat draft | DB | **TERBUKTI** | `014b_surat_fn.sql` menolak alokasi untuk surat `DRAFT` dan memastikan counter tidak naik akibat penolakan itu; `009_surat.sql` memastikan kolom nomor boleh NULL selama draft |
-| INV-15 | Alokasi hanya lewat fungsi database, dengan advisory lock per periode | DB | **SEBAGIAN** | `014b_surat_fn.sql` membuktikan sisi kebenaran: format nomor, idempotensi terhadap retry, urutan pada batch, penolakan batch > 50. **Belum terbukti oleh test yang tersimpan:** serialisasi di bawah beban serentak. Lihat catatan 3 |
+| INV-15 | Alokasi hanya lewat fungsi database, dengan advisory lock per periode | DB | **TERBUKTI** | `014b_surat_fn.sql` membuktikan kebenaran hasil (format, retry, batch, batas 50). `020_nomor_konkuren.sql` membuktikan advisory lock per periode benar-benar dipasang (dan berbeda dari kunci proker), batch semua-atau-tidak, dan index unik menolak nomor kembar walau fungsinya dilewati. `scripts/stress-nomor-surat.ts` (T-057) membuktikan serialisasinya: 50 klien paralel lewat transaction pooler, 50 transaksi tumpang tindih → 50 nomor unik berurutan, 10 retry serentak → satu nomor. Lihat catatan 3 |
 | INV-16 | Nomor yang dibatalkan tidak didaur ulang | DB | **TERBUKTI** | `900_integrasi.sql` membatalkan surat bernomor 001 lalu memastikan surat berikutnya tetap memperoleh 002; `009_surat.sql` menolak counter bernilai negatif |
 | INV-17 | Counter direset ke `nomor_surat_awal` pada periode baru | DB | **TERBUKTI** | `014b_surat_fn.sql` memastikan surat pertama periode baru kembali ke 001 walau periode lama sudah di 32, dan `nomor_surat_awal = 503` menghasilkan `503` |
 
@@ -130,8 +130,20 @@ Kesimpulannya: yang menanggung beban harian adalah bentuk
 `surat_nomor_unik_per_periode` adalah benteng terakhir; advisory lock
 melindungi dari refactor yang memecah keatomikan `UPDATE` itu.
 
-Pengujian itu **tidak tersimpan sebagai test**. T-057 bertugas membuatnya
-permanen. Sampai itu selesai, INV-15 tetap **SEBAGIAN**.
+Sejak T-057 (2026-10-14) pengujian itu permanen dalam dua bagian:
+
+- `scripts/stress-nomor-surat.ts` — 50 klien terpisah lewat transaction pooler
+  (DATABASE_URL, jalur produksi). Bukan 50 sesi backend: project dibatasi
+  `max_connections = 60` dengan ±15 dipakai layanan Supabase, dan barrier yang
+  menunggu 50 transaksi terbuka di session pooler akan macet. Tumpang tindih
+  transaksi diukur dan dilaporkan; jalan pertama: 50 dari 50 tumpang tindih,
+  50 nomor unik berurutan dalam 1,8 detik. Data uji bertanda `T057` dibersihkan
+  dan counter periode aktif diverifikasi tidak tersentuh.
+- `020_nomor_konkuren.sql` — sisi deterministik yang dapat diuji dari satu
+  koneksi.
+
+Skrip stress tidak ikut `npm run db:test` karena butuh data yang di-commit;
+jalankan manual setiap kali `alokasi_nomor_surat` disunting.
 
 ### 4. Test yang sudah dibuktikan tidak sia-sia
 
@@ -158,6 +170,7 @@ mutasi — kodenya sengaja dirusak untuk memastikan testnya berteriak:
 | dimensi dibaca setelah `bitmap.close()` (T-097) | `image-pipeline.test.ts` | dimensi asli tercatat 0 |
 | `my_kepanitiaan()` dikembalikan ke bentuk SYSTEM_DESIGN §5.2 (T-037) | `015a_rls_helpers.sql` | ketua pelaksana memperoleh `{}` |
 | `SET search_path` dilepas dari `auth_roles()` (T-037) | `015a_rls_helpers.sql` | hanya 5 dari 6 helper terkunci |
+| `PERFORM pg_advisory_xact_lock` dihapus dari `alokasi_nomor_surat` (T-057) | `020_nomor_konkuren.sql` | `alokasi_nomor_surat` TIDAK memasang advisory lock per periode |
 
 Lakukan hal yang sama untuk setiap test invariant baru sebelum menandainya
 **TERBUKTI**.
