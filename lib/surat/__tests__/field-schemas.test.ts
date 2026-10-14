@@ -349,7 +349,7 @@ describe('nama field cocok dengan placeholder template', () => {
   const DARI_GENERATOR = new Set([
     'nomor_lengkap', 'tanggal_surat_format', 'kota', 'lampiran', 'perihal',
     'tujuan_nama', 'tujuan_alamat', 'isi_paragraf',
-    'kiri', 'kanan', 'jabatan', 'nama', 'nim', '%ttd', '%stempel',
+    'kiri', 'kanan', 'jabatan', 'nama', 'nim', '%ttd', '%ttd_nama', '%stempel',
     'no', // nomor baris tabel kebutuhan, dihitung generator
   ]);
   // Field khusus yang bukan placeholder, beserta alasannya.

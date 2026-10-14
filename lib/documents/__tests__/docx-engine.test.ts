@@ -5,7 +5,14 @@ import sharp from 'sharp';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { paragrafDariIsiHtml, petakanSurat } from '@/lib/documents/data-mapper';
 import { GalatTemplate, renderDocx } from '@/lib/documents/docx-engine';
-import { gabungTtdStempel, type GambarDocx, UKURAN_TTD } from '@/lib/documents/image-module';
+import {
+  TINGGI_BARIS_PX,
+  UKURAN_TTD,
+  gabungTtdStempel,
+  rapikanTtd,
+  ttdMelayang,
+  type GambarDocx,
+} from '@/lib/documents/image-module';
 import { DAFTAR_JENIS, buatSkemaSurat, infoJenis, nilaiAwalSurat, type JenisSurat, type KonfigSurat } from '@/lib/surat/field-schemas';
 import { TEMPLATE_SURAT, TEMPLATE_UMUM } from '@/lib/surat/template-registry';
 
@@ -126,6 +133,39 @@ describe('paragrafDariIsiHtml', () => {
   });
 });
 
+describe('rapikanTtd', () => {
+  it('latar putih hasil scan menjadi transparan dan margin kosong dipangkas', async () => {
+    // Goresan hitam 100×40 di tengah kertas putih 400×200 tanpa alpha (JPEG).
+    const scan = await sharp({ create: { width: 400, height: 200, channels: 3, background: '#ffffff' } })
+      .composite([{ input: { create: { width: 100, height: 40, channels: 3, background: '#111111' } }, left: 250, top: 20 }])
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    const r = await rapikanTtd(scan);
+    const m = await sharp(r).metadata();
+    expect(m.hasAlpha).toBe(true);
+    expect(m.width).toBeGreaterThanOrEqual(100);
+    expect(m.width).toBeLessThanOrEqual(106);
+    expect(m.height).toBeLessThanOrEqual(46);
+    const { data } = await sharp(r).raw().toBuffer({ resolveWithObject: true });
+    // Pojok kiri atas sudah tinta; tidak ada piksel putih buram tersisa.
+    expect(data[3]).toBeGreaterThan(200);
+  });
+
+  it('gambar kosong dikembalikan tanpa melempar', async () => {
+    const kosong = await sharp({ create: { width: 50, height: 20, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+    await expect(rapikanTtd(kosong)).resolves.toBeInstanceOf(Buffer);
+  });
+});
+
+describe('ttdMelayang', () => {
+  it('dasar gambar jatuh tepat di atas nama, dari tambatan mana pun', () => {
+    const g = { png: Buffer.alloc(0), ...UKURAN_TTD };
+    // Tambatan di baris kosong di atas nama: naik setinggi gambar dikurangi satu baris.
+    expect(ttdMelayang(g, 'BARIS_ATAS_NAMA').melayang?.naikPx).toBe(UKURAN_TTD.tinggiPx - TINGGI_BARIS_PX + 2);
+    expect(ttdMelayang(g, 'PARAGRAF_NAMA').melayang?.naikPx).toBe(UKURAN_TTD.tinggiPx + 2);
+  });
+});
+
 describe('gabungTtdStempel', () => {
   it('menghasilkan satu PNG berukuran tampil tetap, dengan kanvas resolusi tinggi', async () => {
     expect(ttd.lebarPx).toBe(UKURAN_TTD.lebarPx);
@@ -154,6 +194,18 @@ describe('template surat', () => {
         .map((t) => t.slice(t.lastIndexOf('}') + 1));
       expect(sisa.length, f).toBeGreaterThan(0);
       expect(sisa.filter((t) => t !== ''), f).toEqual([]);
+    }
+  });
+
+  it('tidak berakhir dengan paragraf pindah halaman (halaman kosong di akhir surat)', () => {
+    for (const f of berkas) {
+      const xml = new PizZip(fs.readFileSync(path.join(AKAR, 'templates', f))).file('word/document.xml')!.asText();
+      const badan = xml.slice(0, xml.lastIndexOf('<w:sectPr'));
+      const paragrafAkhir = [...badan.matchAll(/<w:p(?=[\s>/])(?:[^>]*\/>|[^>]*>[\s\S]*?<\/w:p>)/g)].slice(-3).map((m) => m[0]);
+      const pindahKosong = paragrafAkhir.filter(
+        (p) => /<w:br\s[^>]*w:type="page"/.test(p) && !/<w:t(?:\s[^>]*)?>[^<]*\S/.test(p),
+      );
+      expect(pindahKosong, f).toEqual([]);
     }
   });
 
@@ -224,6 +276,15 @@ describe('renderDocx — seluruh 11 jenis (9 kode) dari template sungguhan', () 
     expect(baris).toContain('• Butir satu');
     const iTujuan = baris.indexOf('Tujuan Uji');
     expect(baris[iTujuan + 1]).toBe('di Tempat');
+  });
+
+  it('Aspirasi: tak ada butir/nomor kosong di lampiran poin', () => {
+    const data = petakanSurat({ nilai: nilai('ASPIRASI'), nomorLengkap: nomor('ASPIRASI'), ketua: KETUA, ttdKetua: ttd });
+    const xml = new PizZip(renderDocx(fs.readFileSync(berkasUntuk('ASPIRASI')), data)).file('word/document.xml')!.asText();
+    const kosongBerbutir = [...xml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)]
+      .map((m) => m[0])
+      .filter((p) => p.includes('<w:numPr>') && ![...p.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)].some((t) => t[1]!.trim()));
+    expect(kosongBerbutir).toHaveLength(0);
   });
 
   it('Keterangan Aktif menulis "NIM" tanpa titik dan jabatan lengkap', () => {

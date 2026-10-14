@@ -101,6 +101,7 @@ const TTD = {
   nama: 'Dicky Saputra',
   nim: '3337220032',
   '%ttd': '[ttd]',
+  '%ttd_nama': '[ttd]',
   '%stempel': '[stempel]',
 };
 

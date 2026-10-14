@@ -68,7 +68,9 @@ type Op =
    * Buang seluruh gambar badan dokumen — tanda tangan dan stempel contoh.
    * Angkanya jumlah gambar yang diharapkan; lihat `Dokumen.hapusGambar`.
    */
-  | { hapusGambar: number };
+  | { hapusGambar: number }
+  /** Buang paragraf pindah halaman kosong di akhir; angkanya jumlah yang diharapkan. */
+  | { hapusPindahHalamanAkhir: number };
 
 interface Resep {
   keluaran: string;
@@ -146,6 +148,10 @@ const RESEP: Resep[] = [
       // Dipertahankan apa adanya.
       { ganti: ['NIM 3337220032', 'NIM {nim}{/kanan}'] },
 
+      // `{%ttd_nama}`, bukan `{%ttd}`: tambatannya paragraf nama itu sendiri,
+      // bukan baris kosong di atasnya, jadi gambar dinaikkan lebih tinggi
+      // (lib/documents/image-module.ts `ttdMelayang`).
+      //
       // Gambar TTD+stempel ditambatkan ke paragraf NAMA dan melayang naik ke
       // ruang tanda tangan di atasnya — BUKAN di paragraf sisipan baru: satu
       // paragraf tambahan saja sudah mendorong berkas ini menjadi dua halaman
@@ -156,7 +162,7 @@ const RESEP: Resep[] = [
       // pindah ke run baru tanpa format (lihat lib/documents/image-module.ts),
       // jadi `{%ttd}{nama}` akan mencetak nama dengan font bawaan Word.
       {
-        sel: [0, 0, 1, ['{kota}, {tanggal_surat_format}', '{#kanan}{jabatan}', ' ', ' ', '{nama}{%ttd}{%stempel}', 'NIM {nim}{/kanan}']],
+        sel: [0, 0, 1, ['{kota}, {tanggal_surat_format}', '{#kanan}{jabatan}', ' ', ' ', '{nama}{%ttd_nama}{%stempel}', 'NIM {nim}{/kanan}']],
       },
     ],
   },
@@ -192,12 +198,19 @@ const RESEP: Resep[] = [
       // digabung dalam satu paragraf, seluruh butir tercetak berdempet menjadi
       // satu baris panjang.
       //
-      //     {#poin}{judul}
+      //     {#poin}
+      //     {judul}
       //     {#paragraf}
       //     {teks}
       //     {/paragraf}
       //     {/poin}
-      { paragraf: ['1. Penyesuaian Timeline', '{#poin}{judul}'] },
+      //
+      // `{#poin}` juga berdiri sendiri (T-061). Dulu sebaris dengan {judul}:
+      // paragraphLoop hanya membuang paragraf tag bila PEMBUKA dan penutupnya
+      // sama-sama sendirian, jadi paragraf {/poin} — salinan paragraf berbutir —
+      // tercetak sebagai butir "●" kosong di bawah setiap poin.
+      { sisip: ['1. Penyesuaian Timeline', '{#poin}'] },
+      { paragraf: ['1. Penyesuaian Timeline', '{judul}'] },
       { paragraf: ['HMIF pada dasarnya tidak mempermasalahkan', '{#paragraf}'] },
       { sisip: ['Namun, perlu adanya kejelasan timeline', '{teks}'] },
       { paragraf: ['Namun, perlu adanya kejelasan timeline', '{/paragraf}'] },
@@ -221,6 +234,9 @@ const RESEP: Resep[] = [
       // Tanda tangan dan stempel contoh — milik orang sungguhan (T-061). Sesudah
       // TOR di atas dibuang, karena TOR itu membawa gambarnya sendiri.
       { hapusGambar: 3 },
+      // Paragraf pindah halaman yang dulu menyambung ke TOR tertinggal dan
+      // mencetak halaman kedua kosong di setiap undangan (T-061).
+      { hapusPindahHalamanAkhir: 1 },
 
       { ganti: ['04/381/UN43.3.7/KT2HMIF/VIII/2025', '{nomor_lengkap}'] },
       { ganti: ['Cilegon, 07 Agustus 2025', '{kota}, {tanggal_surat_format}'] },
@@ -868,6 +884,11 @@ function jalankan(resep: Resep): { ok: boolean; pesan: string[] } {
       const n = dok.hapusBarisTabel(tabel, indeks);
       if (n !== indeks.length) {
         pesan.push(`hapusBaris tabel ${tabel} — diharapkan ${indeks.length}, dapat ${n}`);
+      }
+    } else if ('hapusPindahHalamanAkhir' in op) {
+      const n = dok.hapusPindahHalamanAkhir();
+      if (n !== op.hapusPindahHalamanAkhir) {
+        pesan.push(`hapusPindahHalamanAkhir — diharapkan ${op.hapusPindahHalamanAkhir}, dapat ${n}`);
       }
     } else if ('hapusGambar' in op) {
       const n = dok.hapusGambar();

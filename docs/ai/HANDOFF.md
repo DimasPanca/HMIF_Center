@@ -65,6 +65,22 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-061 lanjutan · tanda tangan Ketua sungguhan (2026-10-15)
+
+Pemilik (Dimas Panca Pamungkas, Ketua Himpunan) mengirim tanda tangannya.
+Generator disetel ulang dengannya — `rapikanTtd` (latar putih → transparan,
+pangkas margin), ukuran 180×90 px, dua tambatan `{%ttd}`/`{%ttd_nama}`
+(ADR-029 bagian "Penyesuaian"). Diperiksa di Word: 8 template, nama tak
+tertimpa, jabatan tak tertimpa. Ikut diperbaiki: halaman kosong Undangan
+Pemateri dan butir kosong lampiran Aspirasi. Template 02/03/04-pemateri → v3.
+
+- **Berkas tanda tangan TIDAK disimpan di repo maupun di DB** — itu data
+  pribadi, dan DB dev belum punya akun Dimas (satu-satunya KETUA = akun uji
+  `e2e-aktif`, yang tanda tangannya ditimpa gate e2e). Agar surat sungguhan
+  memakai tanda tangan ini: Admin mengundang akun Dimas dengan role KETUA,
+  lalu Dimas mengunggahnya sendiri di `/profil`. Catatan: penandatangan =
+  KETUA PALING AWAL didaftarkan di periode (`bacaPenandatanganKetua`).
+
 ### T-062 · konversi PDF — KODE SAJA, status BLOCKED (2026-10-15)
 
 `lib/documents/pdf-converter.ts`: `docxToPdf()` (Gotenberg → soffice →

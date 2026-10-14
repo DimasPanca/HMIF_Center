@@ -553,6 +553,38 @@ export class Dokumen {
     return n;
   }
 
+  /**
+   * Membuang paragraf kosong berisi pindah halaman di AKHIR badan dokumen.
+   *
+   * Sisa pembedahan: Undangan Pemateri dulu menyambung ke TOR lewat satu
+   * paragraf pindah halaman. TOR-nya dibuang, paragraf itu tertinggal, dan
+   * setiap undangan tercetak dengan halaman kedua kosong (ditemukan T-061).
+   * Hanya paragraf tanpa teks yang memuat `<w:br w:type="page"/>` yang dibuang;
+   * paragraf kosong biasa dan `sectPr` tidak disentuh.
+   */
+  hapusPindahHalamanAkhir(): number {
+    let n = 0;
+    for (;;) {
+      const blok = this.blok().filter((b) => !b.xml.startsWith('<w:sectPr'));
+      const akhir = blok.at(-1);
+      if (!akhir || !akhir.xml.startsWith('<w:p')) break;
+      if (teksParagraf(akhir.xml).trim() !== '') break;
+      if (!/<w:br\b[^>]*w:type="page"/.test(akhir.xml)) {
+        // Paragraf kosong biasa di antaranya boleh dilewati — cari ke belakang.
+        const sebelum = blok.at(-2);
+        if (sebelum && sebelum.xml.startsWith('<w:p') && teksParagraf(sebelum.xml).trim() === '' && /<w:br\b[^>]*w:type="page"/.test(sebelum.xml)) {
+          this.xml = this.xml.slice(0, sebelum.awal) + this.xml.slice(sebelum.akhir);
+          n++;
+          continue;
+        }
+        break;
+      }
+      this.xml = this.xml.slice(0, akhir.awal) + this.xml.slice(akhir.akhir);
+      n++;
+    }
+    return n;
+  }
+
   simpan(): Buffer {
     this.zip.file('word/document.xml', this.xml);
     return this.zip.generate({ type: 'nodebuffer' }) as Buffer;

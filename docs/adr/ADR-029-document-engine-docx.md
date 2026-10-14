@@ -111,3 +111,25 @@ kontrak, dan dua cacat yang sudah ada sebelumnya:
   satu halaman, font nama Times New Roman. Pemeriksaan ini menemukan satu
   korupsi sungguhan — `Default Extension="png"` ganda di `[Content_Types].xml`
   — yang kini dikunci test.
+
+## Penyesuaian dengan tanda tangan Ketua sungguhan (2026-10-15)
+
+Diuji ulang di Word pada kedelapan template dengan tanda tangan basah Ketua
+Himpunan yang sebenarnya (PNG transparan 400×200, goresan hanya 184×132):
+
+- **Tanda tangan dirapikan sebelum digabung** (`rapikanTtd`): latar putih/abu
+  terang → transparan (hasil scan/foto tanpa alpha), tepi tinta dilunakkan,
+  margin kosong dipangkas. Tanpa pangkas, tanda tangan tercetak kecil dan
+  menempel ke kanan.
+- **Ukuran tampil 180×90 px** (±4,8×2,4 cm), turun dari 200×100: ruang tanda
+  tangan tersempit (Undangan Pemateri, Peminjaman Ruangan) ±105 px, dan pada
+  100 px lengkung atas tanda tangan menimpa "Ketua HMIF".
+- **Dua tambatan, dasar gambar selalu tepat di atas nama** (`ttdMelayang`):
+  `{%ttd}` di baris kosong di atas nama (naik tinggi − 1 baris), `{%ttd_nama}`
+  di paragraf nama sendiri (Keterangan Aktif). Sebelumnya gambar menyisakan
+  satu baris kosong di bawahnya dan menimpa jabatan pada template sempit.
+- Dua cacat template sisa T-006 ikut diperbaiki: Undangan Pemateri punya
+  halaman kedua kosong (paragraf pindah halaman sisa TOR — operasi build
+  `hapusPindahHalamanAkhir`), dan lampiran Aspirasi mencetak butir "●" kosong
+  di bawah setiap poin (`{#poin}` kini berdiri sendiri). Keduanya dikunci test.
+  Template 02, 03, 04-pemateri naik ke v3.

@@ -5,7 +5,7 @@
  * diuji terhadap SETIAP template di `templates/` oleh `docx-engine.test.ts`,
  * sehingga kunci yang kurang langsung ketahuan, bukan tercetak `undefined`.
  *
- * `nama`, `jabatan`, `nim`, `label`, `ttd`, dan `stempel` SENGAJA tidak pernah
+ * `nama`, `jabatan`, `nim`, `label`, `ttd`, `ttd_nama`, dan `stempel` SENGAJA tidak pernah
  * ada di tingkat atas: docxtemplater menjatuhkan pencarian ke scope induk, jadi
  * kunci itu di tingkat atas akan mengisi `{nama}` yang salah tempat di luar blok
  * tanda tangan alih-alih membuatnya ketahuan (TEMPLATE_MAPPING §3.3).
@@ -17,7 +17,7 @@ import type { JenisSurat } from '@/lib/surat/field-schemas';
 import { sanitasiIsiHtml } from '@/lib/surat/isi-html';
 import { jabatanKetua, LABEL_MENGETAHUI } from '@/lib/surat/render-preview';
 import { formatTanggalSurat } from '@/lib/utils/format-tanggal';
-import type { GambarDocx } from './image-module';
+import { ttdMelayang, type GambarDocx } from './image-module';
 
 // ---------------------------------------------------------------------------
 // HTML isi surat → paragraf
@@ -148,9 +148,21 @@ function larik(v: unknown): Record<string, unknown>[] {
   return Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Record<string, unknown>[]) : [];
 }
 
-/** Satu entri blok tanda tangan; `ttd`/`stempel` selalu ada supaya tak jatuh ke scope induk. */
+/**
+ * Satu entri blok tanda tangan; `ttd`/`ttd_nama`/`stempel` selalu ada supaya
+ * tak jatuh ke scope induk. Gambar yang sama dalam dua tambatan — template
+ * memakai salah satunya (`ttdMelayang`).
+ */
 function blokTtd(p: { label?: string; jabatan: string; nama: string; nim: string; ttd: GambarDocx | null }) {
-  return { label: p.label ?? '', jabatan: p.jabatan, nama: p.nama, nim: p.nim, ttd: p.ttd, stempel: null };
+  return {
+    label: p.label ?? '',
+    jabatan: p.jabatan,
+    nama: p.nama,
+    nim: p.nim,
+    ttd: p.ttd ? ttdMelayang(p.ttd, 'BARIS_ATAS_NAMA') : null,
+    ttd_nama: p.ttd ? ttdMelayang(p.ttd, 'PARAGRAF_NAMA') : null,
+    stempel: null,
+  };
 }
 
 export function petakanSurat(m: MasukanPeta): Record<string, unknown> {

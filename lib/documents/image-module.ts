@@ -186,10 +186,49 @@ export function pasangGambar(zip: PizZip, modul: ModulGambar): void {
 // Tanda tangan + stempel
 // ---------------------------------------------------------------------------
 
-/** Ukuran tampil blok TTD di dokumen: ±5,3 × 2,6 cm. */
-export const UKURAN_TTD = { lebarPx: 200, tinggiPx: 100 } as const;
+/**
+ * Ukuran tampil blok TTD di dokumen: ±4,8 × 2,4 cm. Dibatasi ruang tanda tangan
+ * terkecil di antara template — Peminjaman Ruangan, ±105 px antara jabatan dan
+ * baris di atas nama. Pada 100 px, lengkung atas tanda tangan Ketua menyentuh
+ * "Ketua HMIF" (diukur di Word dengan tanda tangan sungguhan, 2026-10-15).
+ */
+export const UKURAN_TTD = { lebarPx: 180, tinggiPx: 90 } as const;
 /** Faktor resolusi kanvas terhadap ukuran tampil, supaya tetap tajam saat dicetak. */
 const SKALA = 3;
+
+/** Luma di atas ini dianggap kertas, bukan tinta; di antara keduanya alpha diturunkan bertahap. */
+const LUMA_KERTAS = 235;
+const LUMA_TINTA = 190;
+
+/**
+ * Merapikan gambar tanda tangan unggahan sebelum digabung (diukur pada tanda
+ * tangan Ketua sungguhan, 2026-10-15):
+ *
+ *   1. Latar putih/abu terang → transparan. Hasil scan atau foto kertas tidak
+ *      punya alpha; tanpa ini kotak putihnya menutupi stempel dan garis tabel.
+ *      Tepi tinta yang abu dilunakkan, bukan dipotong, supaya goresan tidak
+ *      bergerigi.
+ *   2. Margin kosong dipangkas. Tanda tangan contoh mengisi 184×132 dari
+ *      kanvas 400×200 dan menempel di sisi kanan; tanpa pangkas ia tercetak
+ *      kecil dan bergeser dari tengah ruang tanda tangan.
+ *
+ * Gambar yang seluruhnya kosong dikembalikan apa adanya (sharp menolak
+ * memangkas sampai habis).
+ */
+export async function rapikanTtd(ttd: Buffer): Promise<Buffer> {
+  const { data, info } = await sharp(ttd).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    const luma = 0.299 * data[i]! + 0.587 * data[i + 1]! + 0.114 * data[i + 2]!;
+    if (luma >= LUMA_KERTAS) data[i + 3] = 0;
+    else if (luma > LUMA_TINTA) data[i + 3] = Math.round(data[i + 3]! * ((LUMA_KERTAS - luma) / (LUMA_KERTAS - LUMA_TINTA)));
+  }
+  const bersih = sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png();
+  try {
+    return await bersih.clone().trim({ background: { r: 0, g: 0, b: 0, alpha: 0 }, threshold: 1 }).toBuffer();
+  } catch {
+    return bersih.toBuffer();
+  }
+}
 
 /**
  * Menggabungkan tanda tangan dan stempel menjadi SATU gambar.
@@ -211,7 +250,7 @@ export async function gabungTtdStempel(ttd: Buffer | null, stempel: Buffer | nul
 
   if (ttd) {
     const lebarTtd = Math.round(W * 0.72);
-    const g = await sharp(ttd)
+    const g = await sharp(await rapikanTtd(ttd))
       .resize({ width: lebarTtd, height: H, fit: 'inside', withoutEnlargement: false })
       .png()
       .toBuffer({ resolveWithObject: true });
@@ -237,8 +276,26 @@ export async function gabungTtdStempel(ttd: Buffer | null, stempel: Buffer | nul
     .composite(lapisan)
     .png()
     .toBuffer();
-  // Dinaikkan setinggi gambarnya dari paragraf tambatannya: dasar gambar jatuh
-  // tepat di atas paragraf itu — nama penandatangan, atau baris kosong tepat di
-  // atasnya — di ruang yang memang disediakan template untuk tanda tangan.
-  return { png, ...UKURAN_TTD, melayang: { naikPx: UKURAN_TTD.tinggiPx + 2 } };
+  return { png, ...UKURAN_TTD };
+}
+
+/** Tinggi satu baris teks 12 pt di template HMIF, piksel 96 dpi (diukur di Word). */
+export const TINGGI_BARIS_PX = 20;
+
+/**
+ * Tempat tag gambar TTD di template, dan karena itu seberapa tinggi gambar
+ * dinaikkan dari paragraf tambatannya. Dalam kedua kasus DASAR gambar jatuh
+ * tepat di atas nama penandatangan, sehingga gambar memakai seluruh ruang
+ * antara jabatan dan nama — bukan menyisakan satu baris kosong di bawahnya dan
+ * menimpa jabatan di template yang ruangnya sempit (Undangan Pemateri, diukur
+ * dengan tanda tangan Ketua sungguhan, 2026-10-15).
+ *
+ *   BARIS_ATAS_NAMA  `{%ttd}` di baris kosong tepat di atas nama (ttdDua/ttdKanan)
+ *   PARAGRAF_NAMA    `{%ttd_nama}` di paragraf nama itu sendiri (Keterangan Aktif)
+ */
+export type TambatanTtd = 'BARIS_ATAS_NAMA' | 'PARAGRAF_NAMA';
+
+export function ttdMelayang(g: GambarDocx, tambatan: TambatanTtd): GambarDocx {
+  const naikPx = tambatan === 'PARAGRAF_NAMA' ? g.tinggiPx + 2 : g.tinggiPx - TINGGI_BARIS_PX + 2;
+  return { ...g, melayang: { naikPx } };
 }
