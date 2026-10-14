@@ -65,6 +65,27 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-054 · skema field per jenis surat (2026-10-14)
+
+Rantai surat dimulai atas permintaan pemilik produk — penundaan ADR-025
+berakhir. `lib/surat/field-schemas.ts` (pabrik `buatSkemaSurat(konfig)`,
+diskriminator `jenis` untuk 11 jenis: 7 varian bertemplate + 4 kode generik),
+`lib/surat/preset-tujuan.ts` (6 preset, `terapkanPreset`), dan
+`lib/surat/konfig.ts` (server-only: `bacaKonfigSurat()` dari `app_config` +
+`PDF_ENABLED`, `bacaPresetTujuan()` dari tabel). Test 44/44.
+
+Keputusan penting (ADR-026):
+- Nama field `data_dinamis` = nama placeholder template, bukan nama PRD F-4.2.
+  Test mencocokkannya **dua arah** dengan tag tiap `.docx` — mengganti nama
+  placeholder di `build-templates.ts` kini wajib diikuti skema.
+- Skema berbentuk pabrik karena default (`kode_kegiatan`, `kota`) dan opsi PDF
+  datang dari server. Halaman T-058 memanggil `bacaKonfigSurat()` lalu
+  meneruskan hasilnya sebagai props; route T-058 memanggil pabrik yang sama.
+- `serialisasiFieldSchema(konfig, jenis)` adalah isi `field_schema` untuk
+  T-055; membawa kunci baru `tetap` (mis. `label_kanan`).
+- Penandatangan tambahan paling banyak satu (kolom KIRI, ADR-021).
+- Belum dikonfirmasi: redaksi 6 preset tujuan ke Sekum (SEED_DATA §4).
+
 ### T-048 · import massal pengguna (2026-09-27)
 
 Kontrak batch ADR-054 dibangun: `lib/auth/import-pengguna.ts` (pratinjau hanya
@@ -141,10 +162,10 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **Rantai surat ditunda (keputusan, bukan kebuntuan).** T-054, T-055, T-056
-   READY; T-058 → T-060 → T-061 berurutan. Yang ikut menunggu: T-063, T-064,
-   T-095 (TOR), T-096 (Proposal), T-105 (LPJ), T-108 (Peminjaman ruangan), dan
-   T-113…T-116. Jangan terapkan pengecualian ADR-025 ke task-task ini.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054 selesai;
+   berikutnya T-055 dan T-056 (keduanya READY), lalu T-058 → T-060 → T-061.
+   Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
+   T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
    baris; T-107 (Data pengurus) yang mengisinya. T-048 kini selesai, jadi
    T-107 siap dikerjakan — kecuali bagian "generate massal Surat Aktif
@@ -166,7 +187,12 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Tujuh hal yang tidak obvious dari kode:
+Delapan hal yang tidak obvious dari kode:
+
+0. **Node 22 wajib (`.nvmrc`, `engines.node >=22`).** Di Node 20, 6 test
+   storage gagal palsu ("native WebSocket not found", `markAsUncloneable is not
+   a function`) — bukan bug kode. Ditemukan 2026-10-14 di mesin yang PATH-nya
+   mendahulukan Node 20.
 
 1. **Koneksi app bypass RLS.** `withAuditContext()` set audit config
    (`app.ip`/`user_agent`/`periode_id`) tapi **tidak** set
@@ -204,8 +230,9 @@ Tujuh hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat** T-054/T-055/T-056 → T-058 → T-060 → T-061 → T-062, lalu
-   turunannya (ADR-025).
+4. **Rantai surat — sedang berjalan.** T-055 (registrasi template, pakai
+   `serialisasiFieldSchema`) dan T-056 (nomor surat) → T-058 → T-060 → T-061 →
+   T-062, lalu turunannya.
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah
