@@ -65,6 +65,26 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-056 · service nomor surat (2026-10-14)
+
+`lib/surat/nomor.ts` (aman untuk klien — tx disuntikkan pemanggil):
+`previewNomor()` → `05/???/UN43.3.7/HMIF/X/2026` (bulan/tahun dibaca dari
+string tanggal, bukan `Date`, supaya tidak bergeser zona waktu);
+`alokasiNomor(tx, konteks, suratId)` dan `alokasiNomorBatch(...)` (maks 50)
+hanya memanggil `alokasi_nomor_surat` / `alokasi_nomor_batch` (INV-15).
+Approver = `konteks.sesi.userId`, surat periode lain = TIDAK_DITEMUKAN,
+sudah bernomor = nomor yang sama (retry). `components/surat/NomorSuratBadge.tsx`
++ `salinNomor()`: badge sementara (ikon jam, teks tertulis, tidak dapat
+disalin) vs final (mono, ikon centang, tombol salin). Badge final butuh
+`ToastProvider`. Test 24 baru.
+
+Signature berbeda dari kontrak (`alokasiNomor(suratId, approverId)`): tx dan
+konteks wajib karena alokasi harus satu transaksi dengan transisi status di
+route T-060 (K-09), dan approver tidak boleh datang dari parameter (INV-02).
+
+Ditemukan: `lpad` di `alokasi_nomor_surat` memotong nomor urut ≥ 1000 —
+dicatat di BACKLOG, belum mendesak.
+
 ### T-055 · registrasi template surat (2026-10-14)
 
 `scripts/upload-templates.ts` (+ `--kering`) mengunggah 11 `.docx` ke
@@ -178,8 +198,9 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054 dan T-055
-   selesai; berikutnya T-056 (READY) dan T-058, lalu T-060 → T-061.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054, T-055,
+   T-056 selesai; berikutnya T-057 (uji konkurensi) dan T-058 (form), lalu
+   T-060 → T-061.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -248,9 +269,9 @@ Delapan hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-056 (nomor surat) dan T-058 (form,
-   pakai `bacaKonfigSurat` + `templateAktif`) → T-060 → T-061 → T-062, lalu
-   turunannya.
+4. **Rantai surat — sedang berjalan.** T-057 (stress 50 approval paralel) dan
+   T-058 (form, pakai `bacaKonfigSurat` + `templateAktif` + `previewNomor`) →
+   T-060 (pakai `alokasiNomor`) → T-061 → T-062, lalu turunannya.
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah

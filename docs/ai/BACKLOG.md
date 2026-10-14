@@ -48,3 +48,18 @@ bisa diaktifkan, tidak bisa diundang ulang. Usulan: `undangUlang(tx, konteks,
 userId, asalUrl)` — tandai undangan lama terpakai/batal, buat baris
 `invitation` baru, tanpa membuat akun auth baru — plus tombol di baris
 `UNDANGAN_KEDALUWARSA`/`MENUNGGU_AKTIVASI` halaman Admin.
+
+## Persuratan — nomor urut di atas 999 terpotong (dicatat 2026-10-14, T-056)
+
+`alokasi_nomor_surat` (migrasi 014b) merakit nomor dengan
+`lpad(v_next::TEXT, 3, '0')`. `lpad` Postgres **memotong** teks yang lebih
+panjang dari panjang targetnya: nomor urut 1000 tercetak `100`, 1234 tercetak
+`123`. Kolom `nomor_urut` tetap unik (index 009), jadi database tidak rusak,
+tetapi `nomor_lengkap` — yang dicetak di surat — bisa kembar dengan surat ke-100.
+
+PRD §8.2 memperkirakan 300–600 surat per periode dan counter reset tiap
+periode (INV-17), jadi belum terjangkau. Perbaikan: migrasi baru yang mengganti
+ekspresinya menjadi
+`CASE WHEN v_next < 1000 THEN lpad(v_next::TEXT, 3, '0') ELSE v_next::TEXT END`,
+plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
+(runner menolak migrasi yang berubah, ADR-027).
