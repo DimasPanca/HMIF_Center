@@ -79,6 +79,8 @@ export interface SuratFormProps {
   ketua: KetuaHimpunan | null;
   /** Jenis awal untuk draft baru, mis. dari `?jenis=` atau peminjaman ruangan. */
   jenisAwal?: JenisSurat;
+  /** Diisi bila surat ini dikembalikan approver; menyuntingnya menjadikannya draft lagi. */
+  alasanPenolakan?: string | null;
 }
 
 type StatusSimpan = 'diam' | 'menyimpan' | 'tersimpan' | 'galat';
@@ -95,7 +97,7 @@ function idUntukPath(path: string): string {
   return `surat-field-${akar}`;
 }
 
-function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
+function Form({ konfig, preset, awal, jenisAwal, ketua, alasanPenolakan }: SuratFormProps) {
   const toast = useToast();
   const [nilai, setNilai] = React.useState<Nilai>(
     () => (awal?.nilai ?? nilaiAwalSurat(konfig, jenisAwal ?? 'PEMINJAMAN_RUANGAN')) as unknown as Nilai,
@@ -104,6 +106,8 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
   const [status, setStatus] = React.useState<StatusSimpan>('diam');
   const [pesanGalat, setPesanGalat] = React.useState<string | null>(null);
   const [disentuh, setDisentuh] = React.useState<Set<string>>(() => new Set());
+  const [mengajukan, setMengajukan] = React.useState(false);
+  const [diajukan, setDiajukan] = React.useState(false);
 
   // Ref untuk auto-save: interval tidak boleh menangkap nilai basi dari closure lama.
   const nilaiRef = React.useRef(nilai);
@@ -184,9 +188,10 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
   );
 
   React.useEffect(() => {
+    if (diajukan) return;
     const t = setInterval(() => void simpan(), INTERVAL_AUTOSAVE_MS);
     return () => clearInterval(t);
-  }, [simpan]);
+  }, [simpan, diajukan]);
 
   // Menutup tab dengan perubahan belum tersimpan: kirim sekali dengan keepalive.
   React.useEffect(() => {
@@ -239,13 +244,32 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
   }
 
   async function ajukan() {
-    if (masalah.length > 0) return;
-    const ok = await simpan(true);
-    if (ok) {
-      toast.info({
-        title: 'Draft lengkap tersimpan',
-        description: 'Pengajuan ke Ketua, Wakil, atau Sekum belum tersedia di versi ini. Draft Anda aman dan dapat dilanjutkan.',
-      });
+    if (masalah.length > 0 || mengajukan) return;
+    setMengajukan(true);
+    try {
+      // Simpan dulu: yang diajukan harus persis yang terlihat di layar.
+      if (!(await simpan(true)) || !idRef.current) {
+        toast.error({
+          title: 'Draft belum tersimpan',
+          description: 'Surat belum dapat diajukan karena perubahan terakhir belum tersimpan.',
+          suggestion: 'Tunggu indikator "Tersimpan", lalu tekan Ajukan lagi.',
+        });
+        return;
+      }
+      const res = await fetch(`/api/surat/${idRef.current}/submit`, { method: 'POST' });
+      const body = (await res.json().catch(() => null)) as { ok: boolean; error?: { message: string } } | null;
+      if (!res.ok || !body?.ok) {
+        toast.error({
+          title: 'Surat belum dapat diajukan',
+          description: body?.error?.message ?? `Server menjawab ${res.status}.`,
+          suggestion: 'Periksa daftar field yang kurang, lalu coba lagi.',
+        });
+        return;
+      }
+      kotorRef.current = false;
+      setDiajukan(true);
+    } finally {
+      setMengajukan(false);
     }
   }
 
@@ -275,6 +299,21 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
   const formatOpsi = opsiFormatOutput(konfig.pdfAktif);
 
   return (
+    diajukan ? (
+      <Card data-testid="surat-diajukan">
+        <CardHeader>
+          <CardTitle>Surat diajukan</CardTitle>
+          <CardDescription>
+            Menunggu persetujuan Ketua, Wakil, atau Sekretaris Umum. Nomor surat ditetapkan saat disetujui.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button type="button" variant="secondary" onClick={() => window.location.assign('/surat/baru')}>
+            Buat surat lain
+          </Button>
+        </CardContent>
+      </Card>
+    ) : (
     <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
       <form
         className="min-w-0 space-y-5"
@@ -289,6 +328,15 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
         data-testid="surat-form"
         noValidate
       >
+        {alasanPenolakan ? (
+          <div role="alert" data-testid="surat-alasan-tolak" className="rounded-md border border-[var(--danger)] bg-[var(--danger-subtle)] p-4 text-[13px] text-primary">
+            <p className="flex items-center gap-1.5 font-medium">
+              <CircleAlert aria-hidden="true" className="size-4 text-[var(--danger)]" /> Surat ini dikembalikan approver
+            </p>
+            <p className="mt-1 text-secondary">{alasanPenolakan}</p>
+            <p className="mt-1 text-tertiary">Perbaiki lalu ajukan kembali. Menyunting surat ini menjadikannya draft lagi.</p>
+          </div>
+        ) : null}
         <Card>
           <CardHeader>
             <CardTitle>Jenis surat</CardTitle>
@@ -476,7 +524,7 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
           </CardContent>
         </Card>
 
-        <AreaAjukan masalah={masalah} status={status} pesanGalat={pesanGalat} />
+        <AreaAjukan masalah={masalah} status={status} pesanGalat={pesanGalat} mengajukan={mengajukan} />
       </form>
 
       <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start" aria-label="Pratinjau surat">
@@ -490,17 +538,28 @@ function Form({ konfig, preset, awal, jenisAwal, ketua }: SuratFormProps) {
         </Card>
       </aside>
     </div>
+    )
   );
 }
 
-function AreaAjukan({ masalah, status, pesanGalat }: { masalah: MasalahField[]; status: StatusSimpan; pesanGalat: string | null }) {
+function AreaAjukan({
+  masalah,
+  status,
+  pesanGalat,
+  mengajukan,
+}: {
+  masalah: MasalahField[];
+  status: StatusSimpan;
+  pesanGalat: string | null;
+  mengajukan: boolean;
+}) {
   const lengkap = masalah.length === 0;
   return (
     <div className="space-y-3 rounded-md border border-default bg-panel p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <IndikatorSimpan status={status} pesanGalat={pesanGalat} />
-        <Button type="submit" disabled={!lengkap || status === 'menyimpan'} data-testid="surat-ajukan">
-          <Send aria-hidden="true" /> Ajukan
+        <Button type="submit" disabled={!lengkap || status === 'menyimpan' || mengajukan} data-testid="surat-ajukan">
+          <Send aria-hidden="true" /> {mengajukan ? 'Mengajukan…' : 'Ajukan'}
         </Button>
       </div>
       {lengkap ? (

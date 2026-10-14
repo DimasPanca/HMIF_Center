@@ -111,7 +111,9 @@ BEGIN
   -- 3. NOMOR YANG SUDAH TERBIT LALU DIBATALKAN TIDAK DIDAUR ULANG (INV-16)
   ---------------------------------------------------------------------------
   UPDATE surat SET status = 'TERBIT' WHERE id = v_s;
-  UPDATE surat SET status = 'DIBATALKAN' WHERE id = v_s;
+  -- Pembatalan surat bernomor wajib beralasan (migrasi 030/032), seperti lewat aplikasi.
+  UPDATE surat SET status = 'DIBATALKAN', alasan_pembatalan = 'Uji pembatalan', dibatalkan_at = now()
+  WHERE id = v_s;
 
   ASSERT (SELECT nomor_urut FROM surat WHERE id = v_s) = 1,
     'Surat dibatalkan kehilangan nomornya — jejak nomor 001 hilang';

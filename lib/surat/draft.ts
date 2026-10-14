@@ -23,6 +23,7 @@ import { lingkupKonteks, type Konteks } from '@/lib/auth/guard';
 import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
 import {
+  FIELD_UMUM_TERPAKAI,
   JENIS_SURAT,
   SkemaDraftSurat,
   infoJenis,
@@ -70,6 +71,9 @@ export interface DraftTersimpan {
 export interface DetailDraft extends DraftTersimpan {
   nilai: SuratFormInput;
 }
+
+/** Status yang masih boleh disunting pembuatnya lewat auto-save. */
+export const STATUS_DAPAT_DISUNTING: readonly string[] = ['DRAFT', 'DITOLAK'];
 
 const RE_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -142,7 +146,10 @@ export async function simpanDraft(
     if (!ada || ada.periode_id !== konteks.periodeId || ada.dibuat_oleh !== konteks.sesi.userId) {
       return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Draft surat tidak ditemukan.' };
     }
-    if (ada.status !== 'DRAFT') {
+    // DITOLAK → DRAFT adalah transisi "Perbaiki" (USER_FLOW §11.2): menyunting
+    // surat yang ditolak mengembalikannya menjadi draft. Alasan penolakan
+    // dibiarkan tersimpan supaya pembuat tetap dapat membacanya.
+    if (!STATUS_DAPAT_DISUNTING.includes(ada.status)) {
       return { ok: false, kode: 'STATUS_TIDAK_SESUAI', pesan: `Surat berstatus ${ada.status} tidak dapat disunting sebagai draft.` };
     }
   }
@@ -168,7 +175,7 @@ export async function simpanDraft(
   };
 
   const surat = id
-    ? await tx.surat.update({ where: { id }, data: kolom, select: { id: true, status: true, updated_at: true } })
+    ? await tx.surat.update({ where: { id }, data: { ...kolom, status: 'DRAFT' }, select: { id: true, status: true, updated_at: true } })
     : await tx.surat.create({
         data: {
           ...kolom,
@@ -218,16 +225,32 @@ function jenisDari(kode: string, varian: string | null): JenisSurat | null {
   return JENIS_SURAT.find((j) => j.kode === kode && j.varian === varian)?.jenis ?? null;
 }
 
+export interface DetailSurat extends DetailDraft {
+  kode_surat: string;
+  nomor_lengkap: string | null;
+  alasan_penolakan: string | null;
+  alasan_pembatalan: string | null;
+  diajukan_at: string | null;
+  dibuat_oleh: string;
+  nama_pembuat: string;
+  nama_departemen: string | null;
+}
+
 /**
- * Draft milik pengguna dalam bentuk nilai form. `null` bila tidak ada, milik
- * orang lain, atau periode lain — pemanggil menjawab 404 tanpa membedakannya.
+ * Baris surat dalam bentuk nilai form, TANPA pemeriksaan hak akses — pemanggil
+ * yang menegakkannya. `null` bila surat tidak ada atau milik periode lain.
  */
-export async function detailDraft(konteks: Konteks, id: string, konfig?: KonfigSurat): Promise<DetailDraft | null> {
+export async function muatSurat(konteks: Konteks, id: string, konfig?: KonfigSurat): Promise<DetailSurat | null> {
   const s = await db.surat.findUnique({
     where: { id },
-    include: { surat_template: { select: { varian: true } }, surat_signer: { orderBy: { urutan: 'asc' } } },
+    include: {
+      surat_template: { select: { varian: true } },
+      surat_signer: { orderBy: { urutan: 'asc' } },
+      app_user_surat_dibuat_olehToapp_user: { select: { nama_lengkap: true } },
+      departemen: { select: { nama: true } },
+    },
   });
-  if (!s || s.periode_id !== konteks.periodeId || s.dibuat_oleh !== konteks.sesi.userId) return null;
+  if (!s || s.periode_id !== konteks.periodeId) return null;
 
   const jenis = jenisDari(s.kode_surat, s.surat_template?.varian ?? null);
   if (!jenis) return null;
@@ -250,13 +273,39 @@ export async function detailDraft(konteks: Konteks, id: string, konfig?: KonfigS
     penandatangan_tambahan: kiri ? [{ jabatan: kiri.jabatan, nama: kiri.nama, nim: kiri.nim ?? '', user_id: kiri.user_id }] : [],
     format_output: s.format_output,
     data_dinamis: { ...awal.data_dinamis, ...(s.data_dinamis as Record<string, unknown>) },
-  } as SuratFormInput;
+  } as Record<string, unknown>;
+
+  // Field umum yang tidak dicetak jenis ini (mis. tujuan pada Keterangan Aktif)
+  // bernilai tetap di skema. Nilainya diambil dari default, BUKAN diturunkan dari
+  // kolom database: "-" sebagai nama dan alamat tujuan akan terbaca sebagai
+  // preset "Lainnya" dan membuat surat yang lengkap tak pernah dapat diajukan.
+  const terpakai = new Set<string>(FIELD_UMUM_TERPAKAI[jenis]);
+  for (const k of ['perihal', 'tujuan_preset', 'tujuan_nama', 'tujuan_alamat', 'isi_surat'] as const) {
+    if (!terpakai.has(k)) nilai[k] = awal[k];
+  }
 
   return {
     id: s.id,
     status: s.status,
     diperbarui_at: s.updated_at.toISOString(),
-    nilai,
+    nilai: nilai as SuratFormInput,
     masalah: periksaKelengkapan(k, nilai),
+    kode_surat: s.kode_surat,
+    nomor_lengkap: s.nomor_lengkap,
+    alasan_penolakan: s.alasan_penolakan,
+    alasan_pembatalan: s.alasan_pembatalan,
+    diajukan_at: s.diajukan_at?.toISOString() ?? null,
+    dibuat_oleh: s.dibuat_oleh,
+    nama_pembuat: s.app_user_surat_dibuat_olehToapp_user.nama_lengkap,
+    nama_departemen: s.departemen?.nama ?? null,
   };
+}
+
+/**
+ * Draft milik pengguna dalam bentuk nilai form. `null` bila tidak ada, milik
+ * orang lain, atau periode lain — pemanggil menjawab 404 tanpa membedakannya.
+ */
+export async function detailDraft(konteks: Konteks, id: string, konfig?: KonfigSurat): Promise<DetailSurat | null> {
+  const s = await muatSurat(konteks, id, konfig);
+  return s && s.dibuat_oleh === konteks.sesi.userId ? s : null;
 }

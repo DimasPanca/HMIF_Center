@@ -852,6 +852,10 @@ model surat {
   disetujui_oleh                          String?           @db.Uuid
   disetujui_at                            DateTime?         @db.Timestamptz(6)
   alasan_penolakan                        String?
+  diajukan_at                             DateTime?         @db.Timestamptz(6)
+  alasan_pembatalan                       String?
+  dibatalkan_oleh                         String?           @db.Uuid
+  dibatalkan_at                           DateTime?         @db.Timestamptz(6)
   created_at                              DateTime          @default(now()) @db.Timestamptz(6)
   updated_at                              DateTime          @default(now()) @db.Timestamptz(6)
   booking_ruangan                         booking_ruangan[]

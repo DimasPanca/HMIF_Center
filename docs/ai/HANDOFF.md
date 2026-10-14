@@ -65,6 +65,36 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-060 · alur approval surat (2026-10-15)
+
+`lib/surat/status.ts`: `TRANSISI` (state machine USER_FLOW §11.2),
+`ajukanSurat` (pembuat + skema lengkap), `setujuiSurat` (baris dikunci
+`FOR UPDATE` → `alokasiNomor`), `terbitkanSurat` (transaksi TERPISAH sesudah
+commit), `tolakSurat` / `batalkanSurat` (alasan ≥ 5 karakter),
+`daftarAntrianSurat`. Route `api/surat/[id]/{submit,approve,reject,cancel}`.
+Halaman `surat/approval` (daftar kiri + pratinjau & aksi kanan) dengan
+`SegarkanBerkala` (router.refresh tiap 10 dtk & saat tab difokus).
+
+- **`lib/surat/generator.ts` masih stub** yang selalu gagal — semua surat
+  disetujui berhenti di DISETUJUI dengan peringatan, nomor tetap sah. T-061
+  tinggal mengisi `generateDokumenSurat(id)`; tombol "Terbitkan ulang"
+  (`{terbitkanUlang:true}`) sudah ada.
+- Approver kedua yang terlambat mendapat 409 "sudah disetujui oleh X dengan
+  nomor Y", bukan nomor kedua.
+- `muatSurat()` (draft.ts) = pemuat tanpa cek kepemilikan untuk approver;
+  `detailDraft()` = milik pembuat. DITOLAK boleh disunting pembuat → DRAFT.
+- Migrasi **030** (diajukan_at, kolom pembatalan), **031** (diajukan_at
+  diisi trigger — CHECK 030 mematahkan 7 test SQL), **032** (alasan batal
+  wajib hanya untuk surat bernomor). **Pelajaran: constraint baru pada tabel
+  yang sudah dipakai → jalankan SELURUH `db:test` dan stress T-057.**
+- Bug T-058 yang ditemukan di sini: Keterangan Aktif tak pernah dapat
+  diajukan (tujuan tersembunyi `-` terbaca preset "Lainnya" saat dimuat).
+  Field umum tak terpakai kini selalu dari default.
+- Belum ada UI untuk membatalkan surat TERBIT — API siap, tombolnya di arsip
+  T-063.
+
+Gate: `surat-approval` 10/10 (desktop + mobile), `db:test` 31/31.
+
 ### T-059 · pratinjau surat langsung (2026-10-15)
 
 `lib/surat/render-preview.ts` (murni): `susunPratinjau(nilai, konfig, ketua)`
@@ -273,8 +303,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-059
-   selesai; berikutnya T-060 (approval) → T-061 (DOCX) → T-063, T-064.
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-060
+   selesai; berikutnya T-061 (DOCX) → T-062 (kode saja) → T-063 → T-064.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -354,10 +384,10 @@ Delapan hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-060 (submit/approve, pakai
-   `alokasiNomor`; ganti tombol Ajukan sementara) → T-061 (pakai
-   `formatTanggalSurat`, `templateById`, template generik baru) → T-062 (kode
-   saja, PDF dilewati) → T-063 → T-064. Jalankan ulang
+4. **Rantai surat — sedang berjalan.** T-061 (isi `lib/surat/generator.ts`;
+   pakai `formatTanggalSurat`, `templateById` dari `surat.template_id`,
+   template generik baru untuk 01/06/07/09) → T-062 (kode saja, PDF
+   dilewati) → T-063 (arsip + tombol batal) → T-064. Jalankan ulang
    `stress-nomor-surat.ts` setiap kali `alokasi_nomor_surat` disunting.
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase

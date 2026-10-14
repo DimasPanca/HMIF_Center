@@ -230,7 +230,9 @@ BEGIN
   -- 8. NOMOR SURAT TIDAK DIDAUR ULANG (INV-16)
   --    Surat pertama dibatalkan; surat berikutnya tetap memperoleh 002.
   ---------------------------------------------------------------------------
-  UPDATE surat SET status = 'DIBATALKAN' WHERE id = v_surat;
+  -- Pembatalan surat bernomor wajib beralasan (migrasi 030/032), seperti lewat aplikasi.
+  UPDATE surat SET status = 'DIBATALKAN', alasan_pembatalan = 'Uji pembatalan', dibatalkan_at = now()
+  WHERE id = v_surat;
 
   DECLARE v_surat2 UUID;
   BEGIN

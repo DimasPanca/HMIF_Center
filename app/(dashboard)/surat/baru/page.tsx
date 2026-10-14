@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { SuratForm } from '@/components/surat/SuratForm';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
-import { detailDraft } from '@/lib/surat/draft';
+import { STATUS_DAPAT_DISUNTING, detailDraft } from '@/lib/surat/draft';
 import { DAFTAR_JENIS, type JenisSurat } from '@/lib/surat/field-schemas';
 import { bacaKetuaHimpunan, bacaKonfigSurat, bacaPresetTujuan } from '@/lib/surat/konfig';
 
@@ -33,11 +33,14 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
   ]);
 
   let awal = null;
+  let alasanPenolakan: string | null = null;
   if (id) {
     const draft = /^[0-9a-f-]{36}$/i.test(id) ? await detailDraft(konteks, id, konfig) : null;
     // Draft orang lain, periode lain, atau sudah diajukan: bukan halaman ini.
-    if (!draft || draft.status !== 'DRAFT') notFound();
+    // Surat DITOLAK boleh dibuka pembuatnya untuk diperbaiki (USER_FLOW §11.2).
+    if (!draft || !STATUS_DAPAT_DISUNTING.includes(draft.status)) notFound();
     awal = { id: draft.id, nilai: draft.nilai };
+    alasanPenolakan = draft.status === 'DITOLAK' ? draft.alasan_penolakan : null;
   }
 
   const jenisAwal = DAFTAR_JENIS.includes(jenis as JenisSurat) ? (jenis as JenisSurat) : undefined;
@@ -51,7 +54,14 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
             Nomor surat ditetapkan saat surat disetujui. Draft tersimpan otomatis.
           </p>
         </header>
-        <SuratForm konfig={konfig} preset={preset} awal={awal} jenisAwal={jenisAwal} ketua={ketua} />
+        <SuratForm
+          konfig={konfig}
+          preset={preset}
+          awal={awal}
+          jenisAwal={jenisAwal}
+          ketua={ketua}
+          alasanPenolakan={alasanPenolakan}
+        />
       </div>
     </main>
   );
