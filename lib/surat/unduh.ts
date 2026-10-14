@@ -22,7 +22,7 @@ if (typeof window !== 'undefined') {
 const STATUS_BERDOKUMEN = ['TERBIT', 'DIBATALKAN'];
 
 /** `05/001/UN43.3.7/HMIF/X/2025` → `05-001-UN43.3.7-HMIF-X-2025.docx`. */
-export function namaBerkasSurat(nomorLengkap: string, ekstensi = 'docx'): string {
+export function namaBerkasSurat(nomorLengkap: string, ekstensi: string = 'docx'): string {
   const aman = nomorLengkap
     .replace(/[/\\]/g, '-')
     .replace(/[^A-Za-z0-9._-]/g, '')
@@ -30,12 +30,33 @@ export function namaBerkasSurat(nomorLengkap: string, ekstensi = 'docx'): string
   return `${aman || 'surat'}.${ekstensi}`;
 }
 
-export type HasilUnduh =
-  | { ok: true; key: string; namaBerkas: string }
-  | { ok: false; kode: 'TIDAK_DITEMUKAN' | 'BELUM_TERBIT'; pesan: string };
+export type FormatUnduh = 'DOCX' | 'PDF';
 
-export async function dokumenSuratUntuk(konteks: Konteks, suratId: string): Promise<HasilUnduh> {
+export const MIME_UNDUH: Record<FormatUnduh, string> = {
+  DOCX: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  PDF: 'application/pdf',
+};
+
+export type HasilUnduh =
+  | { ok: true; key: string; namaBerkas: string; format: FormatUnduh }
+  | { ok: false; kode: 'TIDAK_DITEMUKAN' | 'BELUM_TERBIT' | 'PDF_NONAKTIF'; pesan: string };
+
+/** `?format=` → format berkas; selain "pdf" berarti DOCX. */
+export function formatDariQuery(nilai: string | null): FormatUnduh {
+  return nilai?.toLowerCase() === 'pdf' ? 'PDF' : 'DOCX';
+}
+
+export async function dokumenSuratUntuk(
+  konteks: Konteks,
+  suratId: string,
+  format: FormatUnduh = 'DOCX',
+  pdfAktif = false,
+): Promise<HasilUnduh> {
   const tidakAda = { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Dokumen surat tidak ditemukan.' } as const;
+  // Ditolak terang-terangan, bukan diam-diam diganti DOCX (ADR-010).
+  if (format === 'PDF' && !pdfAktif) {
+    return { ok: false, kode: 'PDF_NONAKTIF', pesan: 'Format PDF belum tersedia. Unduh dokumen DOCX.' };
+  }
 
   const s = await db.surat.findUnique({
     where: { id: suratId },
@@ -56,10 +77,10 @@ export async function dokumenSuratUntuk(konteks: Konteks, suratId: string): Prom
   }
 
   const d = await db.dokumen.findFirst({
-    where: { surat_id: suratId, jenis: 'SURAT', format: 'DOCX' },
+    where: { surat_id: suratId, jenis: 'SURAT', format },
     orderBy: { created_at: 'desc' },
     select: { storage_key: true },
   });
   if (!d) return tidakAda;
-  return { ok: true, key: d.storage_key, namaBerkas: namaBerkasSurat(s.nomor_lengkap) };
+  return { ok: true, key: d.storage_key, namaBerkas: namaBerkasSurat(s.nomor_lengkap, format.toLowerCase()), format };
 }

@@ -762,7 +762,8 @@
       "depends_on": [
         "T-061"
       ],
-      "status": "TODO",
+      "status": "BLOCKED",
+      "blocked_reason": "Kode siap (2026-10-15). Gotenberg/LibreOffice belum terpasang; verifikasi PDF berteks dari konverter sungguhan menunggu GOTENBERG_URL atau SOFFICE_PATH. Langkah: ADR-010 bagian Status nyata.",
       "butuh_manusia": true,
       "completed_at": null
     },

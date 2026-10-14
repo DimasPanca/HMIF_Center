@@ -251,6 +251,14 @@ test('Ketua mengunggah tanda tangan → terbitkan ulang → TERBIT; DOCX dapat d
   expect(xml).toContain(row!.nomor_lengkap);
   expect(xml).toContain('<w:drawing>');
 
+  // PDF_ENABLED=false: PDF ditolak terang-terangan, bukan diganti DOCX (T-062, ADR-010).
+  if (process.env.PDF_ENABLED !== 'true') {
+    const pdf = await kadept.request.get(`/api/surat/${idSetuju}/download?format=pdf`);
+    expect(pdf.status()).toBe(409);
+    expect(((await pdf.json()) as { error: { code: string } }).error.code).toBe('PDF_NONAKTIF');
+    await expect(ketua.getByTestId('surat-unduh-pdf')).toHaveCount(0);
+  }
+
   // Pembaca arsip (BPH) boleh; ANGGOTA tidak punya surat.read.
   const bph = await sesi(browser, AKUN.bacaSaja);
   expect((await bph.request.get(`/api/surat/${idSetuju}/download`)).status()).toBe(200);

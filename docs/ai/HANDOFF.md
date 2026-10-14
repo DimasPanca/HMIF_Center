@@ -65,6 +65,23 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-062 · konversi PDF — KODE SAJA, status BLOCKED (2026-10-15)
+
+`lib/documents/pdf-converter.ts`: `docxToPdf()` (Gotenberg → soffice →
+fallback HTML hanya bila `PDF_FALLBACK_HTML=true`, dan fallback itu sendiri
+belum dipasang → penolakan jelas), `periksaPdfBerteks()` menolak PDF raster.
+Generator membuat PDF bila `format_output` PDF/BOTH; gagal/dimatikan → tetap
+TERBIT sebagai DOCX + peringatan "PDF belum tersedia". Unduh
+`?format=pdf` → 409 `PDF_NONAKTIF` saat flag mati.
+
+**Sesuai keputusan pemilik: tidak ditandai DONE.** `tasks.json` = BLOCKED +
+`blocked_reason`. Langkah mengaktifkan PDF (manusia): ADR-010 bagian
+"Status nyata" — pasang Gotenberg/LibreOffice, uji satu surat BOTH, pastikan
+teks PDF dapat diseleksi & kop utuh, baru `PDF_ENABLED=true` di produksi.
+
+Gate: unit `pdf-converter` 14/14, `verify` 801, `surat-approval` (+ cek
+`?format=pdf` → 409) dan `surat-form` 27 lulus + 3 skip.
+
 ### T-061 · Document Engine DOCX (2026-10-15)
 
 `lib/documents/`: `docx-engine.ts` (`renderDocx` — placeholder tanpa data =
@@ -337,7 +354,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 ## 3. Blocker aktif
 
 1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-061
-   selesai; berikutnya T-062 (kode saja, PDF dilewati) → T-063 → T-064.
+   selesai, T-062 kodenya selesai tetapi BLOCKED menunggu Gotenberg (lihat
+   §2); berikutnya T-063 → T-064.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -428,9 +446,8 @@ Sepuluh hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-062 (kode saja, PDF dilewati;
-   `PDF_ENABLED=false`) → T-063 (arsip + tombol batal; unduh pakai
-   `/api/surat/[id]/download`) → T-064 (massal: `generateDokumenSurat` per
+4. **Rantai surat — sedang berjalan.** T-063 (arsip + tombol batal; unduh
+   pakai `/api/surat/[id]/download`, `?format=pdf` bila ada baris PDF) → T-064 (massal: `generateDokumenSurat` per
    surat). Jalankan ulang `stress-nomor-surat.ts` setiap kali
    `alokasi_nomor_surat` disunting. Sebelum generator TOR/Proposal/LPJ,
    periksa gambar badan templatenya (BACKLOG).

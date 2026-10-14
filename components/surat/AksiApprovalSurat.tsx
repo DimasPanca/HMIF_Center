@@ -22,7 +22,7 @@ import { ToastProvider } from '@/components/ui/toast';
 
 interface Respons {
   ok: boolean;
-  data?: { nomor?: string; status?: string; peringatan?: string | null };
+  data?: { nomor?: string; status?: string; peringatan?: string | null; pdf?: boolean };
   error?: { message?: string };
 }
 
@@ -47,7 +47,9 @@ function Aksi({ suratId, status }: AksiApprovalSuratProps) {
   const [alasan, setAlasan] = React.useState('');
   const [proses, setProses] = React.useState(false);
   const [galat, setGalat] = React.useState<string | null>(null);
-  const [hasil, setHasil] = React.useState<{ nomor: string; status: string; peringatan: string | null } | null>(null);
+  const [hasil, setHasil] = React.useState<{ nomor: string; status: string; peringatan: string | null; pdf: boolean } | null>(
+    null,
+  );
 
   async function setujui(terbitkanUlang = false) {
     setProses(true);
@@ -59,7 +61,12 @@ function Aksi({ suratId, status }: AksiApprovalSuratProps) {
       router.refresh();
       return;
     }
-    setHasil({ nomor: r.data.nomor, status: r.data.status ?? 'DISETUJUI', peringatan: r.data.peringatan ?? null });
+    setHasil({
+      nomor: r.data.nomor,
+      status: r.data.status ?? 'DISETUJUI',
+      peringatan: r.data.peringatan ?? null,
+      pdf: r.data.pdf === true,
+    });
     router.refresh();
   }
 
@@ -85,12 +92,27 @@ function Aksi({ suratId, status }: AksiApprovalSuratProps) {
         </p>
         <NomorSuratBadge nomor={hasil.nomor} />
         {hasil.peringatan ? (
-          <InlineAlert data-testid="surat-peringatan-terbit" title="Dokumen belum diterbitkan" detail={hasil.peringatan} />
+          <InlineAlert
+            data-testid="surat-peringatan-terbit"
+            // TERBIT + peringatan = DOCX terbit, PDF yang diminta tidak dibuat (T-062).
+            title={hasil.status === 'TERBIT' ? 'PDF belum tersedia' : 'Dokumen belum diterbitkan'}
+            detail={hasil.peringatan}
+          />
         ) : null}
         <div className="flex flex-wrap gap-2">
           {hasil.status === 'TERBIT' ? (
             <a href={`/api/surat/${suratId}/download`} className={buttonVariants({})} data-testid="surat-unduh-docx" download>
               <Download aria-hidden="true" /> Unduh DOCX
+            </a>
+          ) : null}
+          {hasil.status === 'TERBIT' && hasil.pdf ? (
+            <a
+              href={`/api/surat/${suratId}/download?format=pdf`}
+              className={buttonVariants({ variant: 'secondary' })}
+              data-testid="surat-unduh-pdf"
+              download
+            >
+              <Download aria-hidden="true" /> Unduh PDF
             </a>
           ) : null}
           <Button type="button" variant="secondary" onClick={() => router.push('/surat/approval')}>

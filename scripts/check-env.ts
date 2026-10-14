@@ -60,6 +60,8 @@ const ATURAN: Aturan[] = [
     wajibBila: (e) => e.PDF_ENABLED === 'true' && !e.SOFFICE_PATH,
     catatan: 'wajib bila PDF_ENABLED=true dan SOFFICE_PATH kosong' },
   { nama: 'SOFFICE_PATH', wajib: false },
+  { nama: 'PDF_FALLBACK_HTML', wajib: false, jenis: 'boolean',
+    catatan: 'fallback HTML→PDF berfidelitas rendah; belum dipasang (T-062)' },
 
   // Aplikasi
   { nama: 'NEXT_PUBLIC_APP_URL', wajib: true, jenis: 'url' },

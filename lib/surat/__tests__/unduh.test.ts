@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { namaBerkasSurat } from '@/lib/surat/unduh';
+import { dokumenSuratUntuk, formatDariQuery, namaBerkasSurat } from '@/lib/surat/unduh';
 
 describe('namaBerkasSurat', () => {
   it('nomor surat dengan "/" menjadi "-" (kontrak T-061)', () => {
@@ -15,5 +15,23 @@ describe('namaBerkasSurat', () => {
   it('nomor kosong tetap menghasilkan nama yang sah', () => {
     expect(namaBerkasSurat('')).toBe('surat.docx');
     expect(namaBerkasSurat('///')).toBe('surat.docx');
+  });
+});
+
+describe('format unduhan', () => {
+  it('?format=pdf (huruf apa pun) → PDF; selain itu DOCX', () => {
+    expect(formatDariQuery('pdf')).toBe('PDF');
+    expect(formatDariQuery('PDF')).toBe('PDF');
+    expect(formatDariQuery('docx')).toBe('DOCX');
+    expect(formatDariQuery(null)).toBe('DOCX');
+  });
+
+  it('PDF saat PDF_ENABLED=false ditolak terang-terangan sebelum menyentuh database (ADR-010)', async () => {
+    const konteks = { sesi: { userId: 'x', isActive: true }, periodeId: 'p', roles: ['KETUA'], departemenIds: [] } as never;
+    await expect(dokumenSuratUntuk(konteks, '00000000-0000-0000-0000-000000000000', 'PDF', false)).resolves.toEqual({
+      ok: false,
+      kode: 'PDF_NONAKTIF',
+      pesan: 'Format PDF belum tersedia. Unduh dokumen DOCX.',
+    });
   });
 });

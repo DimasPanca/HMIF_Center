@@ -192,7 +192,8 @@ async function pasangTemplateAktif(tx: TxKlien, id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export type HasilTerbit =
-  | { ok: true; status: 'TERBIT' }
+  /** `pdf`: PDF ikut terbit; `peringatan`: PDF diminta tetapi tidak dibuat (T-062). */
+  | { ok: true; status: 'TERBIT'; pdf: boolean; peringatan: string | null }
   | { ok: false; status: 'DISETUJUI'; pesan: string };
 
 /**
@@ -217,31 +218,35 @@ export async function terbitkanSurat(request: Request, konteks: Konteks, id: str
         data: { status: 'TERBIT', updated_at: new Date() },
       });
       if (naik.count === 0) return;
-      await tx.dokumen.deleteMany({ where: { surat_id: id, jenis: 'SURAT', format: 'DOCX' } });
-      await tx.dokumen.create({
-        data: {
+      const berkas = [{ format: 'DOCX', ...hasil }, ...(hasil.pdf ? [{ format: 'PDF', ...hasil.pdf }] : [])];
+      await tx.dokumen.deleteMany({ where: { surat_id: id, jenis: 'SURAT' } });
+      await tx.dokumen.createMany({
+        data: berkas.map((b) => ({
           surat_id: id,
           jenis: 'SURAT',
-          format: 'DOCX',
-          storage_key: hasil.key,
-          file_size: BigInt(hasil.ukuran),
+          format: b.format,
+          storage_key: b.key,
+          file_size: BigInt(b.ukuran),
           generated_by: konteks.sesi.userId,
-        },
+        })),
       });
     });
   } catch (e) {
     console.error(`[terbit] surat ${id}: gagal mencatat dokumen`, e);
     // Hanya dihapus bila tidak ada baris yang merujuknya — percobaan terbit lain
     // yang menang mungkin sudah mencatat key yang sama.
-    const dirujuk = await db.dokumen.count({ where: { storage_key: hasil.key } }).catch(() => 1);
-    if (dirujuk === 0) await storage.delete(hasil.key).catch(() => undefined);
+    for (const key of [hasil.key, hasil.pdf?.key]) {
+      if (!key) continue;
+      const dirujuk = await db.dokumen.count({ where: { storage_key: key } }).catch(() => 1);
+      if (dirujuk === 0) await storage.delete(key).catch(() => undefined);
+    }
     return {
       ok: false,
       status: 'DISETUJUI',
       pesan: 'Dokumen gagal dicatat. Nomor surat sudah ditetapkan; dokumen dapat diterbitkan ulang.',
     };
   }
-  return { ok: true, status: 'TERBIT' };
+  return { ok: true, status: 'TERBIT', pdf: Boolean(hasil.pdf), peringatan: hasil.peringatan ?? null };
 }
 
 // ---------------------------------------------------------------------------

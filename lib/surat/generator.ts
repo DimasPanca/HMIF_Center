@@ -23,6 +23,7 @@ import { db } from '@/lib/db/client';
 import { petakanSurat } from '@/lib/documents/data-mapper';
 import { GalatTemplate, renderDocx } from '@/lib/documents/docx-engine';
 import { gabungTtdStempel } from '@/lib/documents/image-module';
+import { GalatPdf, PdfTidakTersedia, docxToPdf } from '@/lib/documents/pdf-converter';
 import { muatBerkas, muatStempel, sumberTemplateSurat } from '@/lib/documents/template-loader';
 import { keys, storage } from '@/lib/storage';
 import { muatSurat } from '@/lib/surat/draft';
@@ -33,7 +34,17 @@ if (typeof window !== 'undefined') {
   throw new Error('lib/surat/generator.ts adalah modul server-only dan tidak boleh diimpor dari sisi klien.');
 }
 
-export type HasilGenerate = { ok: true; key: string; ukuran: number } | { ok: false; pesan: string };
+export type HasilGenerate =
+  | {
+      ok: true;
+      key: string;
+      ukuran: number;
+      /** Ada bila format_output meminta PDF dan konversinya berhasil (T-062). */
+      pdf?: { key: string; ukuran: number };
+      /** PDF diminta tetapi tidak dibuat — surat tetap terbit sebagai DOCX. */
+      peringatan?: string;
+    }
+  | { ok: false; pesan: string };
 
 const SARAN_ULANG = 'Nomor surat sudah ditetapkan; dokumen dapat diterbitkan ulang setelah masalahnya dibereskan.';
 
@@ -90,5 +101,20 @@ export async function generateDokumenSurat(konteks: Konteks, suratId: string): P
     await storage.delete(key).catch(() => undefined);
     return gagal('Dokumen gagal disimpan ke penyimpanan.');
   }
-  return { ok: true, key, ukuran: isi.length };
+
+  // PDF hanya bila diminta. Gagal → surat tetap terbit sebagai DOCX dengan
+  // peringatan: DOCX selalu tersedia, PDF peningkatan (ADR-010). Penolakan
+  // `docxToPdf` saat PDF_ENABLED=false sampai ke approver apa adanya.
+  const format = (surat.nilai as { format_output?: string }).format_output;
+  if (format !== 'PDF' && format !== 'BOTH') return { ok: true, key, ukuran: isi.length };
+  try {
+    const h = await docxToPdf(isi);
+    const keyPdf = keys.suratPdf(suratId);
+    await storage.put(keyPdf, h.pdf, 'application/pdf', { upsert: true });
+    return { ok: true, key, ukuran: isi.length, pdf: { key: keyPdf, ukuran: h.pdf.length } };
+  } catch (e) {
+    const sebab = e instanceof PdfTidakTersedia || e instanceof GalatPdf ? e.message : 'Konversi PDF gagal.';
+    if (!(e instanceof PdfTidakTersedia)) console.error(`[generator] surat ${suratId}: PDF gagal`, e);
+    return { ok: true, key, ukuran: isi.length, peringatan: `PDF tidak dibuat: ${sebab} Dokumen DOCX tetap tersedia.` };
+  }
 }

@@ -33,7 +33,8 @@ export async function POST(request: Request, context: RouteContext) {
     {
       nomor: disetujui.nilai.nomor,
       status: terbit.status,
-      peringatan: terbit.ok ? null : terbit.pesan,
+      peringatan: terbit.ok ? terbit.peringatan : terbit.pesan,
+      pdf: terbit.ok && terbit.pdf,
     },
     { headers: TANPA_CACHE },
   );
