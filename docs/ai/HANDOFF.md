@@ -65,6 +65,21 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-099 · Unduhan master & uji cetak — kode selesai, BLOCKED uji manusia (2026-10-15)
+
+`GET /api/images/[id]/download` (`lib/images/download.ts`): selalu
+`master_path`, dikirim apa adanya (uji asap: byte unduhan = byte unggahan),
+`attachment` + nama asli tersanitasi, `Cache-Control: private, max-age=3600`.
+Hak: pengunggah; pemilik `nota.read` tanpa lingkup (Ketua/Wakil/Sekum/Bendum/
+BPH); setelah jadi nota juga Kadept departemen proker, anggota/koordinator
+divisi, ketua pelaksana. Tidak berhak → 404 (tak membocorkan). Bukan
+`requirePermission('nota.read')` karena Anggota/Kadept hanya punya C.
+`components/nota/NotaImage.tsx` hanya `'thumb' | 'preview'` (+ tautan unduh);
+URL dari `lib/images/url-gambar.ts`.
+
+- **Pemilik:** jalankan `docs/ai/UJI_CETAK.md` (3 nota fisik → unduh → Word →
+  cetak) dan isi tabelnya. Setelah lulus, set T-099 DONE.
+
 ### T-098 · Validasi & penyimpanan gambar sisi server (2026-10-15)
 
 `POST /api/images/upload` (form: `master`, `preview`, `thumb`, metadata sumber)

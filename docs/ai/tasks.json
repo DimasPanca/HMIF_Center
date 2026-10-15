@@ -1187,7 +1187,7 @@
       "depends_on": [
         "T-098"
       ],
-      "status": "TODO",
+      "status": "BLOCKED",
       "butuh_manusia": true,
       "completed_at": null
     },
