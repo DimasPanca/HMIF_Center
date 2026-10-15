@@ -263,6 +263,10 @@ test('Ketua mengunggah tanda tangan → terbitkan ulang → TERBIT; DOCX dapat d
     const pdf = await kadept.request.get(`/api/surat/${idSetuju}/download?format=pdf`);
     expect(pdf.status()).toBe(409);
     expect(((await pdf.json()) as { error: { code: string } }).error.code).toBe('PDF_NONAKTIF');
+    // "Buat PDF" untuk surat terbit juga ditolak terang-terangan selama PDF mati.
+    const buatPdf = await ketua.request.post(`/api/surat/${idSetuju}/pdf`);
+    expect(buatPdf.status()).toBe(409);
+    expect(((await buatPdf.json()) as { error: { code: string } }).error.code).toBe('PDF_NONAKTIF');
     await expect(ketua.getByTestId('surat-unduh-pdf')).toHaveCount(0);
   }
 

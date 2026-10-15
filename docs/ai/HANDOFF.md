@@ -65,6 +65,15 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-062 lanjutan · Gotenberg siap dipasang pemilik (2026-10-15)
+
+Keputusan pemilik: PDF surat lewat **Gotenberg di Render Free**. Ditambahkan
+basic auth (`GOTENBERG_USERNAME`/`GOTENBERG_PASSWORD`), `scripts/cek-pdf.ts`
+(uji konverter + lapisan teks), `POST /api/surat/[id]/pdf` + tombol **Buat PDF**
+di detail arsip (untuk surat yang terbit saat layanan tidur). Panduan langkah
+demi langkah: **`docs/ai/GOTENBERG_SETUP.md`**. T-062 tetap BLOCKED sampai
+pemilik menyelesaikan langkah 5 panduan itu.
+
 ### T-064 · generate massal Surat Keterangan Aktif (2026-10-15)
 
 `/surat/massal` (`components/surat/SuratMassal.tsx`), `POST/GET

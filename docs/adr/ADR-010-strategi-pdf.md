@@ -64,3 +64,20 @@ Yang sudah ada (`lib/documents/pdf-converter.ts`):
    BOTH, unduh PDF-nya, dan **pastikan teksnya dapat diseleksi serta kop
    utuh** dibandingkan DOCX.
 3. Baru set `PDF_ENABLED=true` di produksi, lalu tandai T-062 DONE.
+
+## Keputusan pemilik (2026-10-15, lanjutan T-062)
+
+Pemilik hanya membutuhkan **surat dapat diunduh sebagai PDF**, bukan fitur
+konversi berkas umum. Jalur yang dipilih: **Gotenberg di Render (Free)**,
+disiapkan pemilik mengikuti `docs/ai/GOTENBERG_SETUP.md`.
+
+- Klien Gotenberg mengirim basic auth (`GOTENBERG_USERNAME`/`GOTENBERG_PASSWORD`;
+  layanan dijalankan dengan `--api-enable-basic-auth`). Layanan publik tanpa
+  sandi dapat dipakai siapa pun.
+- **Buat PDF** untuk surat TERBIT yang belum punya PDF (`POST
+  /api/surat/[id]/pdf`): paket Free tidur dan butuh ±1 menit bangun, sehingga
+  PDF saat terbit dapat gagal. PDF dibuat dari DOCX tersimpan — identik dengan
+  dokumen terbit. Berlaku untuk surat TERBIT apa pun format pilihannya.
+- `scripts/cek-pdf.ts`: uji konverter sungguhan + lapisan teks sebelum
+  `PDF_ENABLED=true` dinyalakan di produksi.
+- T-062 tetap BLOCKED sampai langkah 5 panduan berhasil di produksi.

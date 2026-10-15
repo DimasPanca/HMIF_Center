@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { BatalkanSurat } from '@/components/surat/BatalkanSurat';
+import { BuatPdf } from '@/components/surat/BuatPdf';
 import { NomorSuratBadge } from '@/components/surat/NomorSuratBadge';
 import { SuratPreview } from '@/components/surat/SuratPreview';
 import { buttonVariants } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { StatusPill } from '@/components/ui/status-pill';
 import { ToastProvider } from '@/components/ui/toast';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { bacaKonfigPdf } from '@/lib/documents/pdf-converter';
 import { detailArsip } from '@/lib/surat/arsip';
 import { muatSurat } from '@/lib/surat/draft';
 import { bacaKetuaHimpunan, bacaKonfigSurat } from '@/lib/surat/konfig';
@@ -45,6 +47,7 @@ export default async function DetailSuratPage({ params }: PageProps) {
     ? await Promise.all([bacaKonfigSurat(), bacaKetuaHimpunan(konteks.periodeId), muatSurat(konteks, id)])
     : [null, null, null];
   const milikSaya = s.dibuat_oleh === konteks.sesi.userId;
+  const pdfAktif = bacaKonfigPdf().aktif && (milikSaya || can(konteks.roles, 'surat.approve'));
   const bolehBatal = s.status === 'TERBIT' && periodeAktif && can(konteks.roles, 'surat.approve') && s.nomor_lengkap;
   const bolehSunting = milikSaya && periodeAktif && (s.status === 'DRAFT' || s.status === 'DITOLAK');
 
@@ -134,6 +137,7 @@ export default async function DetailSuratPage({ params }: PageProps) {
                   ) : (
                     <p className="text-[13px] text-secondary">Dokumen tersedia setelah surat disetujui dan terbit.</p>
                   )}
+                  {s.status === 'TERBIT' && s.ada_docx && !s.ada_pdf && pdfAktif && periodeAktif ? <BuatPdf suratId={s.id} /> : null}
                   {bolehSunting ? (
                     <Link href={`/surat/baru?id=${s.id}`} className={buttonVariants({ variant: 'secondary' })}>
                       <FilePenLine aria-hidden="true" /> Lanjutkan menyunting

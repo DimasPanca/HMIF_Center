@@ -46,7 +46,13 @@ const PDF_RASTER = pdf(Buffer.from('q 595 0 0 842 0 0 cm /Im1 Do Q', 'latin1'), 
 
 const DOCX = Buffer.from('PK\u0003\u0004 bukan docx sungguhan — konverter disuntik');
 
-const AKTIF: KonfigPdf = { aktif: true, gotenbergUrl: 'http://gotenberg.uji:3000/', sofficePath: null, fallbackHtml: false };
+const AKTIF: KonfigPdf = {
+  aktif: true,
+  gotenbergUrl: 'http://gotenberg.uji:3000/',
+  gotenbergAuth: null,
+  sofficePath: null,
+  fallbackHtml: false,
+};
 
 function depGotenberg(jawab: () => Response | Promise<Response>): DepPdf & { fetch: ReturnType<typeof vi.fn> } {
   return { fetch: vi.fn(async () => jawab()), jalankan: vi.fn(async () => undefined) } as never;
@@ -79,15 +85,22 @@ describe('konfigurasi dan pemilihan jalur', () => {
     expect(bacaKonfigPdf({ PDF_ENABLED: 'false', GOTENBERG_URL: 'http://g' })).toEqual({
       aktif: false,
       gotenbergUrl: 'http://g',
+      gotenbergAuth: null,
       sofficePath: null,
       fallbackHtml: false,
     });
+    expect(bacaKonfigPdf({ GOTENBERG_USERNAME: 'hmif', GOTENBERG_PASSWORD: 'rahasia' }).gotenbergAuth).toEqual({
+      username: 'hmif',
+      password: 'rahasia',
+    });
+    // Separuh kredensial = tidak ada kredensial, bukan header rusak.
+    expect(bacaKonfigPdf({ GOTENBERG_USERNAME: 'hmif' }).gotenbergAuth).toBeNull();
     expect(bacaKonfigPdf({ PDF_ENABLED: '1' }).aktif).toBe(false);
     expect(bacaKonfigPdf({ PDF_ENABLED: 'true', SOFFICE_PATH: '  ' }).sofficePath).toBeNull();
   });
 
   it('urutan: Gotenberg → soffice → HTML (hanya bila eksplisit)', () => {
-    const k = { aktif: true, gotenbergUrl: null, sofficePath: null, fallbackHtml: false };
+    const k = { aktif: true, gotenbergUrl: null, gotenbergAuth: null, sofficePath: null, fallbackHtml: false };
     expect(pilihJalur({ ...k, gotenbergUrl: 'x', sofficePath: 'y', fallbackHtml: true })).toBe('GOTENBERG');
     expect(pilihJalur({ ...k, sofficePath: 'y', fallbackHtml: true })).toBe('SOFFICE');
     expect(pilihJalur({ ...k, fallbackHtml: true })).toBe('HTML');
@@ -122,6 +135,14 @@ describe('docxToPdf — menolak dengan jelas, tidak menurunkan mutu diam-diam (A
     const berkas = (init.body as FormData).get('files') as File;
     expect(berkas.name).toBe('surat.docx');
     expect(Buffer.from(await berkas.arrayBuffer()).equals(DOCX)).toBe(true);
+  });
+
+  it('Gotenberg ber-basic-auth: header Authorization dikirim; 401 dijelaskan', async () => {
+    const dep = depGotenberg(() => new Response(new Uint8Array(PDF_TEKS)));
+    await docxToPdf(DOCX, { ...AKTIF, gotenbergAuth: { username: 'hmif', password: 'r4h4s!a' } }, dep);
+    const [, init] = dep.fetch.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).authorization).toBe(`Basic ${Buffer.from('hmif:r4h4s!a').toString('base64')}`);
+    await expect(docxToPdf(DOCX, AKTIF, depGotenberg(() => new Response('x', { status: 401 })))).rejects.toThrow(/GOTENBERG_USERNAME/);
   });
 
   it('Gotenberg mengembalikan PDF raster → GalatPdf, bukan diterima', async () => {

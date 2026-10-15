@@ -43,6 +43,12 @@ export type JalurPdf = 'GOTENBERG' | 'SOFFICE' | 'HTML';
 export interface KonfigPdf {
   aktif: boolean;
   gotenbergUrl: string | null;
+  /**
+   * Kredensial basic auth Gotenberg (`--api-enable-basic-auth`). Layanan
+   * Gotenberg yang terbuka di internet tanpa ini dapat dipakai siapa pun yang
+   * tahu URL-nya untuk mengonversi berkas apa saja dengan kuota Anda.
+   */
+  gotenbergAuth: { username: string; password: string } | null;
   sofficePath: string | null;
   fallbackHtml: boolean;
 }
@@ -53,6 +59,10 @@ export function bacaKonfigPdf(env: Record<string, string | undefined> = process.
   return {
     aktif: env.PDF_ENABLED === 'true',
     gotenbergUrl: isi(env.GOTENBERG_URL),
+    gotenbergAuth:
+      isi(env.GOTENBERG_USERNAME) && isi(env.GOTENBERG_PASSWORD)
+        ? { username: isi(env.GOTENBERG_USERNAME)!, password: isi(env.GOTENBERG_PASSWORD)! }
+        : null,
     sofficePath: isi(env.SOFFICE_PATH),
     fallbackHtml: env.PDF_FALLBACK_HTML === 'true',
   };
@@ -105,19 +115,26 @@ const depBawaan: DepPdf = {
     }),
 };
 
-async function lewatGotenberg(docx: Buffer, url: string, dep: DepPdf): Promise<Buffer> {
+async function lewatGotenberg(
+  docx: Buffer,
+  url: string,
+  auth: KonfigPdf['gotenbergAuth'],
+  dep: DepPdf,
+): Promise<Buffer> {
   const form = new FormData();
   form.append('files', new Blob([new Uint8Array(docx)]), 'surat.docx');
   let r: Response;
   try {
     r = await dep.fetch(`${url.replace(/\/+$/, '')}/forms/libreoffice/convert`, {
       method: 'POST',
+      headers: auth ? { authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}` } : undefined,
       body: form,
       signal: AbortSignal.timeout(BATAS_MS),
     });
   } catch (e) {
     throw new GalatPdf(`Layanan Gotenberg tidak dapat dihubungi: ${(e as Error).message}`);
   }
+  if (r.status === 401) throw new GalatPdf('Gotenberg menolak kredensial (HTTP 401) — periksa GOTENBERG_USERNAME/GOTENBERG_PASSWORD.');
   if (!r.ok) throw new GalatPdf(`Gotenberg menolak konversi (HTTP ${r.status}).`);
   return Buffer.from(await r.arrayBuffer());
 }
@@ -166,7 +183,7 @@ export async function docxToPdf(docx: Buffer, konfig: KonfigPdf = bacaKonfigPdf(
     );
   }
 
-  const pdf = jalur === 'GOTENBERG' ? await lewatGotenberg(docx, konfig.gotenbergUrl!, dep) : await lewatSoffice(docx, konfig.sofficePath!, dep);
+  const pdf = jalur === 'GOTENBERG' ? await lewatGotenberg(docx, konfig.gotenbergUrl!, konfig.gotenbergAuth, dep) : await lewatSoffice(docx, konfig.sofficePath!, dep);
 
   if (pdf.subarray(0, 5).toString('latin1') !== '%PDF-') throw new GalatPdf('Konverter mengembalikan berkas yang bukan PDF.');
   const periksa = periksaPdfBerteks(pdf);
