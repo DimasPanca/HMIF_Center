@@ -65,6 +65,29 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-100 · Kamera & auto-scan dokumen (2026-10-15)
+
+`components/nota/{CameraCapture,ScanPreview,ScanOverlay}.tsx`,
+`lib/images/{jscanify-loader,pemindai}.ts`, harness `/qa/kamera`,
+`scripts/bench-bundle.ts`, **ADR-032** (baca sebelum menyentuh pemindai).
+
+- Keluaran `CameraCapture.onGunakan`: `{ berkas: Blob, terpindai, sumber }` —
+  SATU berkas untuk `processImage` T-097 (`isScanned = terpindai`). T-101 tinggal
+  memasangnya di `/keuangan/nota/upload`.
+- jscanify + OpenCV.js dari jsDelivr (versi terkunci + SRI), disisipkan saat
+  kamera dibuka; loader sendiri lewat `import()`. Gagal muat / tepi tak
+  meyakinkan (`lib/images/pemindai.ts`: luas ≥ 20% bingkai, cembung, sisi ≥ 120
+  px) → foto apa adanya, tidak memblokir.
+- **Jebakan:** `window.cv` adalah Module *thenable* — jangan `await`/`return`
+  dari fungsi async (tab membeku). Gate e2e yang memuat CDN wajib
+  `extraHTTPHeaders: {}` (header `x-forwarded-for` dari config gagal preflight CORS).
+- Gallery tidak memuat OpenCV (kontrak 1: hanya saat kamera dibuka).
+- Bundle `/qa/kamera`: 114 KB gzip / 385 KB mentah (anggaran §19.1 dibaca
+  gzip). Ukur ulang di rute T-101:
+  `MSYS_NO_PATHCONV=1 npx tsx scripts/bench-bundle.ts -- /keuangan/nota/upload`
+  (hentikan `next dev` dulu — skrip menimpa `.next`; di Git Bash wajib
+  `MSYS_NO_PATHCONV=1` atau `/rute` berubah jadi path Windows).
+
 ### T-084 · Ruang kerja acara (2026-10-15)
 
 Baca saja, tanpa migrasi. `lib/acara/service.ts` (`daftarAcara`, `muatAcara`,
