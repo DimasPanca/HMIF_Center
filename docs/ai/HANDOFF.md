@@ -65,6 +65,30 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-084 · Ruang kerja acara (2026-10-15)
+
+Baca saja, tanpa migrasi. `lib/acara/service.ts` (`daftarAcara`, `muatAcara`,
+`muatDivisi`), `components/acara/{AcaraHeader,TabNav,DivisiCard,RingkasanAcara,BelumTersedia}.tsx`,
+halaman `/acara`, `/acara/[id]?tab=…` (8 tab), `/acara/[id]/divisi/[divId]` (6 bagian).
+
+- **Visibilitas** (app bypass RLS): `kepanitiaan.read` tanpa lingkup → semua
+  acara periode aktif; Kadept/Anggota → acara departemennya + acara tempat ia
+  panitia (cermin `my_kepanitiaan()`). **Angka RAB/nota** hanya untuk `rab.read`
+  tanpa lingkup (≈`is_pimpinan()`), Kadept PIC (`R*`), atau panitia; selain itu
+  `null` → UI menulis "Terbatas", bukan Rp0. Catatan: RLS `rab_*_select` TIDAK
+  memberi Kadept PIC yang bukan panitia — matriks memberi `R*`; app mengikuti
+  matriks.
+- Tab = `?tab=` (bukan subrute) supaya T-087/T-094/T-096/T-105 bebas memakai
+  `/acara/[id]/rab|tor|proposal|lpj` (USER_FLOW §12) — ganti tautan tabnya saat itu.
+  Tab yang belum punya fitur memakai `BelumTersedia` (pembungkus klien
+  `EmptyState`, karena aksinya wajib `<Button>`).
+- Progres = kartu Kanban `divisi_id` berkolom DONE ÷ semua kartu divisi.
+- "Buat Surat untuk acara ini" → `/surat/baru?acara=<id>`; halaman surat membaca
+  kepanitiaan di server (aturan baca yang sama) dan mengisi `kode_kegiatan`,
+  `nama_kegiatan`, `tema_kegiatan` lewat prop baru `SuratForm.isianAwal`.
+- Mode baca saja/penjagaan tulis divisi lain = T-085 (belum). Menu sidebar
+  "Ruang Kerja Divisi" (`/acara/ruang-kerja`) masih 404 seperti sebelumnya.
+
 ### T-108 · Peminjaman ruangan (2026-10-15)
 
 Tanpa migrasi — tabel `ruangan`/`booking_ruangan`, RLS, dan permission `ruangan`

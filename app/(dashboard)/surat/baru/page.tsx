@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 
 import { SuratForm } from '@/components/surat/SuratForm';
+import { muatAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { STATUS_DAPAT_DISUNTING, detailDraft } from '@/lib/surat/draft';
@@ -10,7 +11,7 @@ import { bacaKetuaHimpunan, bacaKonfigSurat, bacaPresetTujuan } from '@/lib/sura
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  searchParams: Promise<{ id?: string; jenis?: string }>;
+  searchParams: Promise<{ id?: string; jenis?: string; acara?: string }>;
 }
 
 /**
@@ -25,7 +26,7 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
   if (!konteks?.sesi.isActive || !konteks.periodeId) redirect('/login');
   if (!can(konteks.roles, 'surat.create')) notFound();
 
-  const { id, jenis } = await searchParams;
+  const { id, jenis, acara } = await searchParams;
   const [konfig, preset, ketua] = await Promise.all([
     bacaKonfigSurat(),
     bacaPresetTujuan(),
@@ -45,6 +46,16 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
 
   const jenisAwal = DAFTAR_JENIS.includes(jenis as JenisSurat) ? (jenis as JenisSurat) : undefined;
 
+  // "Buat Surat untuk acara ini" (T-084): kode kegiatan & nama acara dari kepanitiaan,
+  // dibaca di server dengan aturan baca yang sama dengan ruang kerja acara.
+  const sumberAcara = !awal && acara && /^[0-9a-f-]{36}$/i.test(acara) ? await muatAcara(konteks, acara) : null;
+  const isianAwal = sumberAcara
+    ? {
+        kode_kegiatan: sumberAcara.kode_kegiatan ?? undefined,
+        data_dinamis: { nama_kegiatan: sumberAcara.nama_acara, ...(sumberAcara.tema ? { tema_kegiatan: sumberAcara.tema } : {}) },
+      }
+    : undefined;
+
   return (
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
       <div className="mx-auto max-w-7xl space-y-5">
@@ -61,6 +72,7 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
           jenisAwal={jenisAwal}
           ketua={ketua}
           alasanPenolakan={alasanPenolakan}
+          isianAwal={isianAwal}
         />
       </div>
     </main>

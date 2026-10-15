@@ -75,6 +75,12 @@ export interface SuratFormProps {
   konfig: KonfigSurat;
   preset: PresetTujuan[];
   awal: { id: string; nilai: SuratFormInput } | null;
+  /**
+   * Isian awal draft baru dari konteks pemanggil, mis. "Buat Surat untuk acara
+   * ini" (T-084): kode kegiatan dan field khusus senama (`nama_kegiatan`,
+   * `tema_kegiatan`). Kunci yang tidak dipakai jenis awal diabaikan.
+   */
+  isianAwal?: { kode_kegiatan?: string; data_dinamis?: Record<string, string> };
   /** Ketua Himpunan periode aktif — kolom kanan blok tanda tangan di pratinjau. */
   ketua: KetuaHimpunan | null;
   /** Jenis awal untuk draft baru, mis. dari `?jenis=` atau peminjaman ruangan. */
@@ -84,6 +90,14 @@ export interface SuratFormProps {
 }
 
 type StatusSimpan = 'diam' | 'menyimpan' | 'tersimpan' | 'galat';
+
+/** Menimpa nilai awal dengan `isianAwal`, hanya pada kunci yang memang ada di jenis itu. */
+function isiAwal(nilai: Nilai, isian: SuratFormProps['isianAwal']): Nilai {
+  if (!isian) return nilai;
+  const dinamis = { ...nilai.data_dinamis };
+  for (const [k, v] of Object.entries(isian.data_dinamis ?? {})) if (k in dinamis && v) dinamis[k] = v;
+  return { ...nilai, ...(isian.kode_kegiatan ? { kode_kegiatan: isian.kode_kegiatan } : {}), data_dinamis: dinamis };
+}
 
 function teks(v: unknown): string {
   return typeof v === 'string' ? v : '';
@@ -97,10 +111,10 @@ function idUntukPath(path: string): string {
   return `surat-field-${akar}`;
 }
 
-function Form({ konfig, preset, awal, jenisAwal, ketua, alasanPenolakan }: SuratFormProps) {
+function Form({ konfig, preset, awal, jenisAwal, ketua, alasanPenolakan, isianAwal }: SuratFormProps) {
   const toast = useToast();
   const [nilai, setNilai] = React.useState<Nilai>(
-    () => (awal?.nilai ?? nilaiAwalSurat(konfig, jenisAwal ?? 'PEMINJAMAN_RUANGAN')) as unknown as Nilai,
+    () => (awal?.nilai ?? isiAwal(nilaiAwalSurat(konfig, jenisAwal ?? 'PEMINJAMAN_RUANGAN') as unknown as Nilai, isianAwal)) as unknown as Nilai,
   );
   const [id, setId] = React.useState<string | null>(awal?.id ?? null);
   const [status, setStatus] = React.useState<StatusSimpan>('diam');
