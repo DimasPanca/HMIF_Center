@@ -65,6 +65,23 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-098 · Validasi & penyimpanan gambar sisi server (2026-10-15)
+
+`POST /api/images/upload` (form: `master`, `preview`, `thumb`, metadata sumber)
+→ `lib/images/{server-validate,strip-metadata,upload}.ts`. Jenis dari magic
+bytes (`file-type`), decode penuh dengan sharp (`stats()` + `failOn`), batas
+15 MB & dimensi per peran, 30 unggahan/jam/pengguna (hitung tabel `image`),
+UUID di key (`keys.notaMaster(uuid, ekstensi)` kini menerima ekstensi).
+
+- **ADR-031:** metadata dibuang pada tingkat byte (APP1/APP13/COM JPEG; chunk
+  teks/eXIf PNG; EXIF/XMP WebP) — BUKAN `sharp().withMetadata`, yang selalu
+  meng-encode ulang dan melanggar I3. Tag orientasi > 1 ditolak.
+- Urutan: validasi → simpan → baca ulang master → record; gagal → seluruh
+  berkas dihapus (`Promise.allSettled`), tanpa record. Dibuktikan unit test
+  `image-upload` (storage dalam memori) + uji asap API nyata (201/422/403).
+- `tasks.json` T-044/T-097/T-086 masih READY padahal sudah ber-commit
+  (`3d07af1`, `67b454d`, `fd9223e`) — status lama dari fase paralel.
+
 ### T-078 · Editor Gantt empat level (2026-10-15)
 
 `components/gantt/{GanttEditor,TaskForm,ScaleSwitcher,GanttExport,BuatChartDepartemen}.tsx`

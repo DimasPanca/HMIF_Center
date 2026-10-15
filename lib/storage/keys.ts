@@ -19,6 +19,9 @@ import { SalahBucketError } from './adapter';
 
 export type NamaBucket = 'private' | 'public';
 
+/** Ekstensi berkas gambar nota — daftar tertutup, bukan string bebas. */
+export type EkstensiGambar = 'jpg' | 'png' | 'webp';
+
 /**
  * Prefix yang tinggal di bucket PUBLIK. Selain yang terdaftar di sini,
  * segalanya privat.
@@ -84,9 +87,11 @@ function aman(segmen: string, nama: string): string {
 export const keys = {
   // --- Nota (SYSTEM_DESIGN §12.2) -----------------------------------------
   /** MASTER — hanya untuk unduhan, tidak pernah untuk ditampilkan (INV-19). */
-  notaMaster: (uuid: string): string => `nota/master/${aman(uuid, 'uuid')}.webp`,
-  notaPreview: (uuid: string): string => `nota/preview/${aman(uuid, 'uuid')}.webp`,
-  notaThumb: (uuid: string): string => `nota/thumb/${aman(uuid, 'uuid')}.webp`,
+  //  Ekstensi mengikuti jenis hasil sniffing server (T-098): master lazimnya
+  //  JPEG, WebP bila sumbernya bertransparansi (I8).
+  notaMaster: (uuid: string, ekstensi: EkstensiGambar = 'webp'): string => `nota/master/${aman(uuid, 'uuid')}.${ekstensi}`,
+  notaPreview: (uuid: string, ekstensi: EkstensiGambar = 'webp'): string => `nota/preview/${aman(uuid, 'uuid')}.${ekstensi}`,
+  notaThumb: (uuid: string, ekstensi: EkstensiGambar = 'webp'): string => `nota/thumb/${aman(uuid, 'uuid')}.${ekstensi}`,
 
   // --- Identitas ----------------------------------------------------------
   /** Tanda tangan. Privat: gambar tanda tangan orang adalah data pribadi. */
