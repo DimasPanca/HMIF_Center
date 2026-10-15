@@ -163,7 +163,11 @@ async function masuk(page: Page, akun: AkunUji): Promise<void> {
   await page.getByLabel(/email/i).fill(akun.email);
   await page.getByLabel(/password|kata sandi/i).fill(PASSWORD_UJI);
   await page.getByRole('button', { name: /masuk|login/i }).click();
-  await page.waitForLoadState('networkidle');
+  // Tunggu redirect keluar dari /login, BUKAN networkidle: networkidle dapat
+  // terpenuhi sebelum permintaan login berangkat, sehingga goto('/') berikutnya
+  // berjalan tanpa sesi dan mendarat kembali di /login. Beranda juga membuka
+  // WebSocket realtime yang membuat networkidle tidak stabil.
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 60_000 });
 }
 
 /** Buka beranda & tunggu Master Gantt selesai memuat (bukan loading/empty). */
