@@ -55,7 +55,7 @@ async function masuk(page: Page, akun: AkunUji): Promise<void> {
   await page.getByLabel(/email/i).fill(akun.email);
   await page.getByLabel(/password|kata sandi/i).fill(PASSWORD_UJI);
   await page.getByRole('button', { name: /masuk|login/i }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 });
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 60_000 });
 }
 
 async function sesi(browser: Browser, akun: AkunUji): Promise<Page> {
@@ -136,7 +136,7 @@ test('pencarian "peminjaman tandu" menemukan surat lewat perihal dan isi; filter
 
   await ketua.getByTestId('arsip-cari').fill('peminjaman tandu');
   await ketua.getByTestId('arsip-cari-kirim').click();
-  await expect.poll(() => new URL(ketua.url()).searchParams.get('q')).toBe('peminjaman tandu');
+  await expect.poll(() => new URL(ketua.url()).searchParams.get('q'), { timeout: 60_000 }).toBe('peminjaman tandu');
   await expect(ketua.getByTestId('arsip-jumlah')).toContainText('2 surat');
   expect(await terlihat(ketua, id.tandu)).toBe(1);
   expect(await terlihat(ketua, id.isi)).toBe(1);
@@ -223,7 +223,7 @@ test('paginasi kursor 50 baris tanpa baris ganda; export Excel memuat baris yang
   // Tombol halaman berikutnya di UI memakai kursor yang sama.
   await ketua.goto(`/surat?kegiatan=${kegiatan}`, { waitUntil: 'load' });
   await ketua.getByTestId('arsip-berikutnya').click({ timeout: 60_000 });
-  await expect.poll(() => new URL(ketua.url()).searchParams.get('cursor')).toBe(h1.data.berikut);
+  await expect.poll(() => new URL(ketua.url()).searchParams.get('cursor'), { timeout: 60_000 }).toBe(h1.data.berikut);
   await expect(ketua.getByTestId(`arsip-baris-${h2.data.baris[0]!.id}`)).toBeVisible({ timeout: 60_000 });
 
   // Export: seluruh baris (tanpa kursor), termasuk yang dibatalkan, sebagai xlsx.

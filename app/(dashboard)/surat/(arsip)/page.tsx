@@ -1,4 +1,4 @@
-import { Archive, ChevronRight, Download, FilePlus2, FileSpreadsheet, Inbox } from 'lucide-react';
+import { Archive, ChevronRight, Download, FilePlus2, FileSpreadsheet, Files, Inbox } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -72,6 +72,11 @@ export default async function ArsipSuratPage({ searchParams }: PageProps) {
             >
               <FileSpreadsheet aria-hidden="true" /> Export Excel
             </a>
+            {bolehMembuat ? (
+              <Link href="/surat/massal" className={buttonVariants({ variant: 'secondary' })}>
+                <Files aria-hidden="true" /> Surat aktif massal
+              </Link>
+            ) : null}
             {bolehMembuat ? (
               <Link href="/surat/baru" className={buttonVariants()}>
                 <FilePlus2 aria-hidden="true" /> Buat surat

@@ -112,16 +112,25 @@ export async function withAuditContext<T>(
   req: Request,
   pelaku: Pelaku,
   fn: (tx: TxKlien) => Promise<T>,
+  /**
+   * Batas waktu transaksi (ms). Bawaan Prisma 5 detik cukup untuk satu
+   * mutasi; operasi massal (T-064: 30 surat diajukan atau disetujui dalam
+   * satu transaksi) melampauinya ke DB jarak jauh dan diputus di tengah.
+   */
+  opsi?: { timeout?: number },
 ): Promise<T> {
   const ip = ambilIp(req);
   const userAgent = req.headers.get('user-agent') ?? '';
   const userId = pelaku?.sesi.userId ?? null;
 
-  return db.$transaction(async (tx) => {
-    const periodeId = await idPeriodeAktif(tx);
-    await pasangKonteks(tx, { ip, userAgent, periodeId, userId });
-    return fn(tx);
-  });
+  return db.$transaction(
+    async (tx) => {
+      const periodeId = await idPeriodeAktif(tx);
+      await pasangKonteks(tx, { ip, userAgent, periodeId, userId });
+      return fn(tx);
+    },
+    opsi?.timeout ? { timeout: opsi.timeout, maxWait: 10_000 } : undefined,
+  );
 }
 
 /**

@@ -72,12 +72,13 @@ interface BarisTerkunci {
   dibuat_oleh: string;
   nomor_lengkap: string | null;
   nama_penyetuju: string | null;
+  batch_id: string | null;
 }
 
 /** Baris surat dikunci untuk sisa transaksi; periode lain = tidak ada (INV-08). */
 async function kunci(tx: TxKlien, konteks: Konteks, id: string): Promise<BarisTerkunci | null> {
   const [s] = await tx.$queryRaw<BarisTerkunci[]>`
-    SELECT s.id::text, s.periode_id::text, s.status::text, s.dibuat_oleh::text, s.nomor_lengkap,
+    SELECT s.id::text, s.periode_id::text, s.status::text, s.dibuat_oleh::text, s.nomor_lengkap, s.batch_id::text,
            u.nama_lengkap AS nama_penyetuju
     FROM surat s LEFT JOIN app_user u ON u.id = s.disetujui_oleh
     WHERE s.id = ${id}::uuid
@@ -157,6 +158,13 @@ export async function setujuiSurat(
     return { ok: true, nilai: { status: 'DISETUJUI', nomor: s.nomor_lengkap } };
   }
   if (!bolehTransisi(s.status, 'DISETUJUI')) return salahStatus(s, 'disetujui');
+  if (s.batch_id) {
+    return {
+      ok: false,
+      kode: 'STATUS_TIDAK_SESUAI',
+      pesan: 'Surat ini bagian dari batch generate massal. Setujui seluruh batch di halaman Surat Massal supaya nomornya berurutan.',
+    };
+  }
 
   const r = await alokasiNomor(tx, konteks, id);
   if (!r.ok) return { ok: false, kode: r.kode, pesan: r.pesan };
@@ -175,11 +183,12 @@ export async function setujuiSurat(
  * generate ulang memakai template aslinya (ADR-027, ADR-029). Surat generik
  * (template_id NULL) tidak tersentuh.
  */
-async function pasangTemplateAktif(tx: TxKlien, id: string): Promise<void> {
+export async function pasangTemplateAktif(tx: TxKlien, id: string | string[]): Promise<void> {
+  const ids = Array.isArray(id) ? id : [id];
   await tx.$executeRaw`
     UPDATE surat s SET template_id = baru.id
     FROM surat_template lama, surat_template baru
-    WHERE s.id = ${id}::uuid
+    WHERE s.id = ANY(${ids}::uuid[])
       AND lama.id = s.template_id
       AND baru.kode_surat = lama.kode_surat AND baru.varian = lama.varian
       AND baru.is_active AND baru.id <> lama.id
@@ -205,6 +214,13 @@ export type HasilTerbit =
  * dihapus lagi, sehingga tidak ada berkas yatim maupun baris tanpa berkas
  * (kontrak T-061).
  */
+/**
+ * Transaksi pencatatan dokumen kecil (3 kueri), tetapi dijalankan berulang
+ * selama generate massal di bawah beban; batas bawaan 5 detik pernah terlewati.
+ * Bila tetap terlewati, berkasnya dihapus dan surat dilaporkan gagal terbit.
+ */
+const BATAS_TRANSAKSI_TERBIT_MS = 20_000;
+
 export async function terbitkanSurat(request: Request, konteks: Konteks, id: string): Promise<HasilTerbit> {
   const hasil = await generateDokumenSurat(konteks, id);
   if (!hasil.ok) return { ok: false, status: 'DISETUJUI', pesan: hasil.pesan };
@@ -230,7 +246,7 @@ export async function terbitkanSurat(request: Request, konteks: Konteks, id: str
           generated_by: konteks.sesi.userId,
         })),
       });
-    });
+    }, { timeout: BATAS_TRANSAKSI_TERBIT_MS });
   } catch (e) {
     console.error(`[terbit] surat ${id}: gagal mencatat dokumen`, e);
     // Hanya dihapus bila tidak ada baris yang merujuknya — percobaan terbit lain
@@ -328,7 +344,13 @@ export interface ItemAntrianSurat {
  */
 export async function daftarAntrianSurat(konteks: Konteks): Promise<{ menunggu: ItemAntrianSurat[]; gagalTerbit: ItemAntrianSurat[] }> {
   const baris = await db.surat.findMany({
-    where: { periode_id: konteks.periodeId, status: { in: ['MENUNGGU_APPROVAL', 'DISETUJUI'] } },
+    // Surat batch massal yang masih menunggu disetujui lewat halaman massal
+    // (T-064), bukan satu per satu — kalau tidak, nomornya dapat disela.
+    // Yang sudah bernomor tetapi gagal terbit tetap muncul untuk terbit ulang.
+    where: {
+      periode_id: konteks.periodeId,
+      OR: [{ status: 'DISETUJUI' }, { status: 'MENUNGGU_APPROVAL', batch_id: null }],
+    },
     orderBy: [{ diajukan_at: 'asc' }, { created_at: 'asc' }],
     select: {
       id: true,

@@ -1,4 +1,4 @@
-import { ClipboardCheck, Inbox } from 'lucide-react';
+import { ClipboardCheck, Files, Inbox } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -8,6 +8,7 @@ import { SuratPreview } from '@/components/surat/SuratPreview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { daftarBatch } from '@/lib/surat/batch';
 import { muatSurat } from '@/lib/surat/draft';
 import { JENIS_SURAT } from '@/lib/surat/field-schemas';
 import { bacaKetuaHimpunan, bacaKonfigSurat } from '@/lib/surat/konfig';
@@ -62,11 +63,13 @@ export default async function ApprovalSuratPage({ searchParams }: PageProps) {
   if (!can(konteks.roles, 'surat.approve')) notFound();
 
   const { id } = await searchParams;
-  const [antrian, konfig, ketua] = await Promise.all([
+  const [antrian, konfig, ketua, batch] = await Promise.all([
     daftarAntrianSurat(konteks),
     bacaKonfigSurat(),
     bacaKetuaHimpunan(konteks.periodeId),
+    daftarBatch(konteks),
   ]);
+  const batchMenunggu = batch.filter((b) => b.menunggu > 0);
   const semua = [...antrian.menunggu, ...antrian.gagalTerbit];
   const terpilihId = id && semua.some((s) => s.id === id) ? id : antrian.menunggu[0]?.id;
   const terpilih = terpilihId ? await muatSurat(konteks, terpilihId, konfig) : null;
@@ -87,6 +90,18 @@ export default async function ApprovalSuratPage({ searchParams }: PageProps) {
             </p>
           </div>
         </header>
+
+        {batchMenunggu.length > 0 ? (
+          <Link
+            href="/surat/massal"
+            data-testid="surat-antrian-batch"
+            className="flex items-center gap-2 rounded-sm border border-default bg-panel px-3 py-2 text-[13px] hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          >
+            <Files aria-hidden="true" className="size-4 text-[var(--primary)]" />
+            {batchMenunggu.length} batch Surat Keterangan Aktif massal (
+            {batchMenunggu.reduce((n, b) => n + b.menunggu, 0)} surat) menunggu — disetujui per batch di halaman Surat Massal.
+          </Link>
+        ) : null}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <section aria-label="Daftar surat menunggu" className="min-w-0 space-y-4">

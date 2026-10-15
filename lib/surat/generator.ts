@@ -22,7 +22,7 @@ import type { Konteks } from '@/lib/auth/guard';
 import { db } from '@/lib/db/client';
 import { petakanSurat } from '@/lib/documents/data-mapper';
 import { GalatTemplate, renderDocx } from '@/lib/documents/docx-engine';
-import { gabungTtdStempel } from '@/lib/documents/image-module';
+import { gabungTtdStempel, type GambarDocx } from '@/lib/documents/image-module';
 import { GalatPdf, PdfTidakTersedia, docxToPdf } from '@/lib/documents/pdf-converter';
 import { muatBerkas, muatStempel, sumberTemplateSurat } from '@/lib/documents/template-loader';
 import { keys, storage } from '@/lib/storage';
@@ -52,6 +52,33 @@ function gagal(pesan: string): HasilGenerate {
   return { ok: false, pesan: `${pesan} ${SARAN_ULANG}` };
 }
 
+/**
+ * TTD Ketua yang sudah digabung stempel, di-cache per VERSI tanda tangan.
+ *
+ * Generate massal (T-064) menerbitkan puluhan surat dengan tanda tangan yang
+ * sama; mengunduh dan menggabungnya ulang dengan sharp untuk setiap surat
+ * melipatgandakan waktu batch. Kunci cache memuat `updated_at`: unggahan
+ * tanda tangan baru (key storage-nya sama, `ttd/{userId}.png`) langsung
+ * memakai gambar baru, tidak pernah gambar basi. Kegagalan tidak di-cache.
+ */
+const cacheTtd = new Map<string, Promise<GambarDocx | null>>();
+const MAKS_CACHE_TTD = 8;
+
+function ttdKetuaTergabung(ttd: { storage_key: string; updated_at: Date }): Promise<GambarDocx | null> {
+  const kunci = `${ttd.storage_key}@${ttd.updated_at.toISOString()}`;
+  const ada = cacheTtd.get(kunci);
+  if (ada) return ada;
+  if (cacheTtd.size >= MAKS_CACHE_TTD) cacheTtd.delete(cacheTtd.keys().next().value!);
+  const janji = Promise.all([storage.get(ttd.storage_key), muatStempel()])
+    .then(([gambar, stempel]) => gabungTtdStempel(gambar, stempel))
+    .catch((e: unknown) => {
+      cacheTtd.delete(kunci);
+      throw e;
+    });
+  cacheTtd.set(kunci, janji);
+  return janji;
+}
+
 export async function generateDokumenSurat(konteks: Konteks, suratId: string): Promise<HasilGenerate> {
   const surat = await muatSurat(konteks, suratId);
   if (!surat) return gagal('Surat tidak ditemukan di periode ini.');
@@ -62,7 +89,7 @@ export async function generateDokumenSurat(konteks: Konteks, suratId: string): P
 
   // TTD Ketua wajib pada setiap surat yang mengatasnamakan himpunan (PRD F-4.3,
   // ADR-004). Surat resmi tanpa tanda tangan lebih buruk daripada belum terbit.
-  const ttd = await db.signature.findUnique({ where: { user_id: ketua.userId }, select: { storage_key: true } });
+  const ttd = await db.signature.findUnique({ where: { user_id: ketua.userId }, select: { storage_key: true, updated_at: true } });
   if (!ttd) return gagal(`${ketua.nama} (Ketua Himpunan) belum mengunggah tanda tangan.`);
 
   const sumber = await sumberTemplateSurat(surat.template_id);
@@ -70,12 +97,7 @@ export async function generateDokumenSurat(konteks: Konteks, suratId: string): P
 
   let isi: Buffer;
   try {
-    const [gambarTtd, stempel, template] = await Promise.all([
-      storage.get(ttd.storage_key),
-      muatStempel(),
-      muatBerkas(sumber.key),
-    ]);
-    const ttdKetua = await gabungTtdStempel(gambarTtd, stempel);
+    const [ttdKetua, template] = await Promise.all([ttdKetuaTergabung(ttd), muatBerkas(sumber.key)]);
     const data = petakanSurat({
       nilai: surat.nilai as unknown as Parameters<typeof petakanSurat>[0]['nilai'],
       nomorLengkap: surat.nomor_lengkap,

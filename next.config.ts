@@ -22,6 +22,18 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  /**
+   * Hanya berlaku di `next dev`. Bawaannya membuang rute yang menganggur
+   * ±15 detik, lalu mengompilasinya ulang (9–25 detik) saat diminta lagi — di
+   * tengah gate e2e yang panjang, autosave dan approval jadi timeout palsu
+   * (diukur 2026-10-15, gate surat-approval/surat-massal). Satu jam cukup untuk
+   * satu sesi kerja; produksi tidak terpengaruh.
+   */
+  onDemandEntries: {
+    maxInactiveAge: 60 * 60 * 1000,
+    pagesBufferLength: 100,
+  },
+
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

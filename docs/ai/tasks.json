@@ -786,9 +786,9 @@
         "T-063",
         "T-057"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-10-15"
     },
     {
       "id": "T-065",

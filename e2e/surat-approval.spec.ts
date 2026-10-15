@@ -27,6 +27,7 @@ import postgres from 'postgres';
 import sharp from 'sharp';
 
 import { AKUN, PASSWORD_UJI, type AkunUji } from './fixtures/akun';
+import { kunciTtdKetua, type KunciTtd } from './fixtures/kunci-ttd';
 
 test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
@@ -68,7 +69,12 @@ const dibuat: string[] = [];
 /** Ketua yang menandatangani surat periode aktif — aturan `bacaPenandatanganKetua`. */
 let idKetua = '';
 
+let kunci: KunciTtd | null = null;
+
 test.beforeAll(async () => {
+  test.setTimeout(600_000);
+  // Gate surat-massal juga mengubah tanda tangan Ketua — jangan berjalan bersamaan.
+  if (test.info().project.name === PROJECT_TTD) kunci = await kunciTtdKetua(bacaKoneksi());
   sql = postgres(bacaKoneksi(), { ssl: 'require', max: 1, onnotice: () => {} });
   const [k] = await sql<{ id: string; email: string }[]>`
     SELECT u.id::text, u.email FROM user_role ur
@@ -94,6 +100,7 @@ function lewatiSelainDesktop(): void {
 }
 
 test.afterAll(async () => {
+  await kunci?.lepas();
   if (sql) {
     if (dibuat.length) await sql`DELETE FROM surat WHERE id = ANY(${dibuat}::uuid[])`.catch(() => {});
     await hapusBerkasDokumen(dibuat);
@@ -106,7 +113,7 @@ async function masuk(page: Page, akun: AkunUji): Promise<void> {
   await page.getByLabel(/email/i).fill(akun.email);
   await page.getByLabel(/password|kata sandi/i).fill(PASSWORD_UJI);
   await page.getByRole('button', { name: /masuk|login/i }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 });
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 60_000 });
 }
 
 async function sesi(browser: Browser, akun: AkunUji): Promise<Page> {

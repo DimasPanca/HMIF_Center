@@ -65,6 +65,32 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-064 · generate massal Surat Keterangan Aktif (2026-10-15)
+
+`/surat/massal` (`components/surat/SuratMassal.tsx`), `POST/GET
+/api/surat/batch`, `lib/surat/batch.ts`. Migrasi **034**: `surat.batch_id`.
+Sekum memilih pengurus + satu keperluan → N surat dibuat & diajukan dalam
+SATU transaksi (validasi jalur `simpanDraft`, K-04). Approver menyetujui satu
+batch dalam SATU request: `alokasi_nomor_batch` satu transaksi (nomor urut
+nama, tanpa disela), lalu generate per dokumen dengan progres NDJSON
+di-stream; yang gagal tetap bernomor → "Terbitkan ulang yang gagal". ZIP
+`{nomor}-{nama}.docx` lewat `GET /api/surat/batch?batch=`.
+
+- **Sumber = tabel `pengurus` (T-107), saat ini 0 baris** — halaman menampilkan
+  empty state. Gate menyuntik 30 pengurus uji. Tidak ada fallback ke app_user.
+- Surat batch MENUNGGU tidak muncul di antrian approval satuan dan ditolak
+  `setujuiSurat` (409) — nomornya akan disela. Antrian menautkan ke /surat/massal.
+- Cache TTD+stempel per versi tanda tangan (`generator.ts`), ZIP unduh paralel 6,
+  `withAuditContext(..., { timeout })` baru untuk transaksi massal (bawaan 5 dtk
+  terlewati: 30 draft ±5,2 dtk ke DB jarak jauh).
+- Diperiksa di Word: 30/30 DOCX dari ZIP terbuka, masing-masing 1 halaman.
+- Kegagalan SEBAGIAN diuji unit (`batch.test.ts`, penerbit tiruan); e2e
+  menguji gagal-semua (TTD dihapus) → terbit ulang.
+
+Gate: `surat-massal` 4 (desktop; mobile skip — data global), `surat-approval`
+9+3, `arsip-surat` 9+1, `surat-form` 18, `surat-preview` 8 (sendirian;
+latensi < 300 ms sensitif beban CPU), `verify` 816, `db:test` 32/32.
+
 ### T-063 · Arsip surat (2026-10-15)
 
 `/surat` (route group `(arsip)` + `loading.tsx` skeleton + `layout.tsx`
@@ -389,9 +415,10 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-063
-   selesai, T-062 kodenya selesai tetapi BLOCKED menunggu Gotenberg (lihat
-   §2); berikutnya T-064.
+1. **[SELESAI 2026-10-15] Rantai surat T-054…T-064.** Semua DONE kecuali
+   T-062 (kode siap, BLOCKED menunggu Gotenberg — ADR-010). Yang tadinya
+   menunggu rantai ini kini dapat dikerjakan: T-095 (TOR), T-096 (Proposal),
+   T-105 (LPJ), T-107 bagian surat massal, T-108 (Peminjaman ruangan).
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -423,7 +450,7 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Sebelas hal yang tidak obvious dari kode:
+Dua belas hal yang tidak obvious dari kode:
 
 0. **Node 22 wajib (`.nvmrc`, `engines.node >=22`).** Di Node 20, 6 test
    storage gagal palsu ("native WebSocket not found", `markAsUncloneable is not
@@ -475,6 +502,12 @@ Sebelas hal yang tidak obvious dari kode:
    kalau tidak test `status() === 404` gagal walau isinya halaman 404.
    Jalur gate e2e juga bisa gagal massal karena DNS Supabase putus sesaat
    (`ENOTFOUND ...pooler.supabase.com`) — cek `npm run db:ping` dulu.
+11. **Tanda tangan Ketua uji = keadaan global e2e.** `surat-approval` menghapusnya,
+   `surat-massal` membutuhkannya. Keduanya memegang advisory lock sesi
+   (`e2e/fixtures/kunci-ttd.ts`) di project desktop supaya tidak berjalan
+   bersamaan. Spec baru yang menyentuh tanda tangan Ketua WAJIB memakainya.
+   `next.config.ts` `onDemandEntries` (1 jam) mencegah dev server
+   mengompilasi ulang rute di tengah gate panjang.
 
 ---
 
@@ -488,10 +521,8 @@ Sebelas hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-064 (massal: `generateDokumenSurat` per
-   surat). Jalankan ulang `stress-nomor-surat.ts` setiap kali
-   `alokasi_nomor_surat` disunting. Sebelum generator TOR/Proposal/LPJ,
-   periksa gambar badan templatenya (BACKLOG).
+4. **Rantai surat selesai.** Lanjutan alami: T-107 (Data Pengurus — mengisi
+   sumber surat massal), T-083, T-108, T-084…T-105 (acara/RAB/nota/LPJ).
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah
