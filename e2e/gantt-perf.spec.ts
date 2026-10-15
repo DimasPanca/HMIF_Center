@@ -236,7 +236,17 @@ async function tanamPencatat(page: Page): Promise<void> {
       pengamat.disconnect();
     });
 
-    pengamat.observe(document, { childList: true, subtree: true });
+    // `data-testid="gantt-root"` dipasang lewat ref di klien (GanttChart.tsx),
+    // bukan ikut HTML SSR — jadi saat hydration yang berubah adalah ATRIBUT,
+    // bukan anak. Tanpa `attributes`, pencatat hanya terpicu bila kebetulan ada
+    // mutasi anak sesudahnya; harness bawaan 3 baris tidak punya, sehingga
+    // baseline-nya tercatat terlambat atau tidak sama sekali.
+    pengamat.observe(document, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-testid'],
+    });
   });
 }
 
@@ -248,6 +258,14 @@ interface HasilRender {
 }
 
 async function bacaRender(page: Page): Promise<HasilRender> {
+  // Bar sudah ada di HTML SSR, jadi `waitForSelector` pemanggil selesai SEBELUM
+  // hydration — sedangkan pencatat baru terpicu saat hydration memasang
+  // `gantt-root`. Membaca langsung berarti berlomba dengan React. Ditunggu di
+  // sini; bila tetap null, pesan di bawah yang menjelaskan.
+  await page
+    .waitForFunction(() => window.__ganttPerf?.chartTampil != null, null, { timeout: 10_000 })
+    .catch(() => undefined);
+
   const hasil = await page.evaluate(() => {
     const nav = performance.getEntriesByType('navigation')[0] as
       | PerformanceNavigationTiming
