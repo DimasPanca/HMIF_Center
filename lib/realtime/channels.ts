@@ -47,3 +47,8 @@ export const TABEL_SINYAL_PROGRES = 'proker_progress_signal' as const;
 export function kunciMasterGantt(periodeId: string): readonly [string, string] {
   return ['master-gantt', periodeId] as const;
 }
+
+/** Kanal pemantau kendala Kritis di dashboard pimpinan (T-082 #4). */
+export function kanalKendalaKritis(periodeId: string): string {
+  return `kendala-kritis:${periodeId}`;
+}

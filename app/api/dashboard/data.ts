@@ -60,7 +60,7 @@ async function antrianApproval(konteks: Konteks, panel: PanelDashboardKey) {
   return kartu('approval-antrian', panel, 'Antrian approval', data);
 }
 
-async function kendalaKritis(panel: PanelDashboardKey) {
+async function kendalaKritis(panel: PanelDashboardKey, periodeId: string) {
   const data = await db.$queryRaw<
     Array<{
       id: string;
@@ -77,7 +77,7 @@ async function kendalaKritis(panel: PanelDashboardKey) {
     LEFT JOIN proker p ON p.id = k.proker_id
     LEFT JOIN departemen pd ON pd.id = p.departemen_id
     LEFT JOIN divisi dv ON dv.id = k.divisi_id
-    WHERE k.prioritas = 'KRITIS' AND k.status <> 'SELESAI'
+    WHERE k.periode_id = ${periodeId}::uuid AND k.prioritas = 'KRITIS' AND k.status <> 'SELESAI'
     ORDER BY k.created_at DESC
     LIMIT 6
   `;
@@ -87,6 +87,7 @@ async function kendalaKritis(panel: PanelDashboardKey) {
     'Kendala kritis',
     data.map((item) => ({
       id: item.id,
+        href: `/departemen/kendala/${item.id}`,
       label: item.judul,
       keterangan: item.asal ?? 'Lintas organisasi',
       prioritas: 'KRITIS',
@@ -114,7 +115,7 @@ async function ringkasanRab(periodeId: string): Promise<RingkasanRab[]> {
 async function panelKetua(konteks: Konteks): Promise<KartuDashboard[]> {
   const [approval, kritis, rab, aktivitas] = await Promise.all([
     antrianApproval(konteks, 'ketua'),
-    kendalaKritis('ketua'),
+    kendalaKritis('ketua', konteks.periodeId),
     ringkasanRab(konteks.periodeId),
     db.$queryRaw<
       Array<{ id: string; aksi: string; entitas: string; created_at: Date; nama: string | null }>
@@ -331,7 +332,7 @@ async function panelKadept(konteks: Konteks): Promise<KartuDashboard[]> {
       FROM kendala k
       LEFT JOIN proker p ON p.id = k.proker_id
       WHERE k.departemen_id IN (${ids}) AND k.status <> 'SELESAI'
-        AND (p.periode_id = ${konteks.periodeId}::uuid OR k.proker_id IS NULL)
+        AND k.periode_id = ${konteks.periodeId}::uuid
       ORDER BY k.prioritas DESC, k.created_at DESC
       LIMIT 6
     `,
@@ -377,6 +378,7 @@ async function panelKadept(konteks: Konteks): Promise<KartuDashboard[]> {
       'Kendala terbuka',
       kendala.map((item) => ({
         id: item.id,
+        href: `/departemen/kendala/${item.id}`,
         label: item.judul,
         prioritas: item.prioritas,
         status: item.status,
@@ -405,7 +407,7 @@ async function panelAnggota(konteks: Konteks): Promise<KartuDashboard[]> {
       take: 8,
     }),
     db.kendala.findMany({
-      where: { assignee_id: konteks.sesi.userId, status: { not: 'SELESAI' } },
+      where: { periode_id: konteks.periodeId, assignee_id: konteks.sesi.userId, status: { not: 'SELESAI' } },
       select: { id: true, judul: true, status: true, prioritas: true, created_at: true },
       orderBy: { created_at: 'desc' },
       take: 6,
@@ -432,6 +434,7 @@ async function panelAnggota(konteks: Konteks): Promise<KartuDashboard[]> {
       'Kendala yang ditugaskan kepada saya',
       kendala.map((item) => ({
         id: item.id,
+        href: `/departemen/kendala/${item.id}`,
         label: item.judul,
         status: item.status,
         prioritas: item.prioritas,
@@ -459,7 +462,7 @@ async function panelBph(konteks: Konteks): Promise<KartuDashboard[]> {
       LEFT JOIN proker p ON p.id = k.proker_id
       LEFT JOIN departemen pd ON pd.id = p.departemen_id
       LEFT JOIN divisi dv ON dv.id = k.divisi_id
-      WHERE k.status <> 'SELESAI'
+      WHERE k.periode_id = ${konteks.periodeId}::uuid AND k.status <> 'SELESAI'
       ORDER BY k.prioritas DESC, k.created_at DESC
       LIMIT 8
     `,
@@ -499,6 +502,7 @@ async function panelBph(konteks: Konteks): Promise<KartuDashboard[]> {
       'Kendala terbuka lintas departemen',
       kendala.map((item) => ({
         id: item.id,
+        href: `/departemen/kendala/${item.id}`,
         label: item.judul,
         keterangan: item.asal ?? 'Lintas organisasi',
         prioritas: item.prioritas,

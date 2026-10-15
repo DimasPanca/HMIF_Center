@@ -65,6 +65,30 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-082 · Kendala departemen (2026-10-15)
+
+`/departemen/kendala` (semua dalam lingkup + cari arsip lintas periode),
+`/departemen/[kode]/kendala` (daftar + "Lapor kendala"), `/departemen/kendala/[id]`
+(detail + utas). `lib/kendala/{skema,service,lampiran,berkas,filter-halaman}.ts`,
+`/api/kendala/{,[id],[id]/reply,[id]/lampiran,lampiran/[lampiranId]}`,
+`components/kendala/*`. Migrasi 035 (periode_id, updated_at, kolom FTS `cari`
+judul+deskripsi+catatan, tabel `kendala_lampiran`, publication realtime) &
+036 (trigger updated_at + periode otomatis dari proker).
+
+- Hak: Ketua/Wakil/Admin ubah semua; Sekum/Bendum/BPH BACA saja (tak bisa
+  membalas — hak balas = `kendala.create`); Kadept/Anggota departemennya.
+  Periode lain = arsip baca saja (service `kunci()` menolak).
+- Mention: token `@[Nama](uuid)` di teks; `MentionInput` hanya mengubah nama
+  yang DIPILIH dari saran menjadi token. Tidak ada notifikasi (di luar MVP).
+- Realtime Kritis: `components/dashboard/PantauKendalaKritis.tsx` dipasang di
+  dashboard untuk KETUA/WAKIL/BPH/ADMIN → `router.refresh()` (debounce 250 ms).
+- Tanggal dari SQL harus ISO (`to_char(... 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
+  `::text` timestamptz ditolak `format-tanggal`.
+- Lampiran: bucket privat `kendala/{id}/{lid}.{ext}`, maks 5 MB & 10/kendala,
+  dicek magic bytes (PNG/JPG/WEBP/PDF/DOCX/XLSX).
+- Gate `kendala` 5/5 desktop + 5/5 mobile. `dashboard-role` dapat gagal di
+  jalan pertama karena kompilasi dingin `/` (> 15 s) — hangatkan server dulu.
+
 ### T-107 · Data Pengurus (2026-10-15)
 
 `/sekretariat/pengurus` (`components/pengurus/{PengurusTable,FormPengurusDialog,

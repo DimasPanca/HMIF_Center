@@ -105,6 +105,10 @@ export const keys = {
   rabXlsx: (kepanitiaanId: string): string =>
     `dokumen/rab/${aman(kepanitiaanId, 'kepanitiaanId')}.xlsx`,
 
+  // --- Lampiran kendala (T-082) — PRIVAT, bukan di PREFIX_PUBLIK ------------
+  kendalaLampiran: (kendalaId: string, lampiranId: string, ekstensi: string): string =>
+    `kendala/${aman(kendalaId, 'kendalaId')}/${aman(lampiranId, 'lampiranId')}.${aman(ekstensi, 'ekstensi')}`,
+
   // --- Template dan aset ---------------------------------------------------
   template: (templateId: string, versi: number): string =>
     `template/${aman(templateId, 'templateId')}_v${Math.trunc(versi)}.docx`,
