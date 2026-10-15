@@ -221,7 +221,8 @@ function presetDari(nama: string, alamat: string, preset: readonly PresetTujuan[
   return preset.find((p) => p.nama === nama && p.alamat === alamat)?.label ?? LABEL_PRESET_LAINNYA;
 }
 
-function jenisDari(kode: string, varian: string | null): JenisSurat | null {
+/** Jenis surat dari kode + varian template (NULL = generik). */
+export function jenisDari(kode: string, varian: string | null): JenisSurat | null {
   return JENIS_SURAT.find((j) => j.kode === kode && j.varian === varian)?.jenis ?? null;
 }
 

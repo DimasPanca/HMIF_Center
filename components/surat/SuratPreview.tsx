@@ -193,8 +193,9 @@ function Kop() {
  * ketikan. Tanpa memo, seluruh pohon kertas ikut direkonsiliasi tiap huruf,
  * dan beban itu yang membuat pembaruan sesudah debounce melewati 300 ms.
  */
-const IsiKertas = React.memo(function IsiKertas({ model }: { model: ModelPratinjau }) {
+const IsiKertas = React.memo(function IsiKertas({ model, nomorFinal }: { model: ModelPratinjau; nomorFinal: boolean }) {
   const kotaTanggalKepala = !model.ttd.kotaTanggalDiAtas;
+  const sementara = !nomorFinal;
   return (
     <>
       <Kop />
@@ -203,7 +204,7 @@ const IsiKertas = React.memo(function IsiKertas({ model }: { model: ModelPratinj
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{ fontWeight: 700, textDecoration: 'underline' }}>{model.judul}</div>
           <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-            Nomor : <NomorSuratBadge nomor={model.nomor} sementara />
+            Nomor : <NomorSuratBadge nomor={model.nomor} sementara={sementara} />
           </div>
         </div>
       ) : (
@@ -214,7 +215,7 @@ const IsiKertas = React.memo(function IsiKertas({ model }: { model: ModelPratinj
               <td style={{ width: 12, verticalAlign: 'top' }}>:</td>
               <td style={{ verticalAlign: 'top' }}>
                 <span data-testid="surat-pratinjau-nomor">
-                  <NomorSuratBadge nomor={model.nomor} sementara />
+                  <NomorSuratBadge nomor={model.nomor} sementara={sementara} />
                 </span>
               </td>
               <td style={{ textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }} data-testid="surat-pratinjau-tanggal">
@@ -302,11 +303,19 @@ export interface SuratPreviewProps {
   nilai: unknown;
   konfig: KonfigSurat;
   ketua: KetuaHimpunan | null;
+  /**
+   * Nomor resmi surat yang sudah disetujui (arsip, T-063). Tanpa ini nomor
+   * ditampilkan sebagai perkiraan `???`. Badge final butuh `ToastProvider`.
+   */
+  nomorFinal?: string | null;
 }
 
-export function SuratPreview({ nilai, konfig, ketua }: SuratPreviewProps) {
+export function SuratPreview({ nilai, konfig, ketua, nomorFinal }: SuratPreviewProps) {
   const tertunda = useTertunda(nilai, DEBOUNCE_PRATINJAU_MS);
-  const model = React.useMemo(() => susunPratinjau(tertunda, konfig, ketua), [tertunda, konfig, ketua]);
+  const model = React.useMemo(() => {
+    const m = susunPratinjau(tertunda, konfig, ketua);
+    return nomorFinal ? { ...m, nomor: nomorFinal } : m;
+  }, [tertunda, konfig, ketua, nomorFinal]);
 
   const wadah = React.useRef<HTMLDivElement>(null);
   const kertas = React.useRef<HTMLDivElement>(null);
@@ -350,7 +359,7 @@ export function SuratPreview({ nilai, konfig, ketua }: SuratPreviewProps) {
             visibility: skala === null ? 'hidden' : undefined,
           }}
         >
-          <IsiKertas model={model} />
+          <IsiKertas model={model} nomorFinal={Boolean(nomorFinal)} />
 
           {Array.from({ length: jumlahHalaman - 1 }, (_, i) => (
             <div key={i} className="batas-halaman" style={{ top: TINGGI_A4 * (i + 1) }} aria-hidden="true" />

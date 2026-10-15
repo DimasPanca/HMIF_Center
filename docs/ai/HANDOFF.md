@@ -65,6 +65,26 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-063 · Arsip surat (2026-10-15)
+
+`/surat` (route group `(arsip)` + `loading.tsx` skeleton + `layout.tsx`
+penjaga akses) dan `/surat/[id]` (rincian, unduh ulang DOCX/PDF, pratinjau
+dengan nomor final, tombol **Batalkan** untuk Ketua/Wakil/Sekum).
+`GET /api/surat` (kursor 50 baris; `?format=xlsx` export). Service
+`lib/surat/arsip.ts`; skema filter client-safe `lib/surat/filter-arsip.ts`
+(satu skema untuk URL, API, export — K-04). Migrasi **033**: kolom tergenerasi
+`surat.cari` (perihal/nomor A, tujuan B, isi HTML + NILAI data_dinamis C).
+
+- Draft & DITOLAK hanya terlihat pembuatnya; Kadept hanya departemennya;
+  periode lain boleh dibuka (baca saja). DIBATALKAN selalu tampil + badge.
+- Filter "kegiatan" = `kode_kegiatan` di nomor (mis. KT2HMIF), bukan
+  `kepanitiaan_id` — form surat belum mengisi kepanitiaan.
+- Bug yang ditangkap gate: kursor memuat `created_at::text` Postgres, dan
+  `Date.parse` menolak offset `+00` → halaman 2 mengulang halaman 1.
+
+Gate: `arsip-surat` 9 + 1 skip, `surat-approval`/`surat-form`/`surat-preview`
+35 + 3 skip, `verify` 811, `db:test` 32/32.
+
 ### T-061 lanjutan · tanda tangan Ketua sungguhan (2026-10-15)
 
 Pemilik (Dimas Panca Pamungkas, Ketua Himpunan) mengirim tanda tangannya.
@@ -369,9 +389,9 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 3. Blocker aktif
 
-1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-061
+1. **[DIBUKA 2026-10-14] Rantai surat sedang dikerjakan.** T-054…T-063
    selesai, T-062 kodenya selesai tetapi BLOCKED menunggu Gotenberg (lihat
-   §2); berikutnya T-063 → T-064.
+   §2); berikutnya T-064.
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
 2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
@@ -403,7 +423,7 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Sepuluh hal yang tidak obvious dari kode:
+Sebelas hal yang tidak obvious dari kode:
 
 0. **Node 22 wajib (`.nvmrc`, `engines.node >=22`).** Di Node 20, 6 test
    storage gagal palsu ("native WebSocket not found", `markAsUncloneable is not
@@ -449,6 +469,12 @@ Sepuluh hal yang tidak obvious dari kode:
    korup melempar "The file appears to be corrupted"; `$d.SaveAs2($pdf, 17)`
    menghasilkan PDF untuk dilihat; `$d.ComputeStatistics(2)` = jumlah halaman.
    Selalu `$w.Quit()` di `finally`.
+10. **`loading.tsx` membuat `notFound()` di halaman menjadi HTTP 200.** Next
+   mulai streaming sebelum halaman berjalan. Penjaga akses halaman yang punya
+   skeleton wajib di `layout.tsx` segmennya (lihat `surat/(arsip)/layout.tsx`),
+   kalau tidak test `status() === 404` gagal walau isinya halaman 404.
+   Jalur gate e2e juga bisa gagal massal karena DNS Supabase putus sesaat
+   (`ENOTFOUND ...pooler.supabase.com`) — cek `npm run db:ping` dulu.
 
 ---
 
@@ -462,8 +488,7 @@ Sepuluh hal yang tidak obvious dari kode:
 3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
    T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
    `depends_on`-nya DONE.
-4. **Rantai surat — sedang berjalan.** T-063 (arsip + tombol batal; unduh
-   pakai `/api/surat/[id]/download`, `?format=pdf` bila ada baris PDF) → T-064 (massal: `generateDokumenSurat` per
+4. **Rantai surat — sedang berjalan.** T-064 (massal: `generateDokumenSurat` per
    surat). Jalankan ulang `stress-nomor-surat.ts` setiap kali
    `alokasi_nomor_surat` disunting. Sebelum generator TOR/Proposal/LPJ,
    periksa gambar badan templatenya (BACKLOG).
