@@ -196,7 +196,13 @@ const MENU: MenuUtama[] = [
     submenu: [
       { label: 'Notulensi', href: '/sekretariat/notulensi', icon: ScrollText },
       { label: 'Data Pengurus', href: '/sekretariat/pengurus', icon: Users },
-      { label: 'Peminjaman Ruangan', href: '/sekretariat/ruangan', icon: Building2 },
+      {
+        label: 'Peminjaman Ruangan',
+        href: '/sekretariat/ruangan',
+        icon: Building2,
+        // Anggota tidak punya hak apa pun di modul ini (PRD §5.1); Kadept hanya C*.
+        tampil: (roles) => punya(roles, 'ruangan.read') || punya(roles, 'ruangan.create'),
+      },
       { label: 'Arsip Dokumen', href: '/sekretariat/arsip', icon: Archive },
     ],
   },

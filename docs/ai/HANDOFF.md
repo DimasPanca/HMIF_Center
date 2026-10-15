@@ -65,6 +65,30 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-108 · Peminjaman ruangan (2026-10-15)
+
+Tanpa migrasi — tabel `ruangan`/`booking_ruangan`, RLS, dan permission `ruangan`
+sudah ada sejak 011/015b. `lib/ruangan/{skema,bentrok,service}.ts`,
+`app/api/ruangan/{route,[id]/route,booking/route,booking/[id]/route,booking/[id]/surat/route}.ts`,
+`components/ruangan/{DaftarRuangan,FormPeminjaman,KalenderBooking,PeringatanBentrok}.tsx`.
+
+- **Bentrok = ruangan + tanggal sama** (USER_FLOW §9.3), jam tidak menyaring;
+  irisan jam hanya ditandai "(jam beririsan)". Server menjawab 409 `BENTROK`
+  berisi `details.bentrok`; klien mengirim ulang dengan
+  `lanjutkan_meski_bentrok: true`. Tidak ada constraint/penolakan (T-030).
+- **Hak:** kelola ruangan = `ruangan.update` (ADMIN/SEKUM, cermin RLS
+  `ruangan_insert`) — KADEPT `C*` hanya mencatat booking. Hapus booking =
+  `ruangan.delete`. "Hapus" ruangan = nonaktifkan (FK booking tanpa CASCADE).
+  Halaman terbuka untuk `ruangan.read` ATAU `ruangan.create`; menu disembunyikan
+  dari Anggota (`tampil` di Sidebar).
+- **Surat 05:** `POST /api/ruangan/booking/[id]/surat` membuat draft
+  `PEMINJAMAN_RUANGAN` terisi dari booking (ruangan, kegiatan, hari-tanggal,
+  waktu, tempat, tujuan = pengelola) dan **langsung** menautkan
+  `booking_ruangan.surat_id` (bukan menunggu terbit — supaya klik kedua membuka
+  draft yang sama, bukan draft baru). Nomor tampil di booking begitu
+  `nomor_lengkap` terisi; surat DIBATALKAN dianggap tidak tertaut.
+- Booking dan bentrok ber-scope periode aktif (INV-08).
+
 ### T-083 · Sistem peringatan deadline (2026-10-15)
 
 `lib/deadline.ts` (murni: nomor hari kalender bilangan bulat, 4 tingkat,
