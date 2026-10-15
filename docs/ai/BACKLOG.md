@@ -77,7 +77,9 @@ plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
 
 ## Persuratan — temuan T-059 (dicatat 2026-10-15)
 
-- **Kalimat baku Surat Aspirasi menyebut DPM.** Paragraf 8 template
+- ~~**Kalimat baku Surat Aspirasi menyebut DPM.**~~ **SELESAI 2026-10-15** —
+  pemilik memilih "ikuti tujuan surat": kalimat memakai `{tujuan_nama}`,
+  template Aspirasi v4. Paragraf 8 template
   (`surat-03-aspirasi.docx`) berbunyi "...kami menyampaikan aspirasi kepada
   Dewan Perwakilan Mahasiswa (DPM) FT-UNTIRTA...", padahal tujuan surat dapat
   dipilih BEM atau Kepala Bagian Sekretariat. TEMPLATE_MAPPING §5.2 sengaja

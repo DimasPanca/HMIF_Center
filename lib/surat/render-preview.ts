@@ -322,7 +322,9 @@ export function susunPratinjau(nilai: unknown, konfig: KonfigSurat, ketua: Ketua
         {
           jenis: 'paragraf',
           isi: kalimat(
-            'Sehubungan dengan beberapa hal yang menjadi perhatian dalam pelaksanaan kegiatan organisasi mahasiswa di lingkungan Fakultas Teknik Universitas Sultan Ageng Tirtayasa, bersama surat ini kami menyampaikan aspirasi kepada Dewan Perwakilan Mahasiswa (DPM) FT-UNTIRTA untuk dapat menjadi bahan perhatian serta ditindaklanjuti sesuai dengan fungsi dan kewenangannya.',
+            'Sehubungan dengan beberapa hal yang menjadi perhatian dalam pelaksanaan kegiatan organisasi mahasiswa di lingkungan Fakultas Teknik Universitas Sultan Ageng Tirtayasa, bersama surat ini kami menyampaikan aspirasi kepada ',
+            isi(n.tujuan_nama, 'Nama/jabatan tujuan'),
+            ' untuk dapat menjadi bahan perhatian serta ditindaklanjuti sesuai dengan fungsi dan kewenangannya.',
           ),
         },
         blokIsiSurat(n),

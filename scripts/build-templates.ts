@@ -180,6 +180,10 @@ const RESEP: Resep[] = [
       { ganti: ['Aspirasi Keorganisasian Mahasiswa Fakultas Teknik', '{perihal}'] },
       { ganti: ['Ketua DPM FT UNTIRTA', '{tujuan_nama}'] },
       { ganti: ['di Tempat', '{tujuan_alamat}'] },
+      // Kalimat pembuka dulu selalu menyebut DPM walau surat ditujukan ke BEM
+      // atau Kepala Bagian Sekretariat. Kini mengikuti tujuan yang dipilih
+      // (keputusan pemilik produk 2026-10-15; BACKLOG temuan T-059).
+      { ganti: ['Dewan Perwakilan Mahasiswa (DPM) FT-UNTIRTA', '{tujuan_nama}'] },
 
       // Paragraf pembuka dan penutup adalah kalimat baku setiap surat aspirasi;
       // hanya kalimat tengah — yang menyebut isi aspirasi kali ini — yang
