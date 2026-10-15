@@ -43,7 +43,7 @@
  *   [data-testid="gantt-scale-<skala>"]     minggu | bulan | kuartal
  *   [data-testid="gantt-task-tambah"]       tombol tambah task
  *   [data-testid="gantt-export-png"]        tombol export PNG
- *   [data-testid="gantt-export-pdf"]        tombol export PDF
+ *   (tanpa tombol export PDF — ADR-030)
  *   [data-testid^="gantt-drag-"]            pegangan geser, satu per bar,
  *                                           ber-atribut data-drag-aktif
  *
@@ -395,13 +395,13 @@ test.describe('Selesai bila 1 — export PNG tajam', () => {
     expect(buf.length, 'PNG terlalu kecil untuk memuat gambar apa pun').toBeGreaterThan(5_000);
   });
 
-  test('tombol export PDF tersedia', async ({ page }) => {
+  test('tidak ada tombol export PDF (ADR-030)', async ({ page }) => {
     await buka(page, { izin: 'tulis' });
 
-    // Isi PDF-nya tidak diperiksa di sini. Yang menentukan lulus-tidaknya
-    // "tajam dan terbaca saat disisipkan ke Word" adalah mata manusia, dan
-    // kontrak T-078 memang menyebutnya uji nyata. Yang dijaga otomatis hanya
-    // bahwa jalurnya ada dan tidak diam-diam hilang saat refactor.
-    await expect(page.getByTestId('gantt-export-pdf')).toBeVisible();
+    // Pemilik produk memilih PNG saja (ADR-030): Gantt dipakai sebagai gambar
+    // di dalam dokumen yang PDF-nya datang dari Word/Gotenberg. Dijaga di sini
+    // supaya tombol PDF tidak muncul kembali tanpa keputusan baru.
+    await expect(page.getByTestId('gantt-export-png')).toBeVisible();
+    await expect(page.getByTestId('gantt-export-pdf')).toHaveCount(0);
   });
 });

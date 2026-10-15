@@ -56,6 +56,8 @@ type GanttTaskRow = {
   departemen?: string | null;
   status?: string | null;
   parent_id?: string | null;
+  depends_on?: readonly string[];
+  is_milestone?: boolean;
 };
 
 type TransformGanttInput = {
@@ -250,6 +252,8 @@ function addCustomTaskRows(
         color: group.color,
         assigneeName: normalizeText(row.assignee_name ?? row.app_user?.nama_lengkap),
         parentId: normalizeText(row.parent_id),
+        ...(row.depends_on?.length ? { dependsOn: [...row.depends_on] } : {}),
+        ...(row.is_milestone ? { isMilestone: true } : {}),
         meta: {
           prokerId: normalizeText(row.proker_id),
           departemen: normalizeText(row.departemen),

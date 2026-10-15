@@ -7,7 +7,7 @@ import { GanttPanel } from '@/components/gantt/GanttPanel';
 import { GanttTooltip, type GanttDisplayItem } from '@/components/gantt/GanttTooltip';
 import { GridLines } from '@/components/gantt/GridLines';
 import { GroupBar } from '@/components/gantt/GroupBar';
-import { TaskBar } from '@/components/gantt/TaskBar';
+import { TaskBar, type DragTaskBar } from '@/components/gantt/TaskBar';
 import { TimelineHeader } from '@/components/gantt/TimelineHeader';
 import { TodayLine } from '@/components/gantt/TodayLine';
 import {
@@ -30,6 +30,12 @@ type GanttChartProps = {
   onGroupToggle?: (groupId: string, collapsed: boolean) => void;
   onTaskSelect?: (task: GanttTaskVM) => void;
   highlightedTaskIds?: ReadonlySet<string>;
+  /** Editor T-078: drag bar. Tanpa prop ini chart murni baca (Master Gantt). */
+  drag?: Omit<DragTaskBar, 'pxPerDay'>;
+  /** Bila diberikan, menggantikan panel detail saat task dipilih (editor). */
+  onTaskActivate?: (task: GanttTaskVM) => void;
+  /** Judul kolom label. */
+  labelColumnTitle?: string;
 };
 
 type GroupLayout = {
@@ -244,6 +250,9 @@ function GanttChart({
   onGroupToggle,
   onTaskSelect,
   highlightedTaskIds,
+  drag,
+  onTaskActivate,
+  labelColumnTitle = 'Program kerja',
 }: GanttChartProps) {
   const rootRef = React.useRef<HTMLElement>(null);
   const verticalScrollRef = React.useRef<HTMLDivElement>(null);
@@ -278,6 +287,19 @@ function GanttChart({
       ),
     [virtualRows.rows],
   );
+  // Konektor Finish-to-Start (T-078 #3): pendahulu → task, untuk task yang
+  // tampil. Pendahulu di luar jendela virtual tetap punya rect di layout.
+  const dependencyConnectors = React.useMemo(() => {
+    const rectById = new Map<string, GanttBarRect>();
+    for (const row of layout.rows) if (row.kind === 'task') rectById.set(row.task.id, row.rect);
+    return virtualRows.rows.flatMap((row) => {
+      if (row.kind !== 'task' || !row.task.dependsOn?.length) return [];
+      return row.task.dependsOn.flatMap((fromId) => {
+        const from = rectById.get(fromId);
+        return from ? [{ id: `dep-${fromId}-${row.task.id}`, from, to: row.rect }] : [];
+      });
+    });
+  }, [layout.rows, virtualRows.rows]);
   const visibleRowLines = React.useMemo(
     () => virtualRows.rows.map((row) => row.y + row.height),
     [virtualRows.rows],
@@ -447,7 +469,7 @@ function GanttChart({
             data-slot="gantt-label-header"
             className="sticky top-0 left-0 z-40 flex h-[50px] items-center border-r border-b border-default bg-[var(--gantt-header-bg)] px-3 text-[12px] font-semibold tracking-wide text-secondary uppercase"
           >
-            Program kerja
+            {labelColumnTitle}
           </div>
           <div
             data-slot="gantt-header-viewport"
@@ -544,6 +566,28 @@ function GanttChart({
                 rowLines={visibleRowLines}
               />
               <Connectors items={visibleConnectors} />
+              {dependencyConnectors.length ? (
+                <g data-slot="gantt-dependencies" aria-hidden="true" pointerEvents="none">
+                  {dependencyConnectors.map(({ id, from, to }) => {
+                    const startX = from.x + from.width;
+                    const startY = from.y + from.height / 2;
+                    const endX = to.x;
+                    const endY = to.y + to.height / 2;
+                    const elbowX = Math.max(startX + 6, Math.min(endX - 6, startX + 12));
+                    return (
+                      <g key={id} data-slot="gantt-dependency" data-testid={id}>
+                        <path
+                          d={`M ${startX} ${startY} H ${elbowX} V ${endY} H ${endX - 4}`}
+                          fill="none"
+                          stroke="var(--text-secondary)"
+                          strokeWidth={1.2}
+                        />
+                        <path d={`M ${endX - 4} ${endY - 3.5} L ${endX} ${endY} L ${endX - 4} ${endY + 3.5} Z`} fill="var(--text-secondary)" />
+                      </g>
+                    );
+                  })}
+                </g>
+              ) : null}
 
               {virtualRows.rows.map((row) => {
                 if (row.kind === 'group') {
@@ -581,9 +625,15 @@ function GanttChart({
                     onHoverMove={moveTooltipAnchor}
                     onHoverEnd={hideTooltip}
                     onActivate={() => {
+                      if (onTaskActivate) {
+                        hideTooltip();
+                        onTaskActivate(task);
+                        return;
+                      }
                       activateItem(item);
                       onTaskSelect?.(task);
                     }}
+                    drag={drag ? { ...drag, pxPerDay: model.timeline.pxPerDay } : undefined}
                   />
                 );
               })}

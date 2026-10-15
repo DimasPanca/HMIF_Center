@@ -65,6 +65,34 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-078 · Editor Gantt empat level (2026-10-15)
+
+`components/gantt/{GanttEditor,TaskForm,ScaleSwitcher,GanttExport,BuatChartDepartemen}.tsx`
+memakai `GanttChart` yang SAMA dengan Master Gantt (prop baru `drag`,
+`onTaskActivate`, `labelColumnTitle`; konektor FS dari `task.dependsOn`).
+`lib/gantt/{skema,service,export-svg}.ts`, `/api/gantt/{[chartId],[chartId]/export,
+task/[id],grup/[id],departemen}`. Halaman: `/proker/gantt` (indeks per level —
+sebelumnya tautan sidebar mati), `/gantt/[chartId]`, `/departemen/[kode]/gantt`
+(buat chart departemen sekali), tombol "Gantt proker" di `/proker/[id]`.
+Harness `/qa/gantt-editor?level=&izin=` (mode lokal, tanpa sesi).
+
+- Migrasi 037: `gantt_chart.periode_id` (trigger isi dari proker/kepanitiaan/
+  divisi, lalu periode AKTIF), unik satu chart DEPARTEMEN per departemen+periode,
+  `gantt_task.chart_id` dijaga trigger (filter realtime `chart_id=eq.`),
+  gantt_task & gantt_group masuk publication.
+- Hak tulis: matriks `gantt` + panitia acara (anggota/koordinator divisi,
+  ketua pelaksana) walau beda departemen — sama dengan RLS `my_kepanitiaan()`.
+  Chart periode lain baca saja. Hak aksi dicek sebelum keberadaan (BPH 403).
+- **ADR-030: export PNG saja** (keputusan pemilik). PNG 2x digambar ulang dari
+  view model, bukan salinan layar. Dicek: disisipkan ke Word A4 landscape
+  selebar halaman ≈ 259 dpi, label terbaca. Uji cetak fisik tetap baik
+  dilakukan pemilik.
+- `gantt-editor-data.spec.ts` hanya desktop (chart departemen = state global).
+- **Jebakan e2e:** batas login 5×/15 menit per email+IP. Menjalankan ulang
+  `master-gantt` (8 login) beberapa kali berturut-turut membuat login gagal
+  dan test tampak rusak — tunggu 15 menit. `gantt-perf` "baseline tidak
+  terukur" sudah gagal SEBELUM T-078 (diuji dengan kode chart lama).
+
 ### T-082 · Kendala departemen (2026-10-15)
 
 `/departemen/kendala` (semua dalam lingkup + cari arsip lintas periode),

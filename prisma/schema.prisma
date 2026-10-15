@@ -272,6 +272,8 @@ model gantt_chart {
   divisi_id      String?       @db.Uuid
   departemen_id  String?       @db.Uuid
   kepanitiaan_id String?       @db.Uuid
+  /// Diisi trigger 037 dari proker induk bila kosong (INV-08).
+  periode_id     String        @db.Uuid
   judul          String
   created_at     DateTime      @default(now()) @db.Timestamptz(6)
   updated_at     DateTime      @default(now()) @db.Timestamptz(6)
@@ -318,6 +320,8 @@ model gantt_group {
 model gantt_task {
   id                                                      String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   group_id                                                String             @db.Uuid
+  /// Salinan chart grupnya, dijaga trigger 037 — untuk filter realtime.
+  chart_id                                                String             @db.Uuid
   nama                                                    String
   tanggal_mulai                                           DateTime           @db.Date
   tanggal_selesai                                         DateTime           @db.Date

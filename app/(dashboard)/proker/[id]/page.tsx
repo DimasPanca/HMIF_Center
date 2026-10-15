@@ -1,4 +1,4 @@
-import { ArrowLeft, PencilLine } from 'lucide-react';
+import { ArrowLeft, GanttChartSquare, PencilLine } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -41,6 +41,7 @@ export default async function EditProkerPage({ params }: EditProkerPageProps) {
     select: { id: true, nama: true },
   });
   const departemen: OpsiEditProker[] = barisDepartemen;
+  const chart = await db.gantt_chart.findFirst({ where: { proker_id: proker.id, scope: 'PROKER' }, select: { id: true } });
 
   return (
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
@@ -67,10 +68,18 @@ export default async function EditProkerPage({ params }: EditProkerPageProps) {
             </div>
           </div>
 
-          <Link href="/proker" className={buttonVariants({ variant: 'secondary' })}>
-            <ArrowLeft aria-hidden="true" />
-            Kembali ke daftar
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {chart ? (
+              <Link href={`/gantt/${chart.id}`} className={buttonVariants({ variant: 'secondary' })} data-testid="proker-buka-gantt">
+                <GanttChartSquare aria-hidden="true" />
+                Gantt proker
+              </Link>
+            ) : null}
+            <Link href="/proker" className={buttonVariants({ variant: 'secondary' })}>
+              <ArrowLeft aria-hidden="true" />
+              Kembali ke daftar
+            </Link>
+          </div>
         </header>
 
         <EditProkerForm

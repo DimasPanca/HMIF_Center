@@ -25,6 +25,9 @@ export interface GanttTaskVM {
   color: string;
   assigneeName?: string;
   parentId?: string;
+  /** Task pendahulu Finish-to-Start (T-078 #3) — konektor digambar bila ada. */
+  dependsOn?: string[];
+  isMilestone?: boolean;
   meta: { prokerId?: string; departemen?: string; status?: string };
 }
 
