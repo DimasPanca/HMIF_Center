@@ -51,10 +51,15 @@ describe('lepasKunciSelesai', () => {
 
 describe('cekDeadline', () => {
   it('meringkas urgensi dari kanban_card memakai ambang app_config', async () => {
-    const { tx, panggilan } = klienTiruan([[{ mendekati: 3, kritis: 1, terlambat: 2 }]]);
+    const { tx, panggilan } = klienTiruan([[{ mendekati: 3, kritis: 1, terlambat: 2 }], []]);
     const r = await cekDeadline(tx);
     expect(adaSql(panggilan, 'kanban_card')).toBe(true);
     expect(adaSql(panggilan, 'deadline_warning_hari')).toBe(true);
+    // Batas hari Jakarta, bukan CURRENT_DATE server UTC (T-083 #4).
+    expect(adaSql(panggilan, 'hari_ini_jakarta()')).toBe(true);
+    expect(adaSql(panggilan, 'CURRENT_DATE')).toBe(false);
+    // Agregat dashboard disegarkan (T-083 #5).
+    expect(panggilan.some((p) => p.sql.includes('INSERT INTO deadline_ringkasan') && p.sql.includes('ON CONFLICT'))).toBe(true);
     expect(r).toEqual({ mendekati: 3, kritis: 1, terlambat: 2 });
   });
 });
@@ -64,6 +69,7 @@ describe('jalankanCronHarian', () => {
     const { tx, panggilan } = klienTiruan([
       [{ hasil: { jadi_selesai: 1, kunci_dilepas: 1, jadi_berjalan: 0 } }], // lepasKunciSelesai
       [{ mendekati: 0, kritis: 0, terlambat: 0 }], // cekDeadline
+      [], // segarkan deadline_ringkasan
       [{ tanggal: '2026-09-11', tanggal_1: false }], // meta
       [], // INSERT audit_log
     ]);

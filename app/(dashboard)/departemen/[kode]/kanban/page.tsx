@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
 
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
+import { KonteksDeadline } from '@/components/shared/KonteksDeadline';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can, lingkupUntuk } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
+import { konteksDeadline } from '@/lib/deadline-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +48,9 @@ export default async function KanbanDepartemenPage({
     .sort((a, b) => a.nama.localeCompare(b.nama, 'id-ID'));
   return (
     <section aria-label={`Kanban ${departemen.nama}`}>
-      <KanbanBoard departemenId={departemen.id} bolehUbah={bolehUbah} daftarProker={proker} pengurus={pengurus} />
+      <KonteksDeadline nilai={await konteksDeadline()}>
+        <KanbanBoard departemenId={departemen.id} bolehUbah={bolehUbah} daftarProker={proker} pengurus={pengurus} />
+      </KonteksDeadline>
     </section>
   );
 }

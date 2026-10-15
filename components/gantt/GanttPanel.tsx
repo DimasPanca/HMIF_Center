@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import type { GanttDisplayItem } from '@/components/gantt/GanttTooltip';
+import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
 import { formatRentangTanggal } from '@/lib/utils/format-tanggal';
 import { cn } from '@/lib/utils';
 
@@ -101,6 +102,10 @@ function GanttPanel({ item, open, onClose, className }: GanttPanelProps) {
           <DetailRow label="Status" value={formatStatus(item.status)} />
           <DetailRow label="Persiapan" value={formatRentangTanggal(item.start, item.end)} />
           <DetailRow label="Hari-H" value={formatHariH(item)} />
+          <DetailRow
+            label="Tenggat"
+            value={<DeadlineBadge deadline={item.end.toISOString()} selesai={item.progress >= 100} className="text-[13px]" />}
+          />
           <DetailRow
             label="Progres"
             value={<span className="tabular-nums">{formatProgress(item.progress)}</span>}

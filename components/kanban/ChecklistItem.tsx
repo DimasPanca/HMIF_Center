@@ -2,11 +2,12 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CalendarDays, Check, GripVertical, UserRound } from 'lucide-react';
+import { Check, GripVertical, UserRound } from 'lucide-react';
 
 import type { ItemChecklistKanban } from '@/components/kanban/types';
+import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
+import { useKonteksDeadline } from '@/components/shared/KonteksDeadline';
 import { Checkbox } from '@/components/ui/checkbox';
-import { formatTanggalPendek } from '@/lib/utils/format-tanggal';
 
 export function ChecklistItem({
   item,
@@ -19,6 +20,7 @@ export function ChecklistItem({
   sedangMengubah: boolean;
   onToggle: (item: ItemChecklistKanban) => void;
 }) {
+  const tenggat = useKonteksDeadline();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id, disabled: !bolehUbah });
 
@@ -73,9 +75,8 @@ export function ChecklistItem({
               </span>
             ) : null}
             {item.deadline ? (
-              <span data-testid={`checklist-deadline-${item.id}`} className="inline-flex items-center gap-1">
-                <CalendarDays aria-hidden="true" className="size-3.5" />
-                {formatTanggalPendek(item.deadline)}
+              <span data-testid={`checklist-deadline-${item.id}`}>
+                <DeadlineBadge deadline={item.deadline} ambang={tenggat.ambang} hariIni={tenggat.hariIni} selesai={item.selesai} />
               </span>
             ) : null}
           </div>

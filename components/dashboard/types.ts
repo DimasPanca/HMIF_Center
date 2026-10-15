@@ -12,6 +12,8 @@ export interface ItemDashboard {
   status?: string;
   prioritas?: string;
   tanggal?: string;
+  /** Tenggat `YYYY-MM-DD` — ditampilkan sebagai DeadlineBadge (T-083). */
+  deadline?: string;
   href?: string;
   nilai?: number | string;
   format?: FormatNilaiDashboard;

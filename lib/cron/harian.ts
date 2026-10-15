@@ -46,8 +46,8 @@ export async function jalankanCronHarian(tx: TxKlien): Promise<RingkasanCron> {
   const deadline = await cekDeadline(tx);
 
   const meta = await tx.$queryRaw<{ tanggal: string; tanggal_1: boolean }[]>`
-    SELECT to_char(CURRENT_DATE, 'YYYY-MM-DD') AS tanggal,
-           (EXTRACT(DAY FROM CURRENT_DATE) = 1) AS tanggal_1
+    SELECT to_char(hari_ini_jakarta(), 'YYYY-MM-DD') AS tanggal,
+           (EXTRACT(DAY FROM hari_ini_jakarta()) = 1) AS tanggal_1
   `;
   const { tanggal, tanggal_1 } = meta[0]!;
   const ringkasan: RingkasanCron = { tanggal, tanggal_1, lepas, deadline };

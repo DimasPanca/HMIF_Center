@@ -1135,3 +1135,14 @@ enum surat_status {
   DITOLAK
   DIBATALKAN
 }
+
+/// Agregat deadline per departemen, disegarkan cron harian (T-083, migrasi 038).
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model deadline_ringkasan {
+  departemen_id String   @id @db.Uuid
+  tanggal       DateTime @db.Date
+  peringatan    Int      @default(0)
+  kritis        Int      @default(0)
+  terlambat     Int      @default(0)
+  dihitung_pada DateTime @default(now()) @db.Timestamptz(6)
+}

@@ -2,10 +2,11 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, CalendarDays, CheckSquare2 } from 'lucide-react';
+import { GripVertical, CheckSquare2 } from 'lucide-react';
 
 import type { KartuKanban } from '@/components/kanban/types';
-import { formatTanggalPendek, tanggalHariIniJakarta } from '@/lib/utils/format-tanggal';
+import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
+import { useKonteksDeadline } from '@/components/shared/KonteksDeadline';
 import { Avatar } from '@/components/ui/avatar';
 
 const WARNA_PRIORITAS: Record<KartuKanban['prioritas'], string> = {
@@ -26,7 +27,7 @@ export function KanbanCard({
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
     useSortable({ id: kartu.id, disabled: !bolehUbah });
-  const lewat = kartu.deadline !== null && kartu.deadline < tanggalHariIniJakarta();
+  const tenggat = useKonteksDeadline();
 
   return (
     <article
@@ -70,10 +71,12 @@ export function KanbanCard({
           <span className="max-w-24 truncate">{kartu.assignee_nama ?? 'Belum ada PIC'}</span>
         </span>
         {kartu.deadline ? (
-          <span className={`inline-flex items-center gap-1 ${lewat ? 'font-semibold text-danger' : ''}`}>
-            <CalendarDays className="size-3.5" aria-hidden="true" />
-            {lewat ? 'Terlambat · ' : ''}{formatTanggalPendek(kartu.deadline)}
-          </span>
+          <DeadlineBadge
+            deadline={kartu.deadline}
+            ambang={tenggat.ambang}
+            hariIni={tenggat.hariIni}
+            selesai={kartu.kolom === 'DONE'}
+          />
         ) : null}
         <span data-testid={`kanban-card-progress-${kartu.id}`} className="inline-flex items-center gap-1">
           <CheckSquare2 className="size-3.5" aria-hidden="true" />

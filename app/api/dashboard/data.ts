@@ -340,7 +340,7 @@ async function panelKadept(konteks: Konteks): Promise<KartuDashboard[]> {
       SELECT k.id, k.judul, k.deadline, k.kolom::text
       FROM kanban_card k
       LEFT JOIN proker p ON p.id = k.proker_id
-      WHERE k.departemen_id IN (${ids}) AND k.deadline >= CURRENT_DATE
+      WHERE k.departemen_id IN (${ids}) AND k.deadline IS NOT NULL
         AND k.kolom <> 'DONE'
         AND (p.periode_id = ${konteks.periodeId}::uuid OR k.proker_id IS NULL)
       ORDER BY k.deadline
@@ -392,7 +392,7 @@ async function panelKadept(konteks: Konteks): Promise<KartuDashboard[]> {
         id: item.id,
         label: item.judul,
         status: item.kolom,
-        tanggal: tanggal(item.deadline),
+        deadline: tanggal(item.deadline),
       })),
     ),
   ];
@@ -418,7 +418,7 @@ async function panelAnggota(konteks: Konteks): Promise<KartuDashboard[]> {
     label: item.judul,
     status: item.kolom,
     prioritas: item.prioritas,
-    tanggal: tanggal(item.deadline),
+    deadline: tanggal(item.deadline),
   }));
   return [
     kartu('tugas-saya', 'anggota', 'Tugas saya', tugasData),
@@ -426,7 +426,7 @@ async function panelAnggota(konteks: Konteks): Promise<KartuDashboard[]> {
       'deadline-terdekat',
       'anggota',
       'Deadline terdekat',
-      tugasData.filter((item) => item.tanggal).slice(0, 6),
+      tugasData.filter((item) => item.deadline).slice(0, 6),
     ),
     kartu(
       'kendala-saya',
@@ -446,13 +446,15 @@ async function panelAnggota(konteks: Konteks): Promise<KartuDashboard[]> {
 
 async function panelBph(konteks: Konteks): Promise<KartuDashboard[]> {
   const [departemen, kendala, kepatuhan] = await Promise.all([
-    db.$queryRaw<Array<{ id: string; nama: string; jumlah: number; berjalan: number }>>`
+    db.$queryRaw<Array<{ id: string; nama: string; jumlah: number; berjalan: number; terlambat: number | null; kritis: number | null }>>`
       SELECT d.id, d.nama, count(p.id)::int AS jumlah,
-             count(p.id) FILTER (WHERE p.status = 'BERJALAN')::int AS berjalan
+             count(p.id) FILTER (WHERE p.status = 'BERJALAN')::int AS berjalan,
+             r.terlambat, r.kritis
       FROM departemen d
       LEFT JOIN proker p ON p.departemen_id = d.id AND p.periode_id = ${konteks.periodeId}::uuid
+      LEFT JOIN deadline_ringkasan r ON r.departemen_id = d.id
       WHERE d.is_active
-      GROUP BY d.id, d.nama, d.urutan
+      GROUP BY d.id, d.nama, d.urutan, r.terlambat, r.kritis
       ORDER BY d.urutan
     `,
     db.$queryRaw<Array<{ id: string; judul: string; prioritas: string; asal: string | null }>>`
@@ -470,11 +472,11 @@ async function panelBph(konteks: Konteks): Promise<KartuDashboard[]> {
       SELECT
         count(*) FILTER (
           WHERE status IN ('DISETUJUI','BERJALAN')
-            AND (tanggal_hari_h_selesai IS NULL OR tanggal_hari_h_selesai >= CURRENT_DATE)
+            AND (tanggal_hari_h_selesai IS NULL OR tanggal_hari_h_selesai >= hari_ini_jakarta())
         )::int AS on_track,
         count(*) FILTER (
           WHERE status IN ('DISETUJUI','BERJALAN')
-            AND tanggal_hari_h_selesai < CURRENT_DATE
+            AND tanggal_hari_h_selesai < hari_ini_jakarta()
         )::int AS telat
       FROM proker
       WHERE periode_id = ${konteks.periodeId}::uuid
@@ -491,7 +493,14 @@ async function panelBph(konteks: Konteks): Promise<KartuDashboard[]> {
       departemen.map((item) => ({
         id: item.id,
         label: item.nama,
-        keterangan: `${item.berjalan} sedang berjalan`,
+        // Agregat tenggat disegarkan cron harian (deadline_ringkasan, T-083).
+        keterangan: [
+          `${item.berjalan} sedang berjalan`,
+          item.terlambat ? `${item.terlambat} tugas terlambat` : null,
+          item.kritis ? `${item.kritis} tugas kritis` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
         nilai: item.jumlah,
         format: 'angka',
       })),

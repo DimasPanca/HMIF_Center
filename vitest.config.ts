@@ -24,4 +24,7 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname) },
   },
+  // Runtime JSX otomatis seperti Next (tsconfig "jsx": "preserve" → react-jsx):
+  // komponen yang tidak mengimpor React tetap dapat dirender di unit test.
+  esbuild: { jsx: 'automatic' },
 });

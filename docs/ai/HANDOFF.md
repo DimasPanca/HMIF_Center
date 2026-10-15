@@ -65,6 +65,30 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-083 · Sistem peringatan deadline (2026-10-15)
+
+`lib/deadline.ts` (murni: nomor hari kalender bilangan bulat, 4 tingkat,
+teks "Besok"/"3 hari lagi"/"Terlambat 2 hari"), `lib/deadline-config.ts`
+(ambang dari `app_config`), `components/shared/{DeadlineBadge,KonteksDeadline}.tsx`.
+Dipakai di KanbanCard, ChecklistItem (lewat `KonteksDeadline` di halaman
+Kanban), baris "Tenggat" GanttPanel, dan dashboard (`ItemDashboard.deadline`).
+
+- Migrasi 038: `hari_ini_jakarta()` — **pakai ini, bukan CURRENT_DATE** (server
+  UTC; 00.00–07.00 WIB masih "kemarin"). Dashboard & cron sudah dialihkan.
+  Tabel `deadline_ringkasan` (agregat per departemen, disegarkan cron harian,
+  dibaca kartu BPH "Ringkasan seluruh departemen"). `app_config` WAJIB tepat
+  5 kunci (test 013) — jangan menaruh agregat di sana.
+- `vitest.config.ts` kini `esbuild.jsx = 'automatic'` (komponen tanpa
+  `import React` dapat dirender di unit test).
+- Kartu "Deadline terdekat" Kadept kini juga memuat yang terlambat.
+- **Jebakan lingkungan e2e:** dev server lokal lambat (kompilasi dingin halaman
+  15–20 s, Kanban hangat ±6 s). Test dengan anggaran 30 s (kanban, checklist,
+  approval link di dashboard-role) gagal acak karena timeout — dibuktikan A/B:
+  tanpa perubahan T-083 gagalnya sama. Matikan proses node sisa
+  (`Get-CimInstance Win32_Process` berisi `HMIF_Centerpp`) sebelum menjalankan
+  ulang; server basi di port 3000 membuat dev baru pindah ke 3001 dan test
+  memukul server yang sekarat.
+
 ### T-099 · Unduhan master & uji cetak — kode selesai, BLOCKED uji manusia (2026-10-15)
 
 `GET /api/images/[id]/download` (`lib/images/download.ts`): selalu

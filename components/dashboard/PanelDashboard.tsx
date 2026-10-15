@@ -1,9 +1,11 @@
 import { ArrowUpRight, CircleAlert, Inbox } from 'lucide-react';
 import Link from 'next/link';
 
+import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { AmbangDeadline } from '@/lib/deadline';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 import { formatTanggalPendek } from '@/lib/utils/format-tanggal';
 
@@ -13,10 +15,17 @@ export interface PanelPeranProps {
   kunci: readonly string[];
 }
 
+/** Ambang & "hari ini" deadline dari server (lib/deadline-config.ts). */
+export interface TenggatDashboard {
+  ambang: AmbangDeadline;
+  hariIni: string;
+}
+
 interface PanelDashboardProps {
   kartu: readonly KartuDashboard[];
   panel: PanelDashboardKey;
   judul: string;
+  tenggat?: TenggatDashboard;
 }
 
 const KETERANGAN_PANEL: Record<PanelDashboardKey, string> = {
@@ -50,7 +59,7 @@ function labelKode(nilai: string): string {
     .replace(/^./, (huruf) => huruf.toLocaleUpperCase('id-ID'));
 }
 
-function IsiItem({ item }: { item: ItemDashboard }) {
+function IsiItem({ item, tenggat }: { item: ItemDashboard; tenggat?: TenggatDashboard }) {
   const nilai = formatNilai(item);
 
   return (
@@ -68,6 +77,7 @@ function IsiItem({ item }: { item: ItemDashboard }) {
               {labelKode(item.prioritas)}
             </Badge>
           ) : null}
+          {item.deadline ? <DeadlineBadge deadline={item.deadline} ambang={tenggat?.ambang} hariIni={tenggat?.hariIni} /> : null}
           {item.tanggal ? (
             <span className="text-[11px] leading-4 text-tertiary">
               {formatTanggalPendek(item.tanggal)}
@@ -83,7 +93,7 @@ function IsiItem({ item }: { item: ItemDashboard }) {
   );
 }
 
-function DaftarItem({ data }: { data: readonly ItemDashboard[] }) {
+function DaftarItem({ data, tenggat }: { data: readonly ItemDashboard[]; tenggat?: TenggatDashboard }) {
   if (data.length === 0) {
     return (
       <div className="flex min-h-24 flex-col items-center justify-center gap-2 text-center">
@@ -102,10 +112,10 @@ function DaftarItem({ data }: { data: readonly ItemDashboard[] }) {
               href={item.href}
               className="block rounded-sm outline-none transition-colors duration-fast hover:bg-subtle focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] motion-reduce:transition-none"
             >
-              <IsiItem item={item} />
+              <IsiItem item={item} tenggat={tenggat} />
             </Link>
           ) : (
-            <IsiItem item={item} />
+            <IsiItem item={item} tenggat={tenggat} />
           )}
         </li>
       ))}
@@ -113,7 +123,7 @@ function DaftarItem({ data }: { data: readonly ItemDashboard[] }) {
   );
 }
 
-export function PanelDashboard({ kartu, panel, judul }: PanelDashboardProps) {
+export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardProps) {
   return (
     <section data-testid={`panel-${panel}`} aria-labelledby={`panel-${panel}-title`}>
       <div className="mb-3">
@@ -138,7 +148,7 @@ export function PanelDashboard({ kartu, panel, judul }: PanelDashboardProps) {
             </CardHeader>
             <CardContent className="pt-3">
               {item.tersedia ? (
-                <DaftarItem data={item.data} />
+                <DaftarItem data={item.data} tenggat={tenggat} />
               ) : (
                 <p className="text-xs leading-4 text-secondary">{item.menunggu}</p>
               )}

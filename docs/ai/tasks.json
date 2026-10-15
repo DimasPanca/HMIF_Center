@@ -1003,9 +1003,9 @@
         "T-080",
         "T-079"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-10-15"
     },
     {
       "id": "T-084",
