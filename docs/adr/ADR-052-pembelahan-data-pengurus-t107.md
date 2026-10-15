@@ -53,3 +53,12 @@ T-107 diusulkan dibelah menjadi kontrak data dan adapter UI:
   yang sama tanpa menyamakan dua domain yang berbeda.
 - Baris pengurus tanpa akun tetap menjadi kasus utama yang diuji, bukan kasus
   yang hilang karena route menganggap setiap pengurus harus punya `user_id`.
+
+## Status nyata (2026-10-15)
+
+**Tidak diperlukan lagi — dikerjakan utuh oleh agen tunggal.** Pembelahan
+lane data/UI yang diusulkan di atas lahir dari mode dua-lane; sejak
+konsolidasi single-agent (HANDOFF 2026-09-27) T-107 dikerjakan sebagai satu
+task. Prinsip teknisnya tetap dipakai: service (`lib/pengurus/service.ts`)
+menyimpan import dalam SATU transaksi beraudit, route hanya menerjemahkan
+HTTP ↔ K-02, dan generate massal surat memakai `lib/surat/batch.ts` (T-064).

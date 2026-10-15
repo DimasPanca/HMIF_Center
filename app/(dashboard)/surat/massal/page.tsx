@@ -17,7 +17,7 @@ function hariIniWib(): string {
  * Generate massal Surat Keterangan Aktif Organisasi (T-064). Pembuat surat
  * (Sekum) memilih pengurus; Ketua/Wakil/Sekum menyetujui per batch.
  */
-export default async function SuratMassalPage() {
+export default async function SuratMassalPage({ searchParams }: { searchParams: Promise<{ pilih?: string | string[] }> }) {
   const konteks = await konteksSaatIni();
   if (!konteks?.sesi.isActive || !konteks.periodeId) redirect('/login');
   const bolehBuat = can(konteks.roles, 'surat.create');
@@ -26,6 +26,10 @@ export default async function SuratMassalPage() {
 
   const [pengurus, batch] = await Promise.all([bolehBuat ? daftarPengurus(konteks) : Promise.resolve([]), daftarBatch(konteks)]);
   const menunggu = batch.filter((b) => b.menunggu > 0);
+  // `?pilih=id,id,…` dari halaman Data Pengurus. Id yang bukan pengurus periode
+  // ini diabaikan di BuatBatch (dicocokkan dengan daftar).
+  const { pilih } = await searchParams;
+  const pilihAwal = (Array.isArray(pilih) ? pilih[0] : pilih)?.split(',').slice(0, 200) ?? [];
   const selesai = batch.filter((b) => b.menunggu === 0);
 
   return (
@@ -48,7 +52,7 @@ export default async function SuratMassalPage() {
           </div>
         </header>
 
-        {bolehBuat ? <BuatBatch pengurus={pengurus} tanggalAwal={hariIniWib()} /> : null}
+        {bolehBuat ? <BuatBatch pengurus={pengurus} tanggalAwal={hariIniWib()} pilihAwal={pilihAwal} /> : null}
 
         <section aria-label="Batch menunggu persetujuan" className="space-y-3">
           <h2 className="text-[13px] font-semibold text-secondary">

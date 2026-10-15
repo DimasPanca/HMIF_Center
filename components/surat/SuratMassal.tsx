@@ -19,9 +19,9 @@ import { CheckCircle2, Download, Loader2, Send, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { PilihUntukSurat } from '@/components/pengurus/PilihUntukSurat';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { InlineAlert } from '@/components/ui/inline-alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,9 +53,18 @@ const MAKS = 50;
 
 // ---------------------------------------------------------------------------
 
-export function BuatBatch({ pengurus, tanggalAwal }: { pengurus: PengurusUi[]; tanggalAwal: string }) {
+export function BuatBatch({
+  pengurus,
+  tanggalAwal,
+  pilihAwal = [],
+}: {
+  pengurus: PengurusUi[];
+  tanggalAwal: string;
+  /** Pilihan awal dari halaman Data Pengurus (`/surat/massal?pilih=`). */
+  pilihAwal?: string[];
+}) {
   const router = useRouter();
-  const [pilih, setPilih] = React.useState<Set<string>>(new Set());
+  const [pilih, setPilih] = React.useState<Set<string>>(() => new Set(pilihAwal.filter((id) => pengurus.some((p) => p.id === id))));
   const [keperluan, setKeperluan] = React.useState('');
   const [tanggal, setTanggal] = React.useState(tanggalAwal);
   const [konfirmasi, setKonfirmasi] = React.useState(false);
@@ -68,14 +77,6 @@ export function BuatBatch({ pengurus, tanggalAwal }: { pengurus: PengurusUi[]; t
   const terpilih = pengurus.filter((p) => pilih.has(p.id));
   const kebanyakan = terpilih.length > MAKS;
   const siap = terpilih.length > 0 && !kebanyakan && keperluan.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(tanggal);
-
-  const ubah = (id: string) =>
-    setPilih((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
 
   async function kirim() {
     setProses(true);
@@ -108,7 +109,8 @@ export function BuatBatch({ pengurus, tanggalAwal }: { pengurus: PengurusUi[]; t
         <CardHeader>
           <CardTitle>Pilih pengurus</CardTitle>
           <CardDescription>
-            Data Pengurus periode ini masih kosong. Isi lewat menu Data Pengurus terlebih dahulu, atau buat surat satuan.
+            Data Pengurus periode ini masih kosong. Isi lewat menu Kesekretariatan → Data Pengurus terlebih dahulu, atau buat surat
+            satuan.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -126,38 +128,7 @@ export function BuatBatch({ pengurus, tanggalAwal }: { pengurus: PengurusUi[]; t
           <InlineAlert data-testid="massal-dibuat" title={`${dibuat} surat diajukan`} detail="Batch masuk antrian persetujuan di bawah." />
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={pilih.size > 0 && pilih.size === pengurus.length}
-              onChange={(e) => setPilih(e.target.checked ? new Set(pengurus.map((p) => p.id)) : new Set())}
-              data-testid="massal-pilih-semua"
-            />
-            Pilih semua ({pengurus.length})
-          </label>
-          <span data-testid="massal-terpilih" className={kebanyakan ? 'font-semibold text-danger' : 'text-secondary'}>
-            Terpilih: <span className="tabular-nums">{terpilih.length}</span> orang
-            {kebanyakan ? ` — lebih dari ${MAKS}, pecah menjadi beberapa batch` : ''}
-          </span>
-        </div>
-
-        <ul className="max-h-80 divide-y divide-[var(--border-subtle)] overflow-y-auto rounded-sm border border-default" data-testid="massal-pengurus">
-          {pengurus.map((p) => (
-            <li key={p.id}>
-              <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-[13px] hover:bg-subtle">
-                <Checkbox checked={pilih.has(p.id)} onChange={() => ubah(p.id)} data-testid={`massal-pilih-${p.id}`} />
-                <span className="min-w-0 flex-1">
-                  <span className="font-medium">{p.nama_lengkap}</span>
-                  <span className="ml-2 font-mono text-[12px] text-secondary">{p.nim}</span>
-                  <span className="block text-[12px] text-secondary">
-                    {p.jabatan}
-                    {p.nama_departemen ? ` · ${p.nama_departemen}` : ''}
-                  </span>
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
+        <PilihUntukSurat pengurus={pengurus} terpilih={pilih} onUbah={setPilih} maks={MAKS} />
 
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
           <div className="space-y-1.5">

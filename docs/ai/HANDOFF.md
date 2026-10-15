@@ -65,6 +65,24 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-107 · Data Pengurus (2026-10-15)
+
+`/sekretariat/pengurus` (`components/pengurus/{PengurusTable,FormPengurusDialog,
+ImportPengurusDialog,PilihUntukSurat}.tsx`), `lib/pengurus/{skema,service}.ts`,
+`/api/pengurus/{,[id],import,export}`. Import CSV/XLSX memakai `parse-tabel`
++ `ImportPreview` T-048: pemetaan → pratinjau → simpan dalam SATU transaksi.
+NIM yang sudah ada dicentang lewati bawaan; menghapus centang MEMPERBARUI
+(tak pernah menabrak unik periode+NIM). Tidak membuat akun; baris ber-NIM
+akun pengguna ditautkan `user_id`. Pilih banyak → "Buat Surat Aktif" →
+`/surat/massal?pilih=`. Kadept/Anggota hanya departemennya.
+
+- **DB dev berisi 30 pengurus CONTOH** (nama "(Contoh)", NIM `980000xxxx`,
+  `scripts/seed-pengurus-contoh.ts`, hapus dengan `--hapus`). Data asli
+  diimpor pemilik.
+- ADR-052 → tidak diperlukan (single agent).
+
+Gate: `data-pengurus` 10/10 (desktop + mobile), unit `skema-pengurus` 6.
+
 ### T-062 lanjutan · Gotenberg siap dipasang pemilik (2026-10-15)
 
 Keputusan pemilik: PDF surat lewat **Gotenberg di Render Free**. Ditambahkan
@@ -430,11 +448,8 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
    T-105 (LPJ), T-107 bagian surat massal, T-108 (Peminjaman ruangan).
    Yang menunggu rantai ini: T-063, T-064, T-095 (TOR), T-096 (Proposal),
    T-105 (LPJ), T-108 (Peminjaman ruangan), dan T-113…T-116.
-2. **Daftar hadir notulensi kosong sampai T-107.** Tabel `pengurus` berisi 0
-   baris; T-107 (Data pengurus) yang mengisinya. T-048 kini selesai, jadi
-   T-107 siap dikerjakan — kecuali bagian "generate massal Surat Aktif
-   Organisasi" (ADR-052) yang butuh T-064 dari rantai surat yang ditunda.
-   Putuskan: T-107 dikerjakan tanpa bagian itu (tulis ADR), atau menunggu.
+2. **[SELESAI 2026-10-15] Daftar hadir notulensi** kini terisi dari Data
+   Pengurus (T-107). Saat ini berisi 30 pengurus contoh.
 3. **[DIPERBAIKI 2026-09-27 — migrasi 028 + `withAuditContext(req, pelaku, fn)`; `db:reset` dari kosong BELUM dijalankan]** `audit_log.user_id` selalu NULL untuk mutasi aplikasi (INV-07).
    Ditemukan 2026-09-27: `fn_audit` membaca pelaku dari `auth.uid()`, tetapi
    `withAuditContext` hanya menyetel `app.ip`/`user_agent`/`periode_id`. Semua
