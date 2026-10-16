@@ -287,6 +287,16 @@ test('divisi lain: tanpa input dan PATCH langsung ditolak 403 (INV-30)', async (
   expect(Number((await dbItem(item.kamera)).total)).toBe(400000);
 });
 
+test('unduh Excel 4 sheet: nama berkas RAB-{acara}-{tanggal}.xlsx, divisi lain tetap ikut (T-090)', async () => {
+  const r = await halaman.request.get(`/api/rab/${acaraId}/export`);
+  expect(r.status()).toBe(200);
+  expect(r.headers()['content-type']).toContain('spreadsheetml');
+  expect(r.headers()['content-disposition']).toMatch(/filename="RAB-E2E087-[A-Z0-9]+-SYNCHRONIZE-\d{8}\.xlsx"/);
+  const isi = await r.body();
+  expect(isi.subarray(0, 2).toString()).toBe('PK'); // arsip xlsx
+  await expect(halaman.getByTestId('rab-unduh-excel')).toHaveAttribute('href', `/api/rab/${acaraId}/export`);
+});
+
 test('RAB terkunci: tanpa input, PATCH 409 (INV-29)', async () => {
   const page = halaman;
   // Jalur sah mesin status (trigger 041): DRAFT → DIAJUKAN → DISETUJUI.

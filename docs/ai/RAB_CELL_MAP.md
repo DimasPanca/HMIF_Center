@@ -138,7 +138,13 @@ Buku kas dengan saldo berjalan. Kolom **C:H**.
 | 3 | `{ formula: 'D{r}*E{r}' }` | Template asli memakai dua bentuk bergantian: `=SUM(D*E)` dan `=E*D` | Exporter distandarkan ke `=D{r}*E{r}` |
 | 4 | `numFmt: '"Rp"#,##0'` | Template memakai **tiga** format berbeda: `"Rp"#,##0`, `[$Rp-421]#,##0`, `[$Rp]#,##0` | Exporter distandarkan ke `"Rp"#,##0` sesuai SYSTEM_DESIGN |
 
-Temuan 2, 3, dan 4 tidak memerlukan keputusan: template asli memang tidak konsisten karena diketik manual lintas kepengurusan, dan menstandarkan keluaran justru memperbaikinya tanpa mengubah struktur. Temuan **1 mengubah koordinat**, sehingga diangkat sebagai ADR.
+| 5 | TOTAL divisi di-merge **B:E** | TOTAL Divisi ACARA (baris 45, RAB & RAB AKTUAL) di-merge **C45:E45**, `B45` kosong | Exporter tetap `B:E`; `diff-excel.ts` melaporkannya sebagai inkonsistensi template (T-090) |
+| 6 | Header divisi berawalan `DIVISI` | `SEKRETARIS` (baris 70) dan `BENDAHARA` (76) tanpa awalan | Divisi dikenali dari **struktur** (B:F tergabung + baris `NO` sesudahnya); exporter menulis `DIVISI {NAMA}` |
+| 7 | Header kolom `NO · Jenis Barang · Jumlah · Harga satuan · Total ` | Divisi P3K (baris 47): `No · Nama Barang · Banyaknya · Harga Satuan · Jumlah` | Exporter memakai header baku |
+| 8 | *(tidak disebut)* | Baris kosong bergaris di dalam blok (RAB 10–11, RAB AKTUAL 9–10); divisi P3K/Sekretaris/Bendahara **tanpa** sub-section | Item kosong = baris bergaris tanpa nomor; sub-section bernama kosong = tanpa baris sub-section (T-090) |
+| 9 | Nomor urut per divisi | Nomor melompat (baris 8 bernomor 4 setelah 2) | Exporter menomori berurutan per divisi melintasi sub-section |
+
+Temuan 2–9 tidak memerlukan keputusan: template asli memang tidak konsisten karena diketik manual lintas kepengurusan, dan menstandarkan keluaran justru memperbaikinya tanpa mengubah struktur. Temuan **1 mengubah koordinat**, sehingga diangkat sebagai ADR.
 
 ---
 

@@ -10,13 +10,13 @@
  * server menolak alasan < 10 karakter atau alasan lama yang dipakai ulang.
  *
  * Test id: status-rab (data-status), status-rab-terkunci-oleh,
- * status-rab-alasan, rab-ajukan, rab-kunci, rab-kembalikan, rab-buka-kunci.
+ * status-rab-alasan, rab-unduh-excel, rab-ajukan, rab-kunci, rab-kembalikan, rab-buka-kunci.
  */
 
-import { Lock, LockOpen, RotateCcw, Send } from 'lucide-react';
+import { Download, Lock, LockOpen, RotateCcw, Send } from 'lucide-react';
 import * as React from 'react';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { STATUS_VALUES, StatusPill, type DomainStatus } from '@/components/ui/status-pill';
 import type { DataRab } from '@/lib/rab/service';
@@ -83,6 +83,10 @@ export function StatusRabBar({
         ) : null}
       </div>
       <div className="flex flex-wrap gap-2">
+        {/* Excel 4 sheet berstruktur template asli (T-090) — siapa pun yang dapat membaca RAB. */}
+        <a href={`/api/rab/${rab.kepanitiaan_id}/export`} className={buttonVariants({ variant: 'secondary' })} data-testid="rab-unduh-excel" download>
+          <Download aria-hidden="true" /> Unduh Excel
+        </a>
         {izin.ajukan ? (
           <Button loading={sibuk} onClick={() => void jalankan('submit')} data-testid="rab-ajukan">
             <Send aria-hidden="true" /> Ajukan RAB

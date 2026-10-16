@@ -65,6 +65,31 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-090 · Export Excel 4 sheet (2026-10-16)
+
+`lib/rab/{excel-style,excel-export}.ts` (murni), `dataEksporRab` di
+`lib/rab/service.ts`, `GET /api/rab/[kepanitiaanId]/export`, tombol "Unduh
+Excel" di StatusRabBar, `scripts/diff-excel.ts`.
+
+- **Gaya diukur dari template, bukan SYSTEM_DESIGN §11.3:** Arial 10 rata
+  tengah, garis tipis, isi header `#A4C2F4` (PEMASUKAN `#C0E6F5`/`#83CCEB`).
+- **Formula tanpa #VALUE!:** jumlah bulat murni → D angka + `=D*E`; bersatuan →
+  D teks asli + `=E*{n}` (pola template F42); pecahan → `=ROUND(E*{n},0)`
+  (sama dengan kaliRupiah); manual → nilai statis. Dibuka di **Excel 16
+  (COM)**: semua rumus terhitung, 0 sel galat, total = total aplikasi.
+- `diff-excel.ts` membaca data dari template, mengekspor ulang, membandingkan
+  sheet/lebar/merge/jenis baris: **0 selisih**; inkonsistensi template
+  (C45:E45, dst.) dilaporkan terpisah — didokumentasikan RAB_CELL_MAP §5
+  temuan 5–9 (divisi tanpa awalan "DIVISI" dikenali dari struktur, baris
+  kosong bergaris, divisi tanpa sub-section).
+- Sub-section bernama kosong = divisi tanpa sub-section; item kosong = baris
+  bergaris tanpa nomor; nomor urut berjalan per DIVISI (PRD F-9.1).
+- RAB AKTUAL: item sama, F = realisasi (Σ nota_alokasi nota TERVERIFIKASI)
+  dengan catatan sel "Rencana · selisih" — tata letak tidak diubah. T-103
+  memperkaya; Dana Tak Terduga aktual menunggu T-104.
+- PEMASUKAN: "Total Pembayaran {acara}" (peserta sudah bayar) + baris
+  `pemasukan`; T-092 boleh menyempurnakan sumber dananya.
+
 ### T-089 · Status & penguncian RAB (2026-10-16)
 
 Migrasi **041_rab_status** (trigger mesin status `rab_meta`) dan
