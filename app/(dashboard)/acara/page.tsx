@@ -15,11 +15,14 @@ import { formatRentangTanggal, formatTanggalPendek } from '@/lib/utils/format-ta
 
 export const dynamic = 'force-dynamic';
 
-const statusSah = (s: string) => ((STATUS_VALUES as readonly string[]).includes(s) ? (s as DomainStatus) : null);
+const statusSah = (s: string) =>
+  (STATUS_VALUES as readonly string[]).includes(s) ? (s as DomainStatus) : null;
 
 function hariH(mulai: string | null, selesai: string | null): string {
   if (!mulai) return 'Tanggal belum ditetapkan';
-  return selesai && selesai > mulai ? formatRentangTanggal(mulai, selesai) : formatTanggalPendek(mulai);
+  return selesai && selesai > mulai
+    ? formatRentangTanggal(mulai, selesai)
+    : formatTanggalPendek(mulai);
 }
 
 /**
@@ -45,10 +48,13 @@ export default async function DaftarAcaraPage() {
             <Target className="size-5" />
           </span>
           <div>
-            <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">Acara Besar</p>
+            <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+              Acara Besar
+            </p>
             <h1 className="mt-0.5 text-2xl font-semibold">Daftar acara</h1>
             <p className="mt-1 max-w-2xl text-[14px] leading-5 text-secondary">
-              Acara besar periode ini. Kepanitiaan terbentuk otomatis saat proker terjadwal disetujui; panitianya boleh lintas departemen.
+              Acara besar periode ini. Kepanitiaan terbentuk otomatis saat proker terjadwal
+              disetujui; panitianya boleh lintas departemen.
             </p>
           </div>
         </header>
@@ -72,10 +78,16 @@ export default async function DaftarAcaraPage() {
                   <Card className="flex h-full flex-col gap-3 p-4" data-testid="acara-item">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <Link href={`/acara/${a.id}`} className="text-[16px] font-semibold hover:underline" data-testid="acara-item-buka">
+                        <Link
+                          href={`/acara/${a.id}`}
+                          className="text-[16px] font-semibold hover:underline"
+                          data-testid="acara-item-buka"
+                        >
                           {a.nama_acara}
                         </Link>
-                        <p className="mt-0.5 text-[13px] text-secondary">{hariH(a.hari_h_mulai, a.hari_h_selesai)}</p>
+                        <p className="mt-0.5 text-[13px] text-secondary">
+                          {hariH(a.hari_h_mulai, a.hari_h_selesai)}
+                        </p>
                       </div>
                       {status ? <StatusPill status={status} className="shrink-0" /> : null}
                     </div>

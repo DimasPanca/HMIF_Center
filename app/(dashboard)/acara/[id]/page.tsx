@@ -1,4 +1,4 @@
-import { CalendarRange, Info } from 'lucide-react';
+import { CalendarRange, FileText, Info } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -9,11 +9,14 @@ import { RingkasanAcara } from '@/components/acara/RingkasanAcara';
 import { TabNav, tabDari, type TabAcara } from '@/components/acara/TabNav';
 import { PemasukanPanel } from '@/components/rab/PemasukanPanel';
 import { RabGrid } from '@/components/rab/RabGrid';
+import { buttonVariants } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { muatAcara, type RuangAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { muatPemasukan, type DataPemasukan } from '@/lib/rab/pemasukan';
 import { muatRab, type DataRab } from '@/lib/rab/service';
+import { muatTor, ringkasKelengkapan } from '@/lib/tor/service';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,25 +34,33 @@ function PeranSaya({ acara }: { acara: RuangAcara }) {
     ? 'Anda adalah Ketua Pelaksana acara ini dan dapat mengelola seluruh divisi.'
     : `Anda adalah ${divisi.map((d) => `${d.peran === 'KOORDINATOR' ? 'Koordinator' : 'Anggota'} Divisi ${d.nama}`).join(', ')}. Divisi lain dapat dilihat namun tidak dapat diubah.`;
   return (
-    <p data-testid="acara-peran-saya" className="flex items-start gap-2 rounded-sm bg-[var(--info-subtle)] p-3 text-[13px]">
+    <p
+      data-testid="acara-peran-saya"
+      className="flex items-start gap-2 rounded-sm bg-[var(--info-subtle)] p-3 text-[13px]"
+    >
       <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--info)]" />
       {kalimat}
     </p>
   );
 }
 
-const ringkasan = (id: string) => ({ label: 'Kembali ke Ringkasan', href: `/acara/${id}?tab=ringkasan` });
+const ringkasan = (id: string) => ({
+  label: 'Kembali ke Ringkasan',
+  href: `/acara/${id}?tab=ringkasan`,
+});
 
 function IsiTab({
   acara,
   tab,
   rab,
   pemasukan,
+  tor,
 }: {
   acara: RuangAcara;
   tab: TabAcara;
   rab: DataRab | 'TERBATAS' | null;
   pemasukan: DataPemasukan | 'TERBATAS' | null;
+  tor: { terisi: number; total: number; kurang: string[]; boleh_tulis: boolean } | null;
 }) {
   switch (tab) {
     case 'ringkasan':
@@ -70,11 +81,16 @@ function IsiTab({
             const divisi = acara.divisi.find((d) => d.id === c.divisi_id);
             return (
               <li key={c.id}>
-                <Link href={`/gantt/${c.id}`} className="flex items-center gap-3 rounded-sm border border-default bg-panel p-3 hover:bg-subtle">
+                <Link
+                  href={`/gantt/${c.id}`}
+                  className="flex items-center gap-3 rounded-sm border border-default bg-panel p-3 hover:bg-subtle"
+                >
                   <CalendarRange aria-hidden="true" className="size-5 shrink-0 text-tertiary" />
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] font-medium">{c.judul}</span>
-                    <span className="block text-[12px] text-secondary">{divisi ? `Divisi ${divisi.nama}` : 'Timeline acara'}</span>
+                    <span className="block text-[12px] text-secondary">
+                      {divisi ? `Divisi ${divisi.nama}` : 'Timeline acara'}
+                    </span>
                   </span>
                 </Link>
               </li>
@@ -137,13 +153,30 @@ function IsiTab({
 
     case 'tor':
       return (
-        <BelumTersedia
-          testid="acara-isi-tor"
-          ikon="dokumen"
-          judul="Editor TOR belum tersedia"
-          penjelasan="Term of Reference akan disusun di sini dari data acara dan RAB, lalu dibuat menjadi dokumen resmi."
-          aksi={ringkasan(acara.id)}
-        />
+        <Card className="space-y-3 p-4" data-testid="acara-isi-tor">
+          <div className="flex items-start gap-3">
+            <FileText aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-tertiary" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[15px] font-semibold">Term of Reference</h2>
+              <p className="text-[13px] text-secondary">
+                {tor ? `${tor.terisi} dari ${tor.total} bagian terisi.` : ''} Anggaran ditarik
+                otomatis dari RAB dan rundown dipakai bersama Proposal serta Surat Undangan.
+              </p>
+              {tor && tor.kurang.length ? (
+                <p className="mt-1 text-[12px] text-tertiary">
+                  Belum terisi: {tor.kurang.join(', ')}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <Link
+            href={`/acara/${acara.id}/tor`}
+            className={buttonVariants({ variant: 'primary' })}
+            data-testid="acara-buka-tor"
+          >
+            {tor?.boleh_tulis ? 'Susun TOR' : 'Lihat TOR'}
+          </Link>
+        </Card>
       );
 
     case 'proposal':
@@ -187,7 +220,12 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
   const sp = await searchParams;
   const tab = tabDari(Array.isArray(sp.tab) ? sp.tab[0] : sp.tab);
   const rab = tab === 'rab' && acara.boleh_rab ? await muatRab(konteks, acara.id) : null;
-  const pemasukan = tab === 'rab' && acara.boleh_rab ? await muatPemasukan(konteks, acara.id) : null;
+  const pemasukan =
+    tab === 'rab' && acara.boleh_rab ? await muatPemasukan(konteks, acara.id) : null;
+  const torLengkap = tab === 'tor' ? await muatTor(konteks, acara.id) : null;
+  const tor = torLengkap
+    ? { ...ringkasKelengkapan(torLengkap), boleh_tulis: torLengkap.boleh_tulis }
+    : null;
 
   return (
     <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6">
@@ -196,7 +234,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
         <PeranSaya acara={acara} />
         <TabNav acaraId={acara.id} aktif={tab} />
         <section aria-label={`Tab ${tab}`} data-testid={`acara-panel-${tab}`}>
-          <IsiTab acara={acara} tab={tab} rab={rab} pemasukan={pemasukan} />
+          <IsiTab acara={acara} tab={tab} rab={rab} pemasukan={pemasukan} tor={tor} />
         </section>
       </div>
     </main>

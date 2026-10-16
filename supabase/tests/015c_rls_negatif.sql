@@ -661,5 +661,29 @@ BEGIN
                    AND nilai_baru->>'alasan_buka_kunci' = 'Ada tambahan sewa sound system'),
     'Alasan buka kunci tidak tercatat di audit_log dengan entitas_id acaranya (042)';
 
-  RAISE NOTICE 'OK 015c_rls_negatif - 15 skenario, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
+  ---------------------------------------------------------------------------
+  -- 16. RUNDOWN: PANITIA ACARA MENGHAPUS BARISNYA, BUKAN-PANITIA TIDAK (T-094, 043)
+  --
+  --     Sebelum 043, rundown_delete hanya ADMIN/KETUA/WAKIL/KADEPT — baris yang
+  --     dibuang panitia dari editor TOR tertinggal di DB.
+  ---------------------------------------------------------------------------
+  INSERT INTO rundown (kepanitiaan_id, tanggal, acara) VALUES
+    (v_kep, '2026-11-10', 'Uji rundown 1'), (v_kep, '2026-11-10', 'Uji rundown 2');
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_bendum::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  DELETE FROM rundown WHERE kepanitiaan_id = v_kep AND acara = 'Uji rundown 1';
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_n = 0, format('Bukan-panitia menghapus %s baris rundown acara', v_n);
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_koor::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  DELETE FROM rundown WHERE kepanitiaan_id = v_kep AND acara = 'Uji rundown 1';
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_n = 1, 'Koordinator divisi (panitia acara) TIDAK dapat menghapus baris rundown acaranya';
+  ASSERT (SELECT count(*) FROM rundown WHERE kepanitiaan_id = v_kep) = 1, 'Jumlah baris rundown tidak sesuai';
+
+  RAISE NOTICE 'OK 015c_rls_negatif - 16 skenario, rundown dihapus panitia saja, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
 END $$;

@@ -65,6 +65,31 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-094 · Editor TOR 14 bagian (2026-10-16)
+
+`lib/tor/{schema,service}.ts`, `GET|PUT /api/tor/[kepanitiaanId]`,
+`app/(dashboard)/acara/[id]/tor/page.tsx`, `components/tor/{TorEditor,BagianRepeatable,RundownEditor,ParameterKelulusan}.tsx`;
+tab TOR di ruang kerja acara kini kartu kelengkapan + tautan editor.
+Migrasi **043** (`rundown_delete` + panitia acara) · `015c` skenario 16.
+
+- `tor.data` = bagian 1–10 & 13 saja (zod strict: `anggaran`/`rundown` ditolak).
+  Rundown (11) disinkronkan ke tabel `rundown` dengan `id` UUID dari klien
+  (auto-save idempoten; baris yang hilang dari daftar dihapus). Rundown hanya
+  dikirim bila SEMUA baris valid — baris setengah jadi menahan sinkron, tidak
+  menghapus baris lama. Anggaran (12) = `anggaranTor()` (hitungRab atas RAB
+  saat ini, dipakai lagi oleh generator T-095); Penandatangan (14) = Ketua
+  Pelaksana acara + `bacaKetuaHimpunan`.
+- `kelengkapanTor(data, faktaLuar)` = satu-satunya penghitung "x dari 14";
+  T-095 memakai `kurang` untuk menolak generate dokumen bolong.
+- Nama & Tema TOR baru diisi dari `kepanitiaan.nama_acara/tema` (tidak diketik
+  ulang), tetap dapat disunting.
+- Hak tulis `bisaTulisTor` = cermin RLS tor_update/rundown_* : Admin/Ketua/Wakil,
+  Kadept PIC (RLS: Kadept mana pun — app lebih ketat), panitia acara non-BPH,
+  periode berjalan. Matriks PRD §5.1 tidak punya baris TOR; akses baca =
+  `muatAcara`.
+- Belum ada audit trigger untuk `tor`/`rundown`/`job_desk` — di luar daftar
+  §14.1 (014c); auto-save 10 detik akan membanjiri audit_log bila dipasang.
+
 ### T-093 · Job Desk & Gantt divisi (2026-10-16)
 
 `lib/acara/job-desk.ts`, `GET|PUT /api/divisi/[id]/job-desk`,
