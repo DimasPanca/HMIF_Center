@@ -54,7 +54,8 @@ export interface DataEksporRab {
   aktual: { divisi: { nama: string; sections: { nama: string; items: ItemAktual[] }[] }[]; danaTakTerduga: number };
   pemasukan: { keterangan: string; saldo: number }[];
   peserta: { nama: string; bayar: boolean; tanggal: string | null; jumlah: number }[];
-  pengeluaran: { tanggal: string; uraian: string; divisi: string; nominal: number }[];
+  /** Satu baris per alokasi, sudah berurutan tanggal (lib/rab/realisasi.ts). `luar_rab` ditandai (ADR-006). */
+  pengeluaran: { tanggal: string; uraian: string; divisi: string; nominal: number; luar_rab?: boolean }[];
 }
 
 const BULAT = /^\d+$/;
@@ -338,6 +339,10 @@ function sheetPengeluaran(ws: ExcelJS.Worksheet, d: DataEksporRab) {
     sel(r, k.divisi, p.divisi.toUpperCase());
     sel(r, k.pengeluaran, p.nominal, RAB_MAP.RUPIAH);
     sel(r, k.saldo, { formula: `H${r - 1}-G${r}`, result: saldo }, RAB_MAP.RUPIAH);
+    // Pengeluaran di luar RAB ditandai kuning muda — temuan LPJ (ADR-006, T-103).
+    if (p.luar_rab) {
+      for (let kol = k.no; kol <= k.saldo; kol++) ws.getCell(r, kol).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+    }
     r++;
   }
   gabung(ws, `C${r}:G${r}`, 'SISA UANG');

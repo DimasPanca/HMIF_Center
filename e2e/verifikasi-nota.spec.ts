@@ -235,3 +235,26 @@ test('selain Bendahara/Admin: halaman 404, API 403', async ({ browser }) => {
   expect(r.status()).toBe(403);
   await koor.context().close();
 });
+
+test('T-103: realisasi tampil di RAB Aktual; batalkan verifikasi menghitung ulang dari awal', async ({ browser }) => {
+  const bendum = await sesi(browser, AKUN.bendum);
+  await bendum.goto(`/acara/${kepId}?tab=rab`, { waitUntil: 'load' });
+  const aktual = bendum.getByTestId('rab-aktual');
+  await expect(aktual).toBeVisible({ timeout: 60_000 });
+  const snack = aktual.locator('[data-testid="rab-aktual-item"]').filter({ hasText: 'Snack peserta' });
+  await expect(snack.getByTestId('rab-aktual-realisasi')).toHaveText('Rp50.000');
+  await expect(snack).toHaveAttribute('data-penanda', 'SESUAI');
+  await expect(bendum.getByTestId('rab-pengeluaran-baris')).toHaveCount(1);
+
+  // Batalkan tanpa alasan → 422; dengan alasan → kembali ke antrian, realisasi 0.
+  expect((await bendum.request.delete(`/api/nota/${nota.setuju}/verify`, { data: {} })).status()).toBe(422);
+  await bendum.getByTestId('rab-batalkan-verifikasi').click();
+  await bendum.getByRole('dialog').getByRole('textbox').fill('Nominal salah ketik');
+  await bendum.getByRole('dialog').getByRole('button', { name: 'Batalkan verifikasi' }).click();
+  await expect(snack.getByTestId('rab-aktual-realisasi')).toHaveText('Rp0', { timeout: 30_000 });
+  await expect(snack).toHaveAttribute('data-penanda', 'BELUM');
+  await expect(bendum.getByTestId('rab-pengeluaran-baris')).toHaveCount(0);
+  const [n] = await sql<{ s: string }[]>`SELECT status::text AS s FROM nota WHERE id = ${nota.setuju}::uuid`;
+  expect(n!.s).toBe('MENUNGGU_VERIFIKASI');
+  await bendum.context().close();
+});

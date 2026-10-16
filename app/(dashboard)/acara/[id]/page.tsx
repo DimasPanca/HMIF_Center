@@ -8,6 +8,7 @@ import { DivisiCard } from '@/components/acara/DivisiCard';
 import { RingkasanAcara } from '@/components/acara/RingkasanAcara';
 import { TabNav, tabDari, type TabAcara } from '@/components/acara/TabNav';
 import { PemasukanPanel } from '@/components/rab/PemasukanPanel';
+import { RabAktualTab } from '@/components/rab/RabAktualTab';
 import { RabGrid } from '@/components/rab/RabGrid';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { muatProposal } from '@/lib/proposal/service';
 import { muatPemasukan, type DataPemasukan } from '@/lib/rab/pemasukan';
-import { muatRab, type DataRab } from '@/lib/rab/service';
+import { muatRab, muatRabAktual, type DataRab, type DataRabAktual } from '@/lib/rab/service';
 import { muatTor, ringkasKelengkapan } from '@/lib/tor/service';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,8 @@ function IsiTab({
   tab,
   rab,
   pemasukan,
+  aktual,
+  bolehBatal,
   tor,
   proposal,
 }: {
@@ -62,6 +65,8 @@ function IsiTab({
   tab: TabAcara;
   rab: DataRab | 'TERBATAS' | null;
   pemasukan: DataPemasukan | 'TERBATAS' | null;
+  aktual: DataRabAktual | 'TERBATAS' | null;
+  bolehBatal: boolean;
   tor: { terisi: number; total: number; kurang: string[]; boleh_tulis: boolean } | null;
   proposal: { persen: number; tersimpan: boolean; boleh_tulis: boolean } | null;
 }) {
@@ -132,6 +137,9 @@ function IsiTab({
         <div data-testid="acara-isi-rab" className="space-y-6">
           <RabGrid awal={rab} />
           {pemasukan && pemasukan !== 'TERBATAS' ? <PemasukanPanel awal={pemasukan} /> : null}
+          {aktual && aktual !== 'TERBATAS' ? (
+            <RabAktualTab data={aktual} bolehBatal={bolehBatal} />
+          ) : null}
         </div>
       ) : null;
 
@@ -243,6 +251,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
   const rab = tab === 'rab' && acara.boleh_rab ? await muatRab(konteks, acara.id) : null;
   const pemasukan =
     tab === 'rab' && acara.boleh_rab ? await muatPemasukan(konteks, acara.id) : null;
+  const aktual = tab === 'rab' && acara.boleh_rab ? await muatRabAktual(konteks, acara.id) : null;
   const torLengkap = tab === 'tor' ? await muatTor(konteks, acara.id) : null;
   const tor = torLengkap
     ? { ...ringkasKelengkapan(torLengkap), boleh_tulis: torLengkap.boleh_tulis }
@@ -268,6 +277,8 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
             tab={tab}
             rab={rab}
             pemasukan={pemasukan}
+            aktual={aktual}
+            bolehBatal={can(konteks.roles, 'nota.verify')}
             tor={tor}
             proposal={proposal}
           />

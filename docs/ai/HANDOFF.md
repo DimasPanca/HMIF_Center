@@ -65,6 +65,24 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-103 · PENGELUARAN & RAB AKTUAL otomatis (2026-10-16)
+
+`lib/rab/realisasi.ts` (murni: `bukuPengeluaran`, `realisasiPerItem`,
+`penandaSelisih`), `muatRabAktual` + refaktor `dataEksporRab` di
+`lib/rab/service.ts`, `components/rab/{RabAktualTab,BatalkanVerifikasi}.tsx`
+(tab RAB acara), `DELETE /api/nota/[id]/verify` (`batalkanVerifikasi`).
+
+- Tidak ada saldo/realisasi yang disimpan: setiap baca menghitung ulang PENUH
+  dari nota TERVERIFIKASI, urut tanggal belanja → waktu unggah → id. Membatalkan
+  verifikasi nota tengah = otomatis hitung ulang dari awal (unit test).
+- PENGELUARAN = satu baris per ALOKASI (nominal alokasi, bukan total nota);
+  alokasi di luar RAB ikut, bertanda (layar: latar kuning; Excel: isian
+  FFF2CC; uraian "Di luar RAB: …") dan TIDAK masuk realisasi item mana pun.
+- Ekspor Excel memakai buku yang sama → angka layar = angka Excel.
+- Batalkan verifikasi: Bendum/Admin, wajib alasan (disimpan di
+  `alasan_penolakan` "Verifikasi dibatalkan: …"), ditolak bila RAB SELESAI
+  (LPJ terbit). Status RAB tidak mundur dari REALISASI (trigger 041).
+
 ### T-102 · Verifikasi nota (2026-10-16)
 
 `lib/nota/verifikasi.ts`, `POST /api/nota/[id]/{verify,reject,minta-perbaikan}`

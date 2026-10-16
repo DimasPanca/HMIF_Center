@@ -72,7 +72,6 @@ export interface GrupAntrian {
   nota: KartuAntrian[];
 }
 
-
 /** Nota MENUNGGU_VERIFIKASI periode berjalan, dikelompokkan per acara lalu divisi (kontrak 1). */
 export async function antrianNota(konteks: Konteks): Promise<GrupAntrian[]> {
   if (!bolehVerifikasi(konteks) || !konteks.periodeId) return [];
@@ -408,3 +407,64 @@ export const tolakNota = (tx: TxKlien, konteks: Konteks, id: string, body: unkno
   kembalikan(tx, konteks, id, body, 'DITOLAK');
 export const mintaPerbaikanNota = (tx: TxKlien, konteks: Konteks, id: string, body: unknown) =>
   kembalikan(tx, konteks, id, body, 'PERLU_PERBAIKAN');
+
+/**
+ * Batalkan verifikasi (T-103 kontrak 3): TERVERIFIKASI → MENUNGGU_VERIFIKASI,
+ * wajib alasan. Saldo PENGELUARAN & RAB AKTUAL tidak disimpan di mana pun —
+ * keduanya dihitung ulang penuh dari nota TERVERIFIKASI (lib/rab/realisasi.ts),
+ * jadi pembatalan nota tengah langsung menghitung ulang seluruh saldo.
+ * Ditolak bila RAB acaranya sudah SELESAI (LPJ terbit — angkanya beku).
+ */
+export async function batalkanVerifikasi(
+  tx: TxKlien,
+  konteks: Konteks,
+  id: string,
+  body: unknown,
+): Promise<Hasil<{ status: 'MENUNGGU_VERIFIKASI' }>> {
+  if (!bolehVerifikasi(konteks)) {
+    return {
+      ok: false,
+      kode: 'TIDAK_BERWENANG',
+      pesan: 'Membatalkan verifikasi hanya untuk Bendahara atau Admin.',
+    };
+  }
+  const p = SkemaAlasan.safeParse(body);
+  if (!p.success) {
+    return {
+      ok: false,
+      kode: 'VALIDASI_GAGAL',
+      pesan: 'Pembatalan verifikasi wajib disertai alasan (minimal 5 karakter).',
+    };
+  }
+  const [n] = await tx.$queryRaw<{ status: string; periode_id: string; rab: string | null }[]>`
+    SELECT n.status::text, p.periode_id::text, m.status::text AS rab
+    FROM nota n JOIN divisi d ON d.id = n.divisi_id JOIN kepanitiaan k ON k.id = d.kepanitiaan_id
+    JOIN proker p ON p.id = k.proker_id LEFT JOIN rab_meta m ON m.kepanitiaan_id = k.id
+    WHERE n.id = ${id}::uuid FOR UPDATE OF n`;
+  if (!n || n.periode_id !== konteks.periodeId)
+    return { ok: false, kode: 'TIDAK_DITEMUKAN', pesan: 'Nota tidak ditemukan.' };
+  if (n.status !== 'TERVERIFIKASI')
+    return {
+      ok: false,
+      kode: 'KONFLIK',
+      pesan: 'Hanya nota terverifikasi yang dapat dibatalkan verifikasinya.',
+    };
+  if (n.rab === 'SELESAI')
+    return {
+      ok: false,
+      kode: 'KONFLIK',
+      pesan: 'LPJ acara ini sudah terbit — verifikasi nota tidak dapat dibatalkan.',
+    };
+  await tx.nota.update({
+    where: { id },
+    // Alasan pembatalan tercatat di audit_log (trigger nota) lewat nilai baru baris ini.
+    data: {
+      status: 'MENUNGGU_VERIFIKASI',
+      verified_by: null,
+      verified_at: null,
+      alasan_penolakan: `Verifikasi dibatalkan: ${p.data.alasan}`,
+      updated_at: new Date(),
+    },
+  });
+  return { ok: true, nilai: { status: 'MENUNGGU_VERIFIKASI' } };
+}

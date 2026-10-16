@@ -30,6 +30,14 @@ import { bulatkanJumlah, hitungTotalItem } from '@/lib/rab/calculate';
 import type { DataEksporRab } from '@/lib/rab/excel-export';
 import type { RabImpor } from '@/lib/rab/excel-import';
 import { SkemaUbahItem, terapkanUbah, type DivisiRab, type ItemRab } from '@/lib/rab/item';
+import {
+  bukuPengeluaran,
+  penandaSelisih,
+  realisasiPerItem,
+  type BukuPengeluaran,
+  type NotaRealisasi,
+  type PenandaSelisih,
+} from '@/lib/rab/realisasi';
 
 if (typeof window !== 'undefined') {
   throw new Error('lib/rab/service.ts adalah modul server-only dan tidak boleh diimpor dari sisi klien.');
@@ -532,41 +540,24 @@ export async function dataEksporRab(konteks: Konteks, kepanitiaanId: string): Pr
   if (rab === null || rab === 'TERBATAS') return rab;
   const divisiIds = rab.divisi.map((d) => d.id);
 
-  const [alokasi, pemasukan, peserta, nota] = await Promise.all([
-    divisiIds.length
-      ? db.$queryRaw<{ rab_item_id: string; jumlah: Prisma.Decimal }[]>`
-          SELECT a.rab_item_id::text, SUM(a.nominal) AS jumlah
-          FROM nota_alokasi a JOIN nota n ON n.id = a.nota_id
-          WHERE n.status = 'TERVERIFIKASI' AND n.divisi_id = ANY(${divisiIds}::uuid[]) AND a.rab_item_id IS NOT NULL
-          GROUP BY a.rab_item_id`
-      : Promise.resolve([]),
+  const [nota, pemasukan, peserta] = await Promise.all([
+    notaTerverifikasi(divisiIds),
     db.pemasukan.findMany({ where: { kepanitiaan_id: kepanitiaanId }, orderBy: { no_urut: 'asc' }, select: { keterangan: true, saldo: true } }),
     db.peserta.findMany({
       where: { kepanitiaan_id: kepanitiaanId },
       orderBy: { no_urut: 'asc' },
       select: { nama_lengkap: true, sudah_bayar: true, tanggal_bayar: true, jumlah: true },
     }),
-    divisiIds.length
-      ? db.nota.findMany({
-          where: { divisi_id: { in: divisiIds }, status: 'TERVERIFIKASI' },
-          orderBy: [{ tanggal_belanja: 'asc' }, { created_at: 'asc' }],
-          select: {
-            tanggal_belanja: true,
-            total_nota: true,
-            keterangan: true,
-            divisi: { select: { nama: true } },
-            nota_alokasi: { select: { uraian_luar_rab: true, rab_item: { select: { jenis_barang: true } } } },
-          },
-        })
-      : Promise.resolve([]),
   ]);
 
-  const realisasi = new Map(alokasi.map((a) => [a.rab_item_id, Number(a.jumlah)]));
-  const terbayar = peserta.filter((p) => p.sudah_bayar).reduce((x, p) => x + Number(p.jumlah), 0);
-  const sumber = [
-    ...(peserta.length ? [{ keterangan: `Total Pembayaran ${rab.nama_acara}`, saldo: terbayar }] : []),
-    ...pemasukan.map((p) => ({ keterangan: p.keterangan, saldo: Number(p.saldo) })),
-  ];
+  // T-103: satu rumus dengan tab RAB Aktual — realisasi = Σ alokasi per item,
+  // PENGELUARAN = baris per alokasi berurutan tanggal (lib/rab/realisasi.ts).
+  const realisasi = realisasiPerItem(nota);
+  const sumber = sumberPemasukan(rab.nama_acara, peserta, pemasukan);
+  const buku = bukuPengeluaran(
+    sumber.reduce((x, p) => x + p.saldo, 0),
+    nota,
+  );
 
   const tanpaId = (i: ItemRab) => ({
     jenis_barang: i.jenis_barang,
@@ -597,18 +588,108 @@ export async function dataEksporRab(konteks: Konteks, kepanitiaanId: string): Pr
       tanggal: p.tanggal_bayar ? p.tanggal_bayar.toISOString().slice(0, 10) : null,
       jumlah: Number(p.jumlah),
     })),
-    pengeluaran: nota.map((n) => ({
-      tanggal: n.tanggal_belanja.toISOString().slice(0, 10),
-      uraian:
-        n.keterangan?.trim() ||
-        n.nota_alokasi
-          .map((a) => a.rab_item?.jenis_barang ?? a.uraian_luar_rab ?? '')
-          .filter(Boolean)
-          .join(', ') ||
-        'Belanja',
-      divisi: n.divisi.nama,
-      nominal: Number(n.total_nota),
+    pengeluaran: buku.baris.map((b) => ({ tanggal: b.tanggal, uraian: b.uraian, divisi: b.divisi, nominal: b.nominal, luar_rab: b.luar_rab })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Realisasi (T-103)
+// ---------------------------------------------------------------------------
+
+/** Nota TERVERIFIKASI divisi-divisi ini beserta alokasinya — bahan tunggal PENGELUARAN & RAB AKTUAL. */
+async function notaTerverifikasi(divisiIds: string[]): Promise<NotaRealisasi[]> {
+  if (!divisiIds.length) return [];
+  const rows = await db.nota.findMany({
+    where: { divisi_id: { in: divisiIds }, status: 'TERVERIFIKASI' },
+    select: {
+      id: true,
+      tanggal_belanja: true,
+      created_at: true,
+      divisi: { select: { nama: true } },
+      nota_alokasi: { select: { rab_item_id: true, uraian_luar_rab: true, nominal: true, rab_item: { select: { jenis_barang: true } } } },
+    },
+  });
+  return rows.map((n) => ({
+    id: n.id,
+    tanggal: n.tanggal_belanja.toISOString().slice(0, 10),
+    diunggah: n.created_at.toISOString(),
+    divisi: n.divisi.nama,
+    alokasi: n.nota_alokasi.map((a) => ({
+      rab_item_id: a.rab_item_id,
+      jenis_barang: a.rab_item?.jenis_barang ?? null,
+      uraian_luar_rab: a.uraian_luar_rab,
+      nominal: Number(a.nominal),
     })),
+  }));
+}
+
+/** Sumber saldo awal PENGELUARAN: pembayaran peserta (bila ada) + pemasukan manual. */
+function sumberPemasukan(
+  namaAcara: string,
+  peserta: { sudah_bayar: boolean; jumlah: Prisma.Decimal }[],
+  pemasukan: { keterangan: string; saldo: Prisma.Decimal }[],
+): { keterangan: string; saldo: number }[] {
+  const terbayar = peserta.filter((p) => p.sudah_bayar).reduce((x, p) => x + Number(p.jumlah), 0);
+  return [
+    ...(peserta.length ? [{ keterangan: `Total Pembayaran ${namaAcara}`, saldo: terbayar }] : []),
+    ...pemasukan.map((p) => ({ keterangan: p.keterangan, saldo: Number(p.saldo) })),
+  ];
+}
+
+export interface ItemAktual {
+  id: string;
+  jenis_barang: string;
+  section: string;
+  rencana: number;
+  realisasi: number;
+  penanda: PenandaSelisih;
+}
+
+export interface DataRabAktual {
+  divisi: { id: string; nama: string; rencana: number; realisasi: number; items: ItemAktual[] }[];
+  total_rencana: number;
+  total_realisasi_item: number;
+  luar_rab: number;
+  buku: BukuPengeluaran;
+}
+
+/** Tab RAB Aktual: rencana vs realisasi per item + buku PENGELUARAN (dihitung ulang penuh). */
+export async function muatRabAktual(konteks: Konteks, kepanitiaanId: string): Promise<DataRabAktual | 'TERBATAS' | null> {
+  const rab = await muatRab(konteks, kepanitiaanId);
+  if (rab === null || rab === 'TERBATAS') return rab;
+  const [nota, pemasukan, peserta] = await Promise.all([
+    notaTerverifikasi(rab.divisi.map((d) => d.id)),
+    db.pemasukan.findMany({ where: { kepanitiaan_id: kepanitiaanId }, select: { keterangan: true, saldo: true } }),
+    db.peserta.findMany({ where: { kepanitiaan_id: kepanitiaanId }, select: { sudah_bayar: true, jumlah: true } }),
+  ]);
+  const realisasi = realisasiPerItem(nota);
+  const sumber = sumberPemasukan(rab.nama_acara, peserta, pemasukan);
+  const buku = bukuPengeluaran(
+    sumber.reduce((x, p) => x + p.saldo, 0),
+    nota,
+  );
+  const divisi = rab.divisi.map((d) => {
+    const items = d.sections.flatMap((s) =>
+      s.items.map((i) => {
+        const rencana = hitungTotalItem(i);
+        const nyata = realisasi.get(i.id) ?? 0;
+        return { id: i.id, jenis_barang: i.jenis_barang, section: s.nama, rencana, realisasi: nyata, penanda: penandaSelisih(rencana, nyata) };
+      }),
+    );
+    return {
+      id: d.id,
+      nama: d.nama,
+      items,
+      rencana: items.reduce((x, i) => x + i.rencana, 0),
+      realisasi: items.reduce((x, i) => x + i.realisasi, 0),
+    };
+  });
+  return {
+    divisi,
+    total_rencana: divisi.reduce((x, d) => x + d.rencana, 0),
+    total_realisasi_item: divisi.reduce((x, d) => x + d.realisasi, 0),
+    luar_rab: buku.baris.filter((b) => b.luar_rab).reduce((x, b) => x + b.nominal, 0),
+    buku,
   };
 }
 
