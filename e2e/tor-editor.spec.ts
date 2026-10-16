@@ -254,3 +254,100 @@ test('tab TOR di ruang kerja acara menampilkan kelengkapan dan tautan editor', a
   await expect(koor.getByTestId('acara-buka-tor')).toHaveAttribute('href', `/acara/${acaraId}/tor`);
   await koor.context().close();
 });
+
+// ---------------------------------------------------------------------------
+// T-095 — generate dokumen TOR
+// ---------------------------------------------------------------------------
+
+const doc = (t: string) => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: t }] }] });
+
+test('generate ditolak bila bagian wajib kosong — daftar bagian yang kurang ditampilkan', async ({ browser }) => {
+  const koor = await sesi(browser, AKUN.anggota);
+  await bukaTor(koor);
+  await koor.getByTestId('tor-buat-dokumen').click();
+  const galat = koor.getByTestId('tor-buat-galat');
+  await expect(galat).toContainText('Lengkapi dulu bagian berikut', { timeout: 60_000 });
+  await expect(galat).toContainText('4. Tujuan Kegiatan');
+  await expect(galat).toContainText('11. Susunan Acara (Rundown)');
+  const r = await koor.request.post(`/api/tor/${acaraId}/generate`);
+  expect(r.status()).toBe(422);
+  const b = (await r.json()) as { error: { details: { kurang: string[] } } };
+  expect(b.error.details.kurang).toContain('13. Penutup');
+  const [n] = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM dokumen WHERE kepanitiaan_id = ${acaraId}::uuid AND jenis = 'TOR'`;
+  expect(n!.n).toBe(0);
+  await koor.context().close();
+});
+
+test('generate TOR lengkap: dokumen tercatat, dapat diunduh ulang, angka RAB terbaru', async ({ browser }) => {
+  // TTD Ketua Himpunan = keadaan global (lihat surat-approval.spec): satu project saja.
+  test.skip(test.info().project.name !== 'desktop', 'Bergantung pada TTD Ketua global — dijalankan di desktop saja.');
+  const [k] = await sql<{ ada: boolean }[]>`
+    SELECT EXISTS (SELECT 1 FROM signature s WHERE s.user_id = (
+      SELECT ur.user_id FROM user_role ur JOIN app_user u ON u.id = ur.user_id
+      JOIN periode p ON p.id = ur.periode_id
+      WHERE p.status = 'AKTIF' AND ur.role = 'KETUA' AND u.is_active ORDER BY ur.created_at LIMIT 1)) AS ada`;
+  test.skip(!k!.ada, 'Ketua Himpunan periode aktif belum mengunggah tanda tangan di DB uji.');
+
+  const koor = await sesi(browser, AKUN.anggota);
+  const lengkap = {
+    nama_kegiatan: 'TOR Uji Lengkap',
+    tema: 'Synergy of Informatics',
+    gambaran_umum: doc('Kegiatan pengenalan prodi.'),
+    tujuan: ['Mengenalkan himpunan'],
+    bentuk_acara: { uraian: doc('Kegiatan luring.'), sub: [] },
+    waktu_tempat: [{ sesi: 'Hari H', tanggal: '2028-12-06', waktu: '07.00 WIB', tempat: 'Kampus FT' }],
+    sasaran: { uraian: doc('Mahasiswa baru.'), estimasi_jumlah: 100, jumlah_kelompok: 10 },
+    kondisi: [{ sesi: 'Hari H', ketentuan: 'Dresscode hitam putih' }],
+    parameter: [{ kriteria: 'Kehadiran', bobot: 100, kkm: 60 }],
+    rangkaian: [{ nama: 'Pembukaan', uraian: 'Sambutan' }],
+    penutup: doc('Demikian TOR ini dibuat.'),
+  };
+  const rundown = [{ id: '7d1c2b8e-5f0a-4d3e-9b6a-1c2d3e4f5a6b', tanggal: '2028-12-06', waktu_mulai: '07:00', waktu_selesai: '08:00', acara: 'Registrasi', keterangan: 'Acara' }];
+  const s = await koor.request.put(`/api/tor/${acaraId}`, { data: { data: lengkap, rundown } });
+  expect(s.status(), await s.text()).toBe(200);
+
+  const g = await koor.request.post(`/api/tor/${acaraId}/generate`);
+  expect(g.status(), await g.text()).toBe(201);
+  const unduh = await koor.request.get(`/api/tor/${acaraId}/generate`);
+  expect(unduh.status()).toBe(200);
+  expect(unduh.headers()['content-type']).toContain('wordprocessingml');
+  const PizZip = (await import('pizzip')).default;
+  const teks = (b: Buffer) => new PizZip(b).file('word/document.xml')!.asText().replace(/<[^>]+>/g, '');
+  const t1 = teks(await unduh.body());
+  expect(t1).toContain('TOR Uji Lengkap');
+  expect(t1).toContain('Rp300.000');
+  expect(t1).toContain('Registrasi');
+
+  // RAB berubah → generate ulang → angka di TOR ikut berubah.
+  await sql`UPDATE rab_item SET jumlah_numerik = 20, jumlah_teks = '20', total = 500000 WHERE id = ${itemId}::uuid`;
+  expect((await koor.request.post(`/api/tor/${acaraId}/generate`)).status()).toBe(201);
+  const t2 = teks(await (await koor.request.get(`/api/tor/${acaraId}/generate`)).body());
+  expect(t2).toContain('Rp500.000');
+  expect(t2).not.toContain('Rp300.000');
+  const [n] = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM dokumen WHERE kepanitiaan_id = ${acaraId}::uuid AND jenis = 'TOR'`;
+  expect(n!.n).toBe(2);
+  await koor.context().close();
+});
+
+test('rundown yang sama muncul di TOR dan terisi di Surat Undangan acara ini', async ({ browser }) => {
+  await sql`DELETE FROM rundown WHERE kepanitiaan_id = ${acaraId}::uuid`;
+  await sql`INSERT INTO rundown (kepanitiaan_id, tanggal, waktu_mulai, waktu_selesai, acara, keterangan, urutan) VALUES
+    (${acaraId}::uuid, '2028-12-06', '08:00', '08:30', 'Sambutan Ketua Himpunan', 'MC', 0),
+    (${acaraId}::uuid, '2028-12-06', '08:30', '09:00', 'Sambutan Kaprodi', 'MC', 1)`;
+
+  const koor = await sesi(browser, AKUN.anggota);
+  await bukaTor(koor);
+  const r = koor.getByTestId('tor-bagian-rundown');
+  await expect(r.getByTestId('tor-baris-rundown')).toHaveCount(2);
+  await expect(r.getByTestId('tor-baris-rundown').first().locator('[data-kolom="acara"]')).toHaveValue('Sambutan Ketua Himpunan');
+  await koor.context().close();
+
+  const kadept = await sesi(browser, AKUN.kadept);
+  await kadept.goto(`/surat/baru?acara=${acaraId}&jenis=UNDANGAN_SAMBUTAN`, { waitUntil: 'load' });
+  await expect(kadept.locator('#surat-dinamis-rundown-0-acara')).toHaveValue('Sambutan Ketua Himpunan', { timeout: 60_000 });
+  await expect(kadept.locator('#surat-dinamis-rundown-0-waktu')).toHaveValue('08:00 - 08:30');
+  await expect(kadept.locator('#surat-dinamis-rundown-0-hari_tanggal')).toHaveValue(/06 Desember 2028/);
+  await expect(kadept.locator('#surat-dinamis-rundown-1-acara')).toHaveValue('Sambutan Kaprodi');
+  await expect(kadept.locator('#surat-dinamis-rundown-1-hari_tanggal')).toHaveValue('');
+  await kadept.context().close();
+});

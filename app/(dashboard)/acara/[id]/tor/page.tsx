@@ -5,6 +5,7 @@ import { TorEditor } from '@/components/tor/TorEditor';
 import { muatAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { dokumenTorTerakhir } from '@/lib/tor/generate';
 import { muatTor } from '@/lib/tor/service';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +24,11 @@ export default async function TorPage({ params }: PageProps) {
 
   const { id } = await params;
   if (!POLA_UUID.test(id)) notFound();
-  const [acara, tor] = await Promise.all([muatAcara(konteks, id), muatTor(konteks, id)]);
+  const [acara, tor, dokumen] = await Promise.all([
+    muatAcara(konteks, id),
+    muatTor(konteks, id),
+    dokumenTorTerakhir(konteks, id),
+  ]);
   if (!acara || !tor) notFound();
 
   return (
@@ -43,7 +48,11 @@ export default async function TorPage({ params }: PageProps) {
           <h1 className="mt-1 text-2xl font-semibold">Term of Reference</h1>
           <p className="text-[13px] text-secondary">{acara.nama_acara}</p>
         </header>
-        <TorEditor awal={tor} hariH={acara.hari_h_mulai} />
+        <TorEditor
+          awal={tor}
+          hariH={acara.hari_h_mulai}
+          dokumenTerakhir={dokumen?.created_at.toISOString() ?? null}
+        />
       </div>
     </main>
   );

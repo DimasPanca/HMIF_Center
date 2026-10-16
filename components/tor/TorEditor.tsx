@@ -11,10 +11,12 @@
  *   - Auto-save tiap 10 detik bila ada perubahan + "Simpan sekarang".
  *   - Penghitung "x dari 14 bagian terisi" dihitung `kelengkapanTor` — fungsi
  *     yang sama dipakai generator T-095 untuk menolak dokumen bolong.
+ *   - "Buat dokumen TOR" (T-095) menyimpan dulu, lalu generate; bagian yang
+ *     kurang ditampilkan apa adanya dari server.
  */
 
 import type { JSONContent } from '@tiptap/react';
-import { Check, ExternalLink } from 'lucide-react';
+import { Check, Download, ExternalLink, FileText } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import * as React from 'react';
@@ -146,8 +148,26 @@ function Teks({
   );
 }
 
-export function TorEditor({ awal, hariH }: { awal: DataTorLengkap; hariH: string | null }) {
+type ResponsGenerate =
+  | { ok: true; data: { dokumen_id: string } }
+  | { ok: false; error?: { message?: string; details?: { kurang?: string[] } } };
+
+export function TorEditor({
+  awal,
+  hariH,
+  dokumenTerakhir,
+}: {
+  awal: DataTorLengkap;
+  hariH: string | null;
+  /** ISO waktu TOR terakhir dibuat, null bila belum pernah. */
+  dokumenTerakhir: string | null;
+}) {
   const tulis = awal.boleh_tulis;
+  const [dokumenAt, setDokumenAt] = React.useState(dokumenTerakhir);
+  const [membuat, setMembuat] = React.useState(false);
+  const [galatBuat, setGalatBuat] = React.useState<{ pesan: string; kurang: string[] } | null>(
+    null,
+  );
   const [data, setDataMentah] = React.useState<DataTor>(awal.data);
   const [rundown, setRundownMentah] = React.useState<BarisRundown[]>(awal.rundown);
   const [status, setStatus] = React.useState<Status>('tersimpan');
@@ -230,6 +250,30 @@ export function TorEditor({ awal, hariH }: { awal: DataTorLengkap; hariH: string
     };
   }, [tulis, simpan]);
 
+  const buatDokumen = async () => {
+    setMembuat(true);
+    setGalatBuat(null);
+    try {
+      kotor.current = true;
+      await simpan();
+      const res = await fetch(`/api/tor/${awal.kepanitiaan_id}/generate`, { method: 'POST' });
+      const b = (await res.json().catch(() => null)) as ResponsGenerate | null;
+      if (!res.ok || !b?.ok) {
+        const e = b && !b.ok ? b.error : undefined;
+        setGalatBuat({
+          pesan: e?.message || 'TOR gagal dibuat.',
+          kurang: e?.details?.kurang ?? [],
+        });
+        return;
+      }
+      setDokumenAt(new Date().toISOString());
+    } catch {
+      setGalatBuat({ pesan: 'Tidak dapat menghubungi server. Coba lagi.', kurang: [] });
+    } finally {
+      setMembuat(false);
+    }
+  };
+
   const faktaLuar = {
     rundown: rundown.length - galatBaris.size,
     anggaran: awal.anggaran !== 'TERBATAS' && awal.anggaran.total_divisi > 0,
@@ -240,7 +284,11 @@ export function TorEditor({ awal, hariH }: { awal: DataTorLengkap; hariH: string
   const anggaran = awal.anggaran;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[14rem_1fr]" data-testid="tor-editor" data-siap={siap ? '1' : '0'}>
+    <div
+      className="grid gap-4 lg:grid-cols-[14rem_1fr]"
+      data-testid="tor-editor"
+      data-siap={siap ? '1' : '0'}
+    >
       <aside className="lg:sticky lg:top-14 lg:self-start">
         <Card className="space-y-3 p-4">
           <p
@@ -310,6 +358,29 @@ export function TorEditor({ awal, hariH }: { awal: DataTorLengkap; hariH: string
               >
                 Simpan sekarang
               </Button>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => void buatDokumen()}
+                disabled={membuat || status === 'menyimpan'}
+                data-testid="tor-buat-dokumen"
+              >
+                <FileText aria-hidden="true" /> {membuat ? 'Membuat…' : 'Buat dokumen TOR'}
+              </Button>
+              {galatBuat ? (
+                <div role="alert" className="text-[12px] text-danger" data-testid="tor-buat-galat">
+                  <p>
+                    {galatBuat.kurang.length ? 'Lengkapi dulu bagian berikut:' : galatBuat.pesan}
+                  </p>
+                  {galatBuat.kurang.length ? (
+                    <ul className="mt-1 list-disc pl-4">
+                      {galatBuat.kurang.map((k) => (
+                        <li key={k}>{k}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : (
             <p
@@ -319,6 +390,16 @@ export function TorEditor({ awal, hariH }: { awal: DataTorLengkap; hariH: string
               Tampilan baca saja — TOR disusun panitia acara ini.
             </p>
           )}
+          {dokumenAt ? (
+            <a
+              href={`/api/tor/${awal.kepanitiaan_id}/generate`}
+              className="flex items-center gap-1.5 border-t border-default pt-3 text-[13px] font-medium underline"
+              data-testid="tor-unduh"
+            >
+              <Download aria-hidden="true" className="size-4" /> Unduh TOR (
+              {formatTanggalWaktu(dokumenAt)})
+            </a>
+          ) : null}
         </Card>
       </aside>
 

@@ -14,7 +14,10 @@ import {
   type DataTor,
 } from '@/lib/tor/schema';
 
-const doc = (teks: string) => ({ type: 'doc', content: [{ type: 'paragraph', content: teks ? [{ type: 'text', text: teks }] : [] }] });
+const doc = (teks: string) => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: teks ? [{ type: 'text', text: teks }] : [] }],
+});
 const luarKosong = { rundown: 0, anggaran: false, penandatangan: false };
 
 function torPenuh(): DataTor {
@@ -53,12 +56,21 @@ describe('skema TOR', () => {
   });
 
   it('rundown: tanggal & acara wajib, jam selesai setelah jam mulai', () => {
-    const dasar = { id: '6f1b0f7e-2a51-4c55-9f0e-0d6a6f6a1c11', tanggal: '2026-11-10', waktu_mulai: '08:00', waktu_selesai: '09:30', acara: 'Pembukaan', keterangan: '' };
+    const dasar = {
+      id: '6f1b0f7e-2a51-4c55-9f0e-0d6a6f6a1c11',
+      tanggal: '2026-11-10',
+      waktu_mulai: '08:00',
+      waktu_selesai: '09:30',
+      acara: 'Pembukaan',
+      keterangan: '',
+    };
     expect(SkemaBarisRundown.safeParse(dasar).success).toBe(true);
     expect(SkemaBarisRundown.safeParse({ ...dasar, acara: '  ' }).success).toBe(false);
     expect(SkemaBarisRundown.safeParse({ ...dasar, tanggal: '' }).success).toBe(false);
     expect(SkemaBarisRundown.safeParse({ ...dasar, waktu_selesai: '07:00' }).success).toBe(false);
-    expect(SkemaBarisRundown.safeParse({ ...dasar, waktu_mulai: '', waktu_selesai: '' }).success).toBe(true);
+    expect(
+      SkemaBarisRundown.safeParse({ ...dasar, waktu_mulai: '', waktu_selesai: '' }).success,
+    ).toBe(true);
   });
 
   it('isi simpan: rundown opsional', () => {
@@ -73,8 +85,12 @@ describe('bobot parameter kelulusan', () => {
   });
 
   it('kurang/lebih ditandai beserta selisihnya', () => {
-    expect(peringatanBobot([{ bobot: 40 }, { bobot: 50 }])).toBe('Total bobot 90% — kurang 10% dari 100%.');
-    expect(peringatanBobot([{ bobot: 70 }, { bobot: 40.5 }])).toBe('Total bobot 110,5% — lebih 10,5% dari 100%.');
+    expect(peringatanBobot([{ bobot: 40 }, { bobot: 50 }])).toBe(
+      'Total bobot 90% — kurang 10% dari 100%.',
+    );
+    expect(peringatanBobot([{ bobot: 70 }, { bobot: 40.5 }])).toBe(
+      'Total bobot 110,5% — lebih 10,5% dari 100%.',
+    );
     expect(peringatanBobot([{ bobot: null }])).toContain('kurang 100%');
   });
 
@@ -91,7 +107,9 @@ describe('kelengkapan TOR', () => {
   });
 
   it('11 bagian tor.data terisi + rundown + anggaran + penandatangan = 14', () => {
-    expect(kelengkapanTor(torPenuh(), { rundown: 3, anggaran: true, penandatangan: true })).toEqual({ terisi: 14, total: 14, kurang: [] });
+    expect(kelengkapanTor(torPenuh(), { rundown: 3, anggaran: true, penandatangan: true })).toEqual(
+      { terisi: 14, total: 14, kurang: [] },
+    );
   });
 
   it('bagian luar dihitung dari fakta, bukan tor.data', () => {
@@ -109,7 +127,10 @@ describe('kelengkapan TOR', () => {
 
 describe('normalisasi tor.data dari DB', () => {
   it('kolom rusak diganti kosong, kolom sah dipertahankan, kolom asing dibuang', () => {
-    const n = normalisasiTor({ tema: 'Sah', tujuan: 'bukan array', asing: 1 }, { nama_kegiatan: 'Dari acara' });
+    const n = normalisasiTor(
+      { tema: 'Sah', tujuan: 'bukan array', asing: 1 },
+      { nama_kegiatan: 'Dari acara' },
+    );
     expect(n.tema).toBe('Sah');
     expect(n.tujuan).toEqual([]);
     expect(n.nama_kegiatan).toBe('Dari acara');
@@ -117,6 +138,8 @@ describe('normalisasi tor.data dari DB', () => {
   });
 
   it('null → TOR kosong berisi nama & tema acara', () => {
-    expect(normalisasiTor(null, { nama_kegiatan: 'KT1', tema: 'T' })).toEqual(torKosong({ nama_kegiatan: 'KT1', tema: 'T' }));
+    expect(normalisasiTor(null, { nama_kegiatan: 'KT1', tema: 'T' })).toEqual(
+      torKosong({ nama_kegiatan: 'KT1', tema: 'T' }),
+    );
   });
 });

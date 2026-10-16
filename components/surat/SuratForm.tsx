@@ -80,7 +80,8 @@ export interface SuratFormProps {
    * ini" (T-084): kode kegiatan dan field khusus senama (`nama_kegiatan`,
    * `tema_kegiatan`). Kunci yang tidak dipakai jenis awal diabaikan.
    */
-  isianAwal?: { kode_kegiatan?: string; data_dinamis?: Record<string, string> };
+  /** Isian dari acara (T-084); `rundown` = baris tabel rundown acara (T-095). */
+  isianAwal?: { kode_kegiatan?: string; data_dinamis?: Record<string, string | Record<string, string>[]> };
   /** Ketua Himpunan periode aktif — kolom kanan blok tanda tangan di pratinjau. */
   ketua: KetuaHimpunan | null;
   /** Jenis awal untuk draft baru, mis. dari `?jenis=` atau peminjaman ruangan. */
@@ -91,11 +92,16 @@ export interface SuratFormProps {
 
 type StatusSimpan = 'diam' | 'menyimpan' | 'tersimpan' | 'galat';
 
+const terisi = (v: unknown) => (Array.isArray(v) ? v.length > 0 : !!v);
+/** Daftar yang belum disentuh: kosong, atau hanya baris default yang semua selnya kosong. */
+const kosong = (v: unknown) =>
+  Array.isArray(v) ? v.every((b) => !b || typeof b !== 'object' || Object.values(b).every((x) => !x)) : !v;
+
 /** Menimpa nilai awal dengan `isianAwal`, hanya pada kunci yang memang ada di jenis itu. */
 function isiAwal(nilai: Nilai, isian: SuratFormProps['isianAwal']): Nilai {
   if (!isian) return nilai;
   const dinamis = { ...nilai.data_dinamis };
-  for (const [k, v] of Object.entries(isian.data_dinamis ?? {})) if (k in dinamis && v) dinamis[k] = v;
+  for (const [k, v] of Object.entries(isian.data_dinamis ?? {})) if (k in dinamis && terisi(v)) dinamis[k] = v;
   return { ...nilai, ...(isian.kode_kegiatan ? { kode_kegiatan: isian.kode_kegiatan } : {}), data_dinamis: dinamis };
 }
 
@@ -246,6 +252,10 @@ function Form({ konfig, preset, awal, jenisAwal, ketua, alasanPenolakan, isianAw
     const tetap = serialisasiFieldSchema(baru).tetap;
     for (const k of kunciKhusus(baru)) {
       if (k in lama.data_dinamis && !(k in tetap)) hasil.data_dinamis[k] = lama.data_dinamis[k];
+    }
+    // Isian acara (mis. rundown) mengisi field jenis baru yang masih kosong.
+    for (const [k, v] of Object.entries(isianAwal?.data_dinamis ?? {})) {
+      if (k in hasil.data_dinamis && !(k in tetap) && terisi(v) && kosong(hasil.data_dinamis[k])) hasil.data_dinamis[k] = v;
     }
     kotorRef.current = true;
     setNilai(hasil);

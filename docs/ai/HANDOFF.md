@@ -65,6 +65,30 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-095 · Generator dokumen TOR (2026-10-16)
+
+`lib/tor/generate.ts` (`petakanTor` murni + `generateTor` + `dokumenTorTerakhir`),
+`POST|GET /api/tor/[kepanitiaanId]/generate` (generate / unduh ulang),
+tombol "Buat dokumen TOR" + tautan unduh di editor. Migrasi **044**
+(`dokumen_insert` + panitia untuk jenis TOR/PROPOSAL) · `015c` skenario 17.
+ADR-033 (nama loop template vs kontrak — alias).
+
+- Anggaran ditarik ulang dari RAB setiap generate (`muatTor` → `anggaranTor`);
+  gate e2e mengubah rab_item lalu generate ulang → angka di DOCX berubah.
+- Bagian kurang → 422 `details.kurang` (sama dengan penghitung editor).
+- TTD Ketua Himpunan WAJIB (+ stempel, seperti surat); TTD Ketua Pelaksana
+  dipakai bila ada, selain itu ruang kosong (T-049 unggah TTD belum dikerjakan,
+  tetapi tabel `signature` + `/api/users/me/signature` sudah ada).
+- Dokumen di `dokumen/tor/{id}.docx` (ditimpa); setiap generate menambah baris
+  `dokumen` (riwayat). Unduh dialirkan dari bucket privat.
+- Rundown ↔ Surat Undangan: `/surat/baru?acara=` kini mengisi `rundown` dari
+  tabel `rundown` (`lib/tor/rundown-surat.ts`), juga saat jenis diganti ke
+  undangan dan field masih kosong. Surat = salinan saat dibuat (dibekukan saat
+  terbit).
+- **Flake lama (bukan dari T-095):** `surat-form.spec` "auto-save … draft benar
+  tersimpan" — setelah reload `?id=` field perihal kadang kosong; gagal juga di
+  baseline tanpa perubahan ini (1 dari 2 jalan). Perlu diselidiki terpisah.
+
 ### T-094 · Editor TOR 14 bagian (2026-10-16)
 
 `lib/tor/{schema,service}.ts`, `GET|PUT /api/tor/[kepanitiaanId]`,

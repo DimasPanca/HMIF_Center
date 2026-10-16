@@ -685,5 +685,24 @@ BEGIN
   ASSERT v_n = 1, 'Koordinator divisi (panitia acara) TIDAK dapat menghapus baris rundown acaranya';
   ASSERT (SELECT count(*) FROM rundown WHERE kepanitiaan_id = v_kep) = 1, 'Jumlah baris rundown tidak sesuai';
 
-  RAISE NOTICE 'OK 015c_rls_negatif - 16 skenario, rundown dihapus panitia saja, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
+  ---------------------------------------------------------------------------
+  -- 17. DOKUMEN TOR/PROPOSAL: PANITIA MENCATAT HASIL GENERATE ACARANYA (T-095, 044)
+  --
+  --     Jenis lain (LPJ) tetap jalur role; acara lain tetap ditolak.
+  ---------------------------------------------------------------------------
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_anggota::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  INSERT INTO dokumen (kepanitiaan_id, jenis, format, storage_key, generated_by)
+  VALUES (v_kep, 'TOR', 'DOCX', 'dokumen/tor/uji.docx', v_anggota);
+  v_ditolak := false;
+  BEGIN
+    INSERT INTO dokumen (kepanitiaan_id, jenis, format, storage_key, generated_by)
+    VALUES (v_kep, 'LPJ', 'DOCX', 'dokumen/lpj/uji.docx', v_anggota);
+  EXCEPTION WHEN insufficient_privilege THEN v_ditolak := true;
+  END;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_ditolak, 'Panitia BERHASIL mencatat dokumen LPJ (bukan jalurnya)';
+  ASSERT (SELECT count(*) FROM dokumen WHERE kepanitiaan_id = v_kep AND jenis = 'TOR') = 1, 'Panitia TIDAK dapat mencatat dokumen TOR acaranya';
+
+  RAISE NOTICE 'OK 015c_rls_negatif - 17 skenario, dokumen TOR dicatat panitia, rundown dihapus panitia saja, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
 END $$;

@@ -7,6 +7,8 @@ import { can } from '@/lib/auth/permissions';
 import { STATUS_DAPAT_DISUNTING, detailDraft } from '@/lib/surat/draft';
 import { DAFTAR_JENIS, type JenisSurat } from '@/lib/surat/field-schemas';
 import { bacaKetuaHimpunan, bacaKonfigSurat, bacaPresetTujuan } from '@/lib/surat/konfig';
+import { rundownKeSurat } from '@/lib/tor/rundown-surat';
+import { muatRundown } from '@/lib/tor/service';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,10 +51,16 @@ export default async function SuratBaruPage({ searchParams }: PageProps) {
   // "Buat Surat untuk acara ini" (T-084): kode kegiatan & nama acara dari kepanitiaan,
   // dibaca di server dengan aturan baca yang sama dengan ruang kerja acara.
   const sumberAcara = !awal && acara && /^[0-9a-f-]{36}$/i.test(acara) ? await muatAcara(konteks, acara) : null;
+  // Rundown dari tabel `rundown` acara — sumber yang sama dengan Lampiran II TOR (T-095).
+  const rundown = sumberAcara ? rundownKeSurat(await muatRundown(sumberAcara.id)) : [];
   const isianAwal = sumberAcara
     ? {
         kode_kegiatan: sumberAcara.kode_kegiatan ?? undefined,
-        data_dinamis: { nama_kegiatan: sumberAcara.nama_acara, ...(sumberAcara.tema ? { tema_kegiatan: sumberAcara.tema } : {}) },
+        data_dinamis: {
+          nama_kegiatan: sumberAcara.nama_acara,
+          ...(sumberAcara.tema ? { tema_kegiatan: sumberAcara.tema } : {}),
+          ...(rundown.length ? { rundown: rundown.map((b) => ({ ...b })) } : {}),
+        },
       }
     : undefined;
 
