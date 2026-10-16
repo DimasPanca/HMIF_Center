@@ -65,6 +65,23 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-091 · Import Excel (2026-10-16)
+
+`lib/rab/excel-import.ts` (pengurai murni — dipakai juga `scripts/diff-excel.ts`),
+`rencanaImpor`/`simpanImpor` di `lib/rab/service.ts`,
+`POST /api/rab/[kepanitiaanId]/import` (`mode=pratinjau|simpan`, `manual` =
+`{barisExcel: angka}`), `components/rab/ImportRabDialog.tsx` (tombol di StatusRabBar).
+
+- Struktur dikenali dari bentuk (lihat T-090); judul kolom divalidasi terhadap
+  varian template; galat menyebut sheet/baris/kolom.
+- Jumlah dari rumus ekspor `E*n`/`ROUND(E*n,0)` = angka terkonfirmasi →
+  roundtrip ekspor→impor→ekspor identik field per field (gate unit).
+- Rencana yang sama untuk pratinjau dan simpan: TAMBAH/UBAH (field yang
+  berubah)/SAMA/LEWATI (+alasan: divisi bukan hak, divisi baru tanpa hak tambah,
+  baris kosong). Item dicocokkan per nama (tak peka huruf) dalam sub-section;
+  impor **tidak pernah menghapus**. Dana tak terduga di berkas hanya informasi.
+- RAB terkunci → 409 di pratinjau & simpan (baris rab_meta di-`FOR UPDATE`).
+
 ### T-090 · Export Excel 4 sheet (2026-10-16)
 
 `lib/rab/{excel-style,excel-export}.ts` (murni), `dataEksporRab` di

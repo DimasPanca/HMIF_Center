@@ -25,7 +25,9 @@ import { can } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
 import { kadeptPic, putusanTulisDivisi } from '@/lib/kepanitiaan/akses';
+import { bulatkanJumlah, hitungTotalItem } from '@/lib/rab/calculate';
 import type { DataEksporRab } from '@/lib/rab/excel-export';
+import type { RabImpor } from '@/lib/rab/excel-import';
 import { SkemaUbahItem, terapkanUbah, type DivisiRab, type ItemRab } from '@/lib/rab/item';
 
 if (typeof window !== 'undefined') {
@@ -607,4 +609,214 @@ export async function dataEksporRab(konteks: Konteks, kepanitiaanId: string): Pr
       nominal: Number(n.total_nota),
     })),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Impor Excel (T-091)
+// ---------------------------------------------------------------------------
+
+export type AksiImpor = 'TAMBAH' | 'UBAH' | 'SAMA' | 'LEWATI';
+
+export interface BarisRencana {
+  /** Baris Excel sumber. */
+  baris: number;
+  tingkat: 'DIVISI' | 'SUB-SECTION' | 'ITEM';
+  aksi: AksiImpor;
+  divisi: string;
+  section: string | null;
+  jenis_barang: string | null;
+  jumlah_teks: string | null;
+  jumlah_numerik: number | null;
+  harga_satuan: number | null;
+  total: number | null;
+  /** Field yang berubah (UBAH) atau alasan dilewati (LEWATI). */
+  catatan: string | null;
+  /** Jumlah perlu dipastikan; nilainya boleh diisi di pratinjau. */
+  butuhManual: boolean;
+}
+
+export interface RencanaImpor {
+  baris: BarisRencana[];
+  ringkas: Record<AksiImpor, number>;
+  /** Dana tak terduga di berkas — informasi; tidak diimpor (diatur Bendahara). */
+  danaTakTerdugaBerkas: number;
+}
+
+const kunciNama = (s: string) => s.trim().replace(/\s+/g, ' ').toUpperCase();
+
+/**
+ * Rencana impor terhadap RAB yang tersimpan — dipakai SAMA PERSIS oleh
+ * pratinjau dan simpan, jadi yang disimpan = yang dilihat pengguna.
+ * Impor menambah & memperbarui; tidak pernah menghapus baris yang tidak ada
+ * di berkas. Divisi yang bukan haknya dilewati dengan alasan.
+ */
+export async function rencanaImpor(
+  k: Klien,
+  konteks: Konteks,
+  kepanitiaanId: string,
+  data: RabImpor,
+  manual: Record<number, number>,
+): Promise<Hasil<RencanaImpor>> {
+  const { status } = await statusRab(k, kepanitiaanId);
+  if (!STATUS_TERBUKA.includes(status)) {
+    return gagal('RAB_TERKUNCI', `RAB berstatus ${status} dan terkunci — impor ditolak. Minta Bendahara membuka kuncinya.`);
+  }
+  const hak = await hakDivisiAcara(k, konteks, kepanitiaanId);
+
+  const ada = await k.divisi.findMany({
+    where: { kepanitiaan_id: kepanitiaanId },
+    select: {
+      id: true,
+      nama: true,
+      koordinator_id: true,
+      divisi_member: { select: { user_id: true } },
+      kepanitiaan: { select: { ketua_pelaksana: true, proker: { select: { periode_id: true } } } },
+      rab_section: { select: { id: true, nama: true, rab_item: { orderBy: { no_urut: 'asc' }, select: PILIH_ITEM } } },
+    },
+  });
+  const pelaku = { userId: konteks.sesi.userId, roles: konteks.roles, periodeId: konteks.periodeId };
+  const peta = new Map(ada.map((d) => [kunciNama(d.nama), d]));
+
+  const baris: BarisRencana[] = [];
+  const kosong = { section: null, jenis_barang: null, jumlah_teks: null, jumlah_numerik: null, harga_satuan: null, total: null, butuhManual: false };
+  for (const dv of data.divisi) {
+    const lama = peta.get(kunciNama(dv.nama));
+    const bolehDivisi = lama
+      ? putusanTulisDivisi(pelaku, {
+          periodeId: lama.kepanitiaan.proker.periode_id,
+          ketuaPelaksanaId: lama.kepanitiaan.ketua_pelaksana,
+          koordinatorId: lama.koordinator_id,
+          anggotaIds: lama.divisi_member.map((m) => m.user_id),
+        })
+      : hak.tambah;
+    const alasanDivisi = lama
+      ? `Divisi ${lama.nama} bukan divisi Anda.`
+      : 'Divisi baru hanya dapat ditambah Ketua Pelaksana, Kadept penanggung jawab, atau pimpinan.';
+    baris.push({
+      ...kosong,
+      baris: dv.baris,
+      tingkat: 'DIVISI',
+      aksi: !bolehDivisi ? 'LEWATI' : lama ? 'SAMA' : 'TAMBAH',
+      divisi: dv.nama,
+      catatan: bolehDivisi ? null : alasanDivisi,
+    });
+
+    for (const sc of dv.sections) {
+      const sLama = lama?.rab_section.find((s) => kunciNama(s.nama) === kunciNama(sc.nama));
+      if (sc.nama.trim() || !sLama) {
+        baris.push({
+          ...kosong,
+          baris: sc.baris,
+          tingkat: 'SUB-SECTION',
+          aksi: !bolehDivisi ? 'LEWATI' : sLama ? 'SAMA' : 'TAMBAH',
+          divisi: dv.nama,
+          section: sc.nama,
+          catatan: bolehDivisi ? null : alasanDivisi,
+        });
+      }
+      const terpakai = new Set<string>();
+      for (const it of sc.items) {
+        const numerik = manual[it.baris] !== undefined ? bulatkanJumlah(manual[it.baris]!) : it.jumlah_numerik;
+        const total = hitungTotalItem({ jumlah_numerik: numerik, harga_satuan: it.harga_satuan, total: it.total, total_manual: it.total_manual });
+        const dasar = {
+          baris: it.baris,
+          tingkat: 'ITEM' as const,
+          divisi: dv.nama,
+          section: sc.nama,
+          jenis_barang: it.jenis_barang,
+          jumlah_teks: it.jumlah_teks,
+          jumlah_numerik: numerik,
+          harga_satuan: it.harga_satuan,
+          total,
+          butuhManual: it.butuhManual && manual[it.baris] === undefined,
+        };
+        if (it.kosong) {
+          baris.push({ ...dasar, aksi: 'LEWATI', catatan: 'Baris kosong.', butuhManual: false });
+          continue;
+        }
+        if (!bolehDivisi) {
+          baris.push({ ...dasar, aksi: 'LEWATI', catatan: alasanDivisi });
+          continue;
+        }
+        const iLama = sLama?.rab_item.find((x) => !terpakai.has(x.id) && kunciNama(x.jenis_barang) === kunciNama(it.jenis_barang));
+        if (!iLama) {
+          baris.push({ ...dasar, aksi: 'TAMBAH', catatan: null });
+          continue;
+        }
+        terpakai.add(iLama.id);
+        const l = keItem(iLama);
+        const beda: string[] = [];
+        if (l.jumlah_teks !== it.jumlah_teks) beda.push(`jumlah "${l.jumlah_teks}" → "${it.jumlah_teks}"`);
+        if (l.jumlah_numerik !== numerik) beda.push(`jumlah hitung ${l.jumlah_numerik ?? '–'} → ${numerik ?? '–'}`);
+        if (l.harga_satuan !== it.harga_satuan) beda.push(`harga ${l.harga_satuan} → ${it.harga_satuan}`);
+        if (l.total_manual !== it.total_manual || l.total !== total) beda.push(`total ${l.total} → ${total}${it.total_manual ? ' (manual)' : ''}`);
+        baris.push({ ...dasar, aksi: beda.length ? 'UBAH' : 'SAMA', catatan: beda.length ? beda.join('; ') : null });
+      }
+    }
+  }
+
+  const ringkas: Record<AksiImpor, number> = { TAMBAH: 0, UBAH: 0, SAMA: 0, LEWATI: 0 };
+  for (const b of baris) if (b.tingkat === 'ITEM') ringkas[b.aksi]++;
+  return { ok: true, nilai: { baris, ringkas, danaTakTerdugaBerkas: data.danaTakTerduga } };
+}
+
+/** Menyimpan rencana impor dalam satu transaksi (dipanggil di withAuditContext). */
+export async function simpanImpor(
+  tx: TxKlien,
+  konteks: Konteks,
+  kepanitiaanId: string,
+  data: RabImpor,
+  manual: Record<number, number>,
+): Promise<Hasil<Record<AksiImpor, number>>> {
+  await tx.$executeRaw`INSERT INTO rab_meta (kepanitiaan_id) VALUES (${kepanitiaanId}::uuid) ON CONFLICT (kepanitiaan_id) DO NOTHING`;
+  await tx.$queryRaw`SELECT 1 FROM rab_meta WHERE kepanitiaan_id = ${kepanitiaanId}::uuid FOR UPDATE`;
+  const r = await rencanaImpor(tx, konteks, kepanitiaanId, data, manual);
+  if (!r.ok) return r;
+  const rencana = new Map(r.nilai.baris.map((b) => [b.baris, b]));
+
+  for (const dv of data.divisi) {
+    if (rencana.get(dv.baris)?.aksi === 'LEWATI') continue;
+    let divisi = await tx.divisi.findFirst({
+      where: { kepanitiaan_id: kepanitiaanId, nama: { equals: dv.nama.trim(), mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (!divisi) {
+      const urutan = await tx.divisi.count({ where: { kepanitiaan_id: kepanitiaanId } });
+      divisi = await tx.divisi.create({ data: { kepanitiaan_id: kepanitiaanId, nama: dv.nama.trim(), urutan }, select: { id: true } });
+    }
+    for (const sc of dv.sections) {
+      const namaSection = sc.nama.trim().toUpperCase();
+      let section = await tx.rab_section.findFirst({
+        where: { divisi_id: divisi.id, nama: { equals: namaSection, mode: 'insensitive' } },
+        select: { id: true },
+      });
+      if (!section) {
+        const urutan = await tx.rab_section.count({ where: { divisi_id: divisi.id } });
+        section = await tx.rab_section.create({ data: { divisi_id: divisi.id, nama: namaSection, urutan }, select: { id: true } });
+      }
+      const lama = await tx.rab_item.findMany({ where: { section_id: section.id }, orderBy: { no_urut: 'asc' }, select: { id: true, jenis_barang: true } });
+      const terpakai = new Set<string>();
+      let noAkhir = (await tx.rab_item.aggregate({ where: { section_id: section.id }, _max: { no_urut: true } }))._max.no_urut ?? 0;
+      for (const it of sc.items) {
+        const b = rencana.get(it.baris);
+        if (!b || b.aksi === 'LEWATI') continue;
+        const nilai = {
+          jenis_barang: it.jenis_barang,
+          jumlah_teks: it.jumlah_teks,
+          jumlah_numerik: b.jumlah_numerik,
+          harga_satuan: it.harga_satuan,
+          total: b.total ?? 0,
+          total_manual: it.total_manual,
+        };
+        const cocok = lama.find((x) => !terpakai.has(x.id) && kunciNama(x.jenis_barang) === kunciNama(it.jenis_barang));
+        if (cocok) {
+          terpakai.add(cocok.id);
+          if (b.aksi === 'UBAH') await tx.rab_item.update({ where: { id: cocok.id }, data: { ...nilai, updated_at: new Date() } });
+        } else {
+          await tx.rab_item.create({ data: { section_id: section.id, no_urut: ++noAkhir, ...nilai } });
+        }
+      }
+    }
+  }
+  return { ok: true, nilai: r.nilai.ringkas };
 }

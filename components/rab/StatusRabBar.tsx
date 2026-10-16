@@ -16,6 +16,7 @@
 import { Download, Lock, LockOpen, RotateCcw, Send } from 'lucide-react';
 import * as React from 'react';
 
+import { ImportRabDialog } from '@/components/rab/ImportRabDialog';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { STATUS_VALUES, StatusPill, type DomainStatus } from '@/components/ui/status-pill';
@@ -87,6 +88,9 @@ export function StatusRabBar({
         <a href={`/api/rab/${rab.kepanitiaan_id}/export`} className={buttonVariants({ variant: 'secondary' })} data-testid="rab-unduh-excel" download>
           <Download aria-hidden="true" /> Unduh Excel
         </a>
+        {rab.terbuka && (rab.boleh_tambah_divisi || rab.divisi.some((d) => d.boleh_tulis)) ? (
+          <ImportRabDialog kepanitiaanId={rab.kepanitiaan_id} onSelesai={onBerubah} />
+        ) : null}
         {izin.ajukan ? (
           <Button loading={sibuk} onClick={() => void jalankan('submit')} data-testid="rab-ajukan">
             <Send aria-hidden="true" /> Ajukan RAB
