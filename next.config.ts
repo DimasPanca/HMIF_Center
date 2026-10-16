@@ -23,6 +23,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   /**
+   * `NEXT_DIST_DIR` hanya untuk pengukuran: build produksi benchmark
+   * (mis. `.next-bench`, T-102 bench-galeri-nota) dapat dibuat dan dijalankan
+   * berdampingan dengan `next dev` tanpa menimpa `.next` miliknya. Bawaan tetap `.next`.
+   */
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+
+  /**
    * Hanya berlaku di `next dev`. Bawaannya membuang rute yang menganggur
    * ±15 detik, lalu mengompilasinya ulang (9–25 detik) saat diminta lagi — di
    * tengah gate e2e yang panjang, autosave dan approval jadi timeout palsu

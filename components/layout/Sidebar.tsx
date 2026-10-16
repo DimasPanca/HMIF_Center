@@ -180,7 +180,7 @@ const MENU: MenuUtama[] = [
       },
       {
         label: 'Verifikasi Nota',
-        href: '/keuangan/verifikasi-nota',
+        href: '/keuangan/nota/verifikasi',
         icon: ShieldCheck,
         tampil: (roles) => punya(roles, 'nota.verify'),
       },

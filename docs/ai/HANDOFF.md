@@ -65,6 +65,35 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-102 · Verifikasi nota (2026-10-16)
+
+`lib/nota/verifikasi.ts`, `POST /api/nota/[id]/{verify,reject,minta-perbaikan}`
+(kerangka bersama `app/api/nota/[id]/_aksi.ts`),
+`components/nota/{AntrianNota,NotaDetailSplit,VerifikasiAksi}.tsx`,
+`/keuangan/nota/verifikasi` (sidebar diarahkan ke sini), `scripts/bench-galeri-nota.ts`.
+
+- Antrian = nota MENUNGGU_VERIFIKASI periode berjalan, dikelompokkan per acara
+  lalu divisi; kartu memakai `NotaImage varian="thumb"` (lazy), detail
+  `varian="preview"`, unduh master hanya lewat `/api/images/[id]/download`.
+  Gate e2e memeriksa lalu lintas jaringan: tak satu pun permintaan master.
+- Setujui: baris dikunci `FOR UPDATE`, hanya dari MENUNGGU_VERIFIKASI (selain
+  itu 409), Σ alokasi = total diperiksa ULANG (422 `ALOKASI_TIDAK_SEIMBANG`),
+  nota pertama memajukan RAB DISETUJUI → REALISASI (`majukanStatusRab`).
+  Tolak/minta perbaikan wajib alasan ≥ 5 karakter (422 di server), disimpan di
+  `alasan_penolakan`; status DITOLAK / PERLU_PERBAIKAN kembali ke pengunggah
+  (perbaikan T-101/045).
+- Hak = `nota.verify` (Admin, Bendum) — cermin RLS nota_update.
+- `next.config.ts` kini menerima `NEXT_DIST_DIR` (bawaan `.next`) agar build
+  produksi benchmark dapat berjalan berdampingan dengan `next dev`;
+  `.next-*/` di-ignore.
+- Bench galeri (`scripts/bench-galeri-nota.ts`, build produksi `.next-bench`
+  port 3100): median **936 ms** < 2000 ms, 30 thumbnail dimuat, 0 permintaan
+  master; TTFB setara halaman `/surat` (layout + sesi). Antrian = SATU query
+  SQL, detail = dua query paralel — relasi Prisma bersarang berarti satu
+  round-trip per relasi. Di `next dev` setiap halaman +±2 detik (tak berarti).
+- Gate: `upload-nota.spec` kini memfilter baris "Nota saya" dengan nama acara
+  ber-tag project (desktop & mobile berbagi akun uji secara paralel).
+
 ### T-101 · Alur upload nota (2026-10-16)
 
 `lib/nota/{skema,service,unggah-gambar}.ts`, `GET|POST /api/nota`,

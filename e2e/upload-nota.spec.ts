@@ -42,6 +42,7 @@ function fotoNota(): Buffer {
 
 let sql: ReturnType<typeof postgres>;
 let prokerId = '';
+let namaAcara = '';
 const div = { konsumsi: '', pdd: '' };
 const item = { snack: '', galon: '', kamera: '' };
 let notaId = '';
@@ -85,6 +86,7 @@ test.beforeAll(async () => {
   sql = postgres(bacaKoneksi(), { ssl: 'require', max: 1, onnotice: () => {} });
   const tag = `${test.info().project.name === 'mobile' ? 'M' : 'D'}${Date.now().toString().slice(-6)}`;
   const nama = `E2E101 ${tag} NOTA`;
+  namaAcara = nama;
   const [p] = await sql<{ id: string }[]>`SELECT id::text FROM periode WHERE status = 'AKTIF' LIMIT 1`;
   const kadept = await idAkun(AKUN.kadept);
   anggotaId = await idAkun(AKUN.anggota);
@@ -232,7 +234,8 @@ test('nota DITOLAK diperbaiki pengunggah → kembali MENUNGGU_VERIFIKASI', async
   await sql`UPDATE nota SET status = 'DITOLAK', alasan_penolakan = 'Nominal galon salah' WHERE id = ${notaId}::uuid`;
   const koor = await sesi(browser, AKUN.anggota);
   await koor.goto('/keuangan/nota', { waitUntil: 'load' });
-  const baris = koor.getByTestId('nota-saya-baris').filter({ hasText: 'E2E101' }).first();
+  // Nama acara ber-tag project: desktop & mobile memakai akun uji yang sama secara paralel.
+  const baris = koor.getByTestId('nota-saya-baris').filter({ hasText: namaAcara });
   await expect(baris).toHaveAttribute('data-status', 'DITOLAK', { timeout: 60_000 });
   await expect(baris).toContainText('Nominal galon salah');
   await baris.getByTestId('nota-perbaiki').click();
