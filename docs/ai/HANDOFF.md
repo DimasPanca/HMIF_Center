@@ -65,6 +65,26 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-104 · Analisis LPJ (2026-10-16)
+
+`lib/lpj/analyze.ts` (`analisisLpj` murni + `muatBahanLpj`),
+`GET /api/lpj/[kepanitiaanId]/analyze` (`langsung` + `snapshot` tersimpan),
+`lib/lpj/__tests__/lpj-analyze.test.ts` (nama ber-prefiks seperti
+`rab-calculate.test.ts` supaya `npm run test -- lpj-analyze` menemukannya).
+
+- Seluruh field SYSTEM_DESIGN §11.5 + `underBudget`, `totalDiLuarRab`,
+  `kekuranganDanaTakTerduga`, `jumlahNota`, `dihitungAt`.
+- `totalAktual` = Σ total nota terverifikasi (= Σ alokasi, INV-28 — diuji);
+  realisasi item dari alokasi; di luar RAB dari alokasi `rab_item_id NULL`.
+- Persen selisih `null` bila rencana 0. Item ber-rencana 0 yang terealisasi =
+  OVER_BUDGET.
+- **Definisi dana tak terduga terpakai** (SYSTEM_DESIGN tak merinci
+  `hitungDanaTakTerduga`): min(cadangan RAB, Σ kelebihan item over-budget + Σ
+  pengeluaran di luar RAB); sisa kebutuhan = `kekuranganDanaTakTerduga`.
+- Bahan memakai helper realisasi T-103 (`notaTerverifikasi`,
+  `sumberPemasukan`, kini diekspor dari `lib/rab/service.ts`). Snapshot ke
+  `lpj.analisis` ditulis T-105 saat generate.
+
 ### T-103 · PENGELUARAN & RAB AKTUAL otomatis (2026-10-16)
 
 `lib/rab/realisasi.ts` (murni: `bukuPengeluaran`, `realisasiPerItem`,

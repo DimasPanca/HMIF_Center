@@ -597,7 +597,7 @@ export async function dataEksporRab(konteks: Konteks, kepanitiaanId: string): Pr
 // ---------------------------------------------------------------------------
 
 /** Nota TERVERIFIKASI divisi-divisi ini beserta alokasinya — bahan tunggal PENGELUARAN & RAB AKTUAL. */
-async function notaTerverifikasi(divisiIds: string[]): Promise<NotaRealisasi[]> {
+export async function notaTerverifikasi(divisiIds: string[]): Promise<NotaRealisasi[]> {
   if (!divisiIds.length) return [];
   const rows = await db.nota.findMany({
     where: { divisi_id: { in: divisiIds }, status: 'TERVERIFIKASI' },
@@ -624,7 +624,7 @@ async function notaTerverifikasi(divisiIds: string[]): Promise<NotaRealisasi[]> 
 }
 
 /** Sumber saldo awal PENGELUARAN: pembayaran peserta (bila ada) + pemasukan manual. */
-function sumberPemasukan(
+export function sumberPemasukan(
   namaAcara: string,
   peserta: { sudah_bayar: boolean; jumlah: Prisma.Decimal }[],
   pemasukan: { keterangan: string; saldo: Prisma.Decimal }[],
