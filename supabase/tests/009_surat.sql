@@ -50,7 +50,8 @@ BEGIN
   VALUES (v_periode1, v_tmpl, '05', '2026-11-02',
           'Permohonan Peminjaman Tandu', 'Kepala BPBD Kota Cilegon', 'di Tempat', v_user);
 
-  SELECT count(*)::INT INTO v_jumlah FROM surat WHERE nomor_urut IS NULL;
+  -- Hanya draft milik test ini: DB dev juga memuat draft dari e2e (hermetis, seperti 014c/017).
+  SELECT count(*)::INT INTO v_jumlah FROM surat WHERE nomor_urut IS NULL AND dibuat_oleh = v_user;
   ASSERT v_jumlah = 2,
     format('Draft tanpa nomor: %s baris, seharusnya 2 - index bukan parsial', v_jumlah);
 
