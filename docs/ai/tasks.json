@@ -1210,9 +1210,9 @@
         "T-100",
         "T-089"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-10-16"
     },
     {
       "id": "T-102",

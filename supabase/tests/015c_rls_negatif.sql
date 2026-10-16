@@ -704,5 +704,50 @@ BEGIN
   ASSERT v_ditolak, 'Panitia BERHASIL mencatat dokumen LPJ (bukan jalurnya)';
   ASSERT (SELECT count(*) FROM dokumen WHERE kepanitiaan_id = v_kep AND jenis = 'TOR') = 1, 'Panitia TIDAK dapat mencatat dokumen TOR acaranya';
 
-  RAISE NOTICE 'OK 015c_rls_negatif - 17 skenario, dokumen TOR dicatat panitia, rundown dihapus panitia saja, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
+  ---------------------------------------------------------------------------
+  -- 18. NOTA: PENGUNGGAH MEMPERBAIKI NOTA DITOLAK, TIDAK MEMVERIFIKASI SENDIRI;
+  --     ALOKASI NOTA TERVERIFIKASI TERKUNCI (T-101, 045)
+  ---------------------------------------------------------------------------
+  DECLARE
+    v_img  UUID;
+    v_nota UUID;
+  BEGIN
+    INSERT INTO image (uploader_id, original_filename, storage_uuid, master_path, preview_path, thumbnail_path,
+                       original_mime_type, master_mime_type, original_width, original_height,
+                       master_width, master_height, master_file_size, kind)
+    VALUES (v_anggota, 'nota.jpg', 'rls-045', 'nota/master/rls-045.jpg', 'nota/preview/rls-045.webp',
+            'nota/thumb/rls-045.webp', 'image/jpeg', 'image/jpeg', 1200, 900, 1200, 900, 100000, 'DOKUMEN')
+    RETURNING id INTO v_img;
+    INSERT INTO nota (divisi_id, image_id, uploader_id, tanggal_belanja, total_nota, status, alasan_penolakan)
+    VALUES (v_div1, v_img, v_anggota, '2026-11-01', 75000, 'DITOLAK', 'Foto buram')
+    RETURNING id INTO v_nota;
+    INSERT INTO nota_alokasi (nota_id, uraian_luar_rab, nominal) VALUES (v_nota, 'Galon', 75000);
+
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_anggota::TEXT)::TEXT, true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    -- Memverifikasi sendiri ditolak (WITH CHECK).
+    v_ditolak := false;
+    BEGIN
+      UPDATE nota SET status = 'TERVERIFIKASI' WHERE id = v_nota;
+    EXCEPTION WHEN insufficient_privilege THEN v_ditolak := true;
+    END;
+    ASSERT v_ditolak, 'Pengunggah BERHASIL memverifikasi notanya sendiri';
+    -- Memperbaiki: alokasi diganti, status kembali MENUNGGU_VERIFIKASI.
+    DELETE FROM nota_alokasi WHERE nota_id = v_nota;
+    INSERT INTO nota_alokasi (nota_id, uraian_luar_rab, nominal) VALUES (v_nota, 'Galon 19L', 75000);
+    UPDATE nota SET status = 'MENUNGGU_VERIFIKASI', alasan_penolakan = NULL WHERE id = v_nota;
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    EXECUTE 'RESET ROLE';
+    ASSERT v_n = 1, 'Pengunggah TIDAK dapat memperbaiki nota yang ditolak';
+
+    UPDATE nota SET status = 'TERVERIFIKASI', verified_by = v_bendum WHERE id = v_nota;
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', v_anggota::TEXT)::TEXT, true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    DELETE FROM nota_alokasi WHERE nota_id = v_nota;
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    EXECUTE 'RESET ROLE';
+    ASSERT v_n = 0, format('Alokasi nota TERVERIFIKASI terhapus %s baris oleh pengunggah', v_n);
+  END;
+
+  RAISE NOTICE 'OK 015c_rls_negatif - 18 skenario, nota diperbaiki pengunggah & alokasi terverifikasi terkunci, dokumen TOR dicatat panitia, rundown dihapus panitia saja, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
 END $$;

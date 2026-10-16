@@ -65,6 +65,31 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-101 · Alur upload nota (2026-10-16)
+
+`lib/nota/{skema,service,unggah-gambar}.ts`, `GET|POST /api/nota`,
+`PATCH /api/nota/[id]`, `components/nota/{NotaForm,ItemRabSelector,AlokasiEditor}.tsx`,
+`/keuangan/nota` (nota saya + Perbaiki) dan `/keuangan/nota/upload` (`?perbaiki=`).
+Migrasi **045** · `015c` skenario 18.
+
+- Urutan USER_FLOW §7.1: divisi (otomatis bila satu) → item RAB (select +
+  "Pengeluaran di luar RAB") → baru tombol kamera aktif → CameraCapture (dimuat
+  dinamis; OpenCV baru saat kamera dibuka — gate memeriksa tak ada request CDN
+  sebelumnya) → pipeline T-097 → `/api/images/upload` → rincian & alokasi.
+- Uang rupiah bulat; selisih alokasi real-time (`data-selisih`); server menolak
+  `ALOKASI_TIDAK_SEIMBANG` + `details {total_nota,total_alokasi,selisih}`.
+  Item RAB diperiksa milik divisi itu di server, gambar milik pengunggah dan
+  belum dipakai nota lain, tanggal belanja tidak di masa depan.
+- Hak unggah = `nota.create` + (Admin | `bisaTulisPanitiaDivisi`) — cermin
+  `nota_insert` (039). Sekum sebagai Ketua Pelaksana tidak punya `nota.create`
+  (matriks PRD) → tidak dapat mengunggah.
+- 045: pengunggah memperbaiki nota DITOLAK/PERLU_PERBAIKAN (hasil wajib
+  MENUNGGU_VERIFIKASI — tak dapat memverifikasi sendiri); alokasi hanya diubah
+  Admin/Bendum atau pengunggah selama nota belum terverifikasi (sebelumnya
+  SEMUA anggota divisi dapat mengubah alokasi nota terverifikasi).
+- Belum dijalankan: `scripts/bench-bundle.ts -- /keuangan/nota/upload` (butuh
+  port 3000 kosong; dev server sedang dipakai). Jalankan saat server mati.
+
 ### T-096 · Editor & generator Proposal (2026-10-16)
 
 `lib/proposal/{schema,prefill,service,generate}.ts`,
