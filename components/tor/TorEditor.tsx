@@ -15,26 +15,21 @@
  *     kurang ditampilkan apa adanya dari server.
  */
 
-import type { JSONContent } from '@tiptap/react';
 import { Check, Download, ExternalLink, FileText } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import * as React from 'react';
 
-import { KontenProsa } from '@/components/acara/KontenProsa';
 import { BagianRepeatable } from '@/components/tor/BagianRepeatable';
+import { Teks, TeksKaya } from '@/components/tor/BidangDokumen';
 import { ParameterKelulusan } from '@/components/tor/ParameterKelulusan';
 import { RundownEditor, galatRundown } from '@/components/tor/RundownEditor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import type { NodeProseMirror } from '@/lib/notulensi/sanitasi';
 import type { DataTorLengkap } from '@/lib/tor/service';
 import {
   BAGIAN_TOR,
   SkemaDataTor,
-  adaTeks,
   bagianTerisi,
   type BarisRundown,
   type DataTor,
@@ -42,14 +37,6 @@ import {
 } from '@/lib/tor/schema';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 import { formatTanggalWaktu } from '@/lib/utils/format-tanggal';
-
-const NotulensiEditor = dynamic(
-  () => import('@/components/notulensi/NotulensiEditor').then((m) => m.NotulensiEditor),
-  {
-    ssr: false,
-    loading: () => <Skeleton variant="text" rows={3} loadingLabel="Memuat editor…" />,
-  },
-);
 
 export const SELANG_AUTOSAVE_TOR_MS = 10_000;
 
@@ -86,65 +73,6 @@ function Bagian({
         {children}
       </Card>
     </section>
-  );
-}
-
-function TeksKaya({
-  label,
-  konten,
-  bolehTulis,
-  onChange,
-}: {
-  label: string;
-  konten: NodeProseMirror;
-  bolehTulis: boolean;
-  onChange: (k: NodeProseMirror) => void;
-}) {
-  if (!bolehTulis) {
-    return adaTeks(konten) ? (
-      <KontenProsa konten={konten} />
-    ) : (
-      <p className="text-[13px] text-secondary">Belum diisi.</p>
-    );
-  }
-  return (
-    <NotulensiEditor
-      konten={konten as JSONContent}
-      editable
-      label={label}
-      onChange={(k) => onChange(k as NodeProseMirror)}
-    />
-  );
-}
-
-function Teks({
-  id,
-  label,
-  nilai,
-  bolehTulis,
-  maks,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  nilai: string;
-  bolehTulis: boolean;
-  maks: number;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="sr-only">
-        {label}
-      </label>
-      <Input
-        id={id}
-        value={nilai}
-        readOnly={!bolehTulis}
-        maxLength={maks}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
   );
 }
 

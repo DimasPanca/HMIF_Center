@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { muatAcara } from '@/lib/acara/service';
 import { requirePermission } from '@/lib/auth/guard';
 import { withAuditContext } from '@/lib/db/with-audit-context';
 import { gagal, sukses } from '@/lib/http/respond';
@@ -35,7 +36,8 @@ export async function PUT(request: Request, context: RouteContext) {
   if (!z.uuid().safeParse(kepanitiaanId).success)
     return gagal('VALIDASI_GAGAL', 'ID tidak valid.', { status: 422, headers: TANPA_CACHE });
   // Acara periode lain / tak terlihat → 404, sama dengan GET.
-  if (!(await muatTor(guard.konteks, kepanitiaanId)))
+  // Cukup cek visibilitas acara — memuat seluruh TOR + RAB di tiap auto-save terlalu mahal.
+  if (!(await muatAcara(guard.konteks, kepanitiaanId)))
     return gagal('TIDAK_DITEMUKAN', 'Acara tidak ditemukan.', {
       status: 404,
       headers: TANPA_CACHE,

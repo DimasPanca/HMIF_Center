@@ -177,7 +177,7 @@ test('koordinator: TipTap baru dimuat saat editor dibuka, auto-save → Tersimpa
   await expect(koor.getByTestId('job-desk-status')).toHaveAttribute('data-status', 'berubah');
   // Auto-save tiap 10 detik — tanpa menekan apa pun.
   await expect(koor.getByTestId('job-desk-status')).toHaveAttribute('data-status', 'tersimpan', {
-    timeout: 25_000,
+    timeout: 60_000,
   });
   await expect(koor.getByTestId('job-desk-status')).toContainText('Tersimpan');
 

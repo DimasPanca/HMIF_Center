@@ -63,8 +63,9 @@ async function bukaTor(page: Page): Promise<void> {
 const terisi = async (page: Page) => Number(await page.getByTestId('tor-kelengkapan').getAttribute('data-terisi'));
 
 async function tungguTersimpan(page: Page): Promise<void> {
-  // Auto-save tiap 10 detik — tanpa menekan apa pun.
-  await expect(page.getByTestId('tor-status')).toHaveAttribute('data-status', 'tersimpan', { timeout: 25_000 });
+  // Auto-save tiap 10 detik — tanpa menekan apa pun. 60 detik: PUT pertama di
+  // server dev dingin ikut mengompilasi route (terukur >15 detik di Windows).
+  await expect(page.getByTestId('tor-status')).toHaveAttribute('data-status', 'tersimpan', { timeout: 60_000 });
 }
 
 test.beforeAll(async () => {
@@ -205,7 +206,7 @@ test('rundown yang diubah di TOR berubah di tabel rundown (satu sumber)', async 
   await expect(koor.getByTestId('tor-rundown-ditahan')).toBeVisible();
   await expect(r.getByTestId('tor-rundown-galat')).toContainText('Nama acara rundown wajib diisi.');
   await koor.getByTestId('tor-simpan').click();
-  await expect(koor.getByTestId('tor-status')).toHaveAttribute('data-status', 'berubah', { timeout: 15_000 });
+  await expect(koor.getByTestId('tor-status')).toHaveAttribute('data-status', 'berubah', { timeout: 60_000 });
   const [n] = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM rundown WHERE kepanitiaan_id = ${acaraId}::uuid`;
   expect(n!.n).toBe(1);
 

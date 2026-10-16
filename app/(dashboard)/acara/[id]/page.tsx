@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { muatAcara, type RuangAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { muatProposal } from '@/lib/proposal/service';
 import { muatPemasukan, type DataPemasukan } from '@/lib/rab/pemasukan';
 import { muatRab, type DataRab } from '@/lib/rab/service';
 import { muatTor, ringkasKelengkapan } from '@/lib/tor/service';
@@ -55,12 +56,14 @@ function IsiTab({
   rab,
   pemasukan,
   tor,
+  proposal,
 }: {
   acara: RuangAcara;
   tab: TabAcara;
   rab: DataRab | 'TERBATAS' | null;
   pemasukan: DataPemasukan | 'TERBATAS' | null;
   tor: { terisi: number; total: number; kurang: string[]; boleh_tulis: boolean } | null;
+  proposal: { persen: number; tersimpan: boolean; boleh_tulis: boolean } | null;
 }) {
   switch (tab) {
     case 'ringkasan':
@@ -181,13 +184,31 @@ function IsiTab({
 
     case 'proposal':
       return (
-        <BelumTersedia
-          testid="acara-isi-proposal"
-          ikon="dokumen"
-          judul="Editor proposal belum tersedia"
-          penjelasan="Proposal kegiatan akan dibuat dari TOR dan RAB acara ini setelah keduanya tersusun."
-          aksi={ringkasan(acara.id)}
-        />
+        <Card className="space-y-3 p-4" data-testid="acara-isi-proposal">
+          <div className="flex items-start gap-3">
+            <FileText aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-tertiary" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[15px] font-semibold">Proposal Kegiatan</h2>
+              <p className="text-[13px] text-secondary">
+                {proposal
+                  ? `${proposal.persen}% field terisi otomatis dari TOR, data panitia, dan RAB.`
+                  : ''}{' '}
+                Susunan kepanitiaan dan anggaran selalu ditarik dari data acara.
+              </p>
+            </div>
+          </div>
+          <Link
+            href={`/acara/${acara.id}/proposal`}
+            className={buttonVariants({ variant: 'primary' })}
+            data-testid="acara-buka-proposal"
+          >
+            {proposal?.boleh_tulis
+              ? proposal.tersimpan
+                ? 'Lanjutkan proposal'
+                : 'Buat proposal'
+              : 'Lihat proposal'}
+          </Link>
+        </Card>
       );
 
     case 'lpj':
@@ -226,6 +247,14 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
   const tor = torLengkap
     ? { ...ringkasKelengkapan(torLengkap), boleh_tulis: torLengkap.boleh_tulis }
     : null;
+  const propLengkap = tab === 'proposal' ? await muatProposal(konteks, acara.id) : null;
+  const proposal = propLengkap
+    ? {
+        persen: propLengkap.ukuran.persen_otomatis,
+        tersimpan: propLengkap.tersimpan,
+        boleh_tulis: propLengkap.boleh_tulis,
+      }
+    : null;
 
   return (
     <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6">
@@ -234,7 +263,14 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
         <PeranSaya acara={acara} />
         <TabNav acaraId={acara.id} aktif={tab} />
         <section aria-label={`Tab ${tab}`} data-testid={`acara-panel-${tab}`}>
-          <IsiTab acara={acara} tab={tab} rab={rab} pemasukan={pemasukan} tor={tor} />
+          <IsiTab
+            acara={acara}
+            tab={tab}
+            rab={rab}
+            pemasukan={pemasukan}
+            tor={tor}
+            proposal={proposal}
+          />
         </section>
       </div>
     </main>

@@ -101,6 +101,8 @@ export const keys = {
   // --- Dokumen yang dihasilkan --------------------------------------------
   suratDocx: (suratId: string): string => `dokumen/surat/${aman(suratId, 'suratId')}.docx`,
   suratPdf: (suratId: string): string => `dokumen/surat/${aman(suratId, 'suratId')}.pdf`,
+  proposalPdf: (kepanitiaanId: string): string =>
+    `dokumen/proposal/${aman(kepanitiaanId, 'kepanitiaanId')}.pdf`,
   proposalDocx: (kepanitiaanId: string): string =>
     `dokumen/proposal/${aman(kepanitiaanId, 'kepanitiaanId')}.docx`,
   torDocx: (kepanitiaanId: string): string =>

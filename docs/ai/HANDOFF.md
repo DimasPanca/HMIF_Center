@@ -65,6 +65,37 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-096 · Editor & generator Proposal (2026-10-16)
+
+`lib/proposal/{schema,prefill,service,generate}.ts`,
+`GET|PUT /api/proposal/[kepanitiaanId]`, `POST|GET /api/proposal/[kepanitiaanId]/generate`
+(`?format=pdf`), `components/proposal/ProposalEditor.tsx`,
+`app/(dashboard)/acara/[id]/proposal/page.tsx`; tab Proposal = kartu persentase
++ tautan. `components/tor/BidangDokumen.tsx` (TeksKaya/Teks) kini dipakai TOR & Proposal.
+
+- `proposal.data` = 16 field yang dapat disunting + `asal` (tanda prefill) +
+  `manual` (field yang pernah disunting — prefill tak pernah menyentuhnya lagi,
+  termasuk bila dikosongkan). Susunan kepanitiaan, anggaran, rincian RAB,
+  rundown, Ketua Pelaksana & Ketua Himpunan = tarikan (zod strict menolak).
+- Prefill (`terapkanPrefill`, dijalankan setiap muat): TOR (8 field, placeholder
+  sama), deskripsi/tujuan/sasaran proker, koordinator divisi bernama
+  "*sekretar*" → Sekretaris, proposal terbaru lain di periode yang sama →
+  landasan, asas, Ketua BEM, WD III, Kaprodi (pejabat fakultas tanpa akun —
+  TEMPLATE_MAPPING Temuan 12; `app_config` belum punya kuncinya).
+- Ukuran kontrak 2 = (field bertanda asal & terisi + tarikan yang datanya ada)
+  / 23 (16 field + 7 tarikan). TOR lengkap + deskripsi proker → 16/23 = 70%;
+  rinciannya tampil di sidebar ("x dari TOR…, y dari data acara & RAB").
+- Generate: wajib nama, pengesahan (4 orang), latar belakang, landasan, tujuan,
+  sasaran, bentuk acara, sesi, gambaran umum, penutup → selain itu 422
+  `details.kurang`. Tanpa gambar TTD (lembar pengesahan ditandatangani basah).
+  PDF hanya bila PDF_ENABLED (keys.proposalPdf baru); gagal → DOCX + peringatan.
+- Hak = `bisaTulisTor` (RLS proposal_* identik tor_*); dokumen PROPOSAL lewat 044.
+
+- Gate e2e: tunggu auto-save TOR/Proposal/Job desk dinaikkan ke 60 detik — PUT
+  pertama di server dev dingin ikut mengompilasi route (>15 detik terukur saat
+  dua sesi memakai server yang sama). PUT TOR/Proposal kini cukup cek
+  visibilitas lewat `muatAcara`, bukan memuat dokumen penuh.
+
 ### T-095 · Generator dokumen TOR (2026-10-16)
 
 `lib/tor/generate.ts` (`petakanTor` murni + `generateTor` + `dokumenTorTerakhir`),
