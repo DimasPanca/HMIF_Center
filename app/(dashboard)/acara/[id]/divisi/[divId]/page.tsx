@@ -1,10 +1,12 @@
-import { CalendarRange } from 'lucide-react';
+import { CalendarRange, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { AcaraHeader } from '@/components/acara/AcaraHeader';
 import { BelumTersedia } from '@/components/acara/BelumTersedia';
 import { BilahProgres } from '@/components/acara/DivisiCard';
+import { ModeBacaSajaBanner } from '@/components/acara/ModeBacaSajaBanner';
+import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { STATUS_VALUES, StatusPill, type DomainStatus } from '@/components/ui/status-pill';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -132,9 +134,11 @@ export default async function RuangDivisiPage({ params }: PageProps) {
   if (!r) notFound();
 
   return (
-    <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6">
+    <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6" data-testid="ruang-divisi" data-mode={r.boleh_tulis ? 'tulis' : 'baca'}>
       <div className="mx-auto max-w-[92rem] space-y-4">
         <AcaraHeader acara={r.acara} divisi={r.divisi} bolehSurat={can(konteks.roles, 'surat.create')} />
+        {/* Divisi lain: banner + tombol tulis TIDAK dirender (INV-30, T-085). */}
+        {r.boleh_tulis ? null : <ModeBacaSajaBanner namaDivisi={r.divisi.nama} />}
 
         <div className="grid gap-3 sm:grid-cols-3" data-testid="divisi-metrik">
           <Card className="p-4">
@@ -187,11 +191,19 @@ export default async function RuangDivisiPage({ params }: PageProps) {
             {r.chart.length ? (
               <ul className="grid gap-2">
                 {r.chart.map((c) => (
-                  <li key={c.id}>
-                    <Link href={`/gantt/${c.id}`} className="flex items-center gap-3 rounded-sm border border-default p-3 hover:bg-subtle">
+                  <li key={c.id} className="flex items-center gap-2">
+                    <Link
+                      href={`/gantt/${c.id}`}
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-sm border border-default p-3 hover:bg-subtle"
+                    >
                       <CalendarRange aria-hidden="true" className="size-5 shrink-0 text-tertiary" />
-                      <span className="text-[14px] font-medium">{c.judul}</span>
+                      <span className="truncate text-[14px] font-medium">{c.judul}</span>
                     </Link>
+                    {r.boleh_tulis ? (
+                      <Link href={`/gantt/${c.id}`} className={buttonVariants({ variant: 'secondary' })} data-testid="divisi-aksi-tulis">
+                        <Pencil aria-hidden="true" /> Ubah timeline
+                      </Link>
+                    ) : null}
                   </li>
                 ))}
               </ul>

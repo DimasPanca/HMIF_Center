@@ -188,7 +188,7 @@ test('chart departemen lain tidak bocor (404); BPH baca saja (403); Anggota tak 
   await bph.goto(`/gantt/${chartId}`, { waitUntil: 'load' });
   await expect(bph.getByTestId('gantt-editor-root')).toHaveAttribute('data-editor-izin', 'baca', { timeout: 60_000 });
   await expect(bph.getByTestId(`gantt-drag-${t!.id}`)).toHaveAttribute('data-drag-aktif', 'false');
-  await expect(bph.getByTestId('gantt-task-tambah')).toBeDisabled();
+  await expect(bph.getByTestId('gantt-task-tambah')).toHaveCount(0); // tidak dirender (INV-30)
   await bph.context().close();
 
   const anggota = await sesi(browser, AKUN.anggota);

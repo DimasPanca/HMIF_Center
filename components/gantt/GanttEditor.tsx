@@ -230,16 +230,19 @@ export function GanttEditor({
               Tambah grup
             </Button>
           ) : null}
-          <Button
-            type="button"
-            onClick={taskBaru}
-            disabled={!hak.tambah || data.grup.length === 0}
-            title={!hak.tambah ? 'Anda hanya dapat membaca chart ini.' : data.grup.length === 0 ? 'Tambahkan grup terlebih dahulu.' : undefined}
-            data-testid="gantt-task-tambah"
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            Tambah task
-          </Button>
+          {/* Izin baca: tombol tidak dirender sama sekali, bukan disabled (INV-30, T-085). */}
+          {hak.tambah ? (
+            <Button
+              type="button"
+              onClick={taskBaru}
+              disabled={data.grup.length === 0}
+              title={data.grup.length === 0 ? 'Tambahkan grup terlebih dahulu.' : undefined}
+              data-testid="gantt-task-tambah"
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              Tambah task
+            </Button>
+          ) : null}
           <GanttExport model={model} judul={data.chart.judul} svgRef={() => rootRef.current?.querySelector<SVGSVGElement>('[data-testid="gantt-svg"]') ?? null} />
         </div>
       </div>

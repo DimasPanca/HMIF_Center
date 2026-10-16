@@ -54,6 +54,12 @@ DECLARE
   v_bph      UUID := '5a000000-0000-0000-0000-000000000008';
   v_ganda    UUID := '5a000000-0000-0000-0000-000000000009';
 
+  v_ketuplak UUID := '5a000000-0000-0000-0000-00000000000a';
+  v_koor     UUID := '5a000000-0000-0000-0000-00000000000b';
+  v_chart2   UUID;
+  v_grup2    UUID;
+  v_task2    UUID;
+
   v_n        INT;
   v_ditolak  BOOLEAN;
 BEGIN
@@ -508,5 +514,102 @@ BEGIN
   ASSERT (SELECT count(*) FROM proker WHERE nama = 'Proker Sah') = 1,
     'KADEPT tidak dapat membuat proker di departemennya sendiri';
 
-  RAISE NOTICE 'OK 015c_rls_negatif - 10 skenario, lintas divisi baca boleh tulis 0 baris, BPH tak pernah menulis, approver terpisah per jenis';
+  ---------------------------------------------------------------------------
+  -- 11. KETUA PELAKSANA MENULIS DI SELURUH DIVISI (PRD F-8.3, T-085)
+  --
+  --     Ia bukan anggota divisi mana pun, dan departemennya pun lain.
+  --     Sebelum 039, policy RAB hanya melihat keanggotaan divisi.
+  ---------------------------------------------------------------------------
+  INSERT INTO app_user (id, nama_lengkap, nim, email) VALUES
+    (v_ketuplak, 'Ketua Pelaksana', '3337220510', 'ketuplak@rls.test'),
+    (v_koor,     'Koordinator Acara', '3337220511', 'koor@rls.test');
+  INSERT INTO user_role (user_id, periode_id, role, departemen_id) VALUES
+    (v_ketuplak, v_periode, 'ANGGOTA', v_deptB),
+    (v_koor,     v_periode, 'ANGGOTA', v_deptB);
+  UPDATE kepanitiaan SET ketua_pelaksana = v_ketuplak WHERE id = v_kep;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_ketuplak::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  UPDATE rab_item SET harga_satuan = 6000000 WHERE id = v_item2;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  INSERT INTO rab_section (divisi_id, nama) VALUES (v_div1, 'Dari Ketua Pelaksana');
+  EXECUTE 'RESET ROLE';
+
+  ASSERT v_n = 1, 'Ketua Pelaksana TIDAK dapat mengubah RAB divisi Acara (PRD F-8.3)';
+  ASSERT (SELECT count(*) FROM rab_section WHERE divisi_id = v_div1 AND nama = 'Dari Ketua Pelaksana') = 1,
+    'Ketua Pelaksana TIDAK dapat menambah RAB divisi Konsumsi (PRD F-8.3)';
+
+  ---------------------------------------------------------------------------
+  -- 12. KOORDINATOR MENULIS DIVISINYA SAJA, WALAU TAK TERCATAT DI divisi_member
+  ---------------------------------------------------------------------------
+  UPDATE divisi SET koordinator_id = v_koor WHERE id = v_div2;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_koor::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  UPDATE rab_item SET harga_satuan = 7000000 WHERE id = v_item2;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  v_ditolak := false;
+  BEGIN
+    INSERT INTO rab_section (divisi_id, nama) VALUES (v_div1, 'Serobot Konsumsi');
+  EXCEPTION WHEN insufficient_privilege THEN v_ditolak := true;
+  END;
+  EXECUTE 'RESET ROLE';
+
+  ASSERT v_n = 1, 'Koordinator divisi Acara TIDAK dapat mengubah RAB divisinya';
+  ASSERT v_ditolak, 'Koordinator divisi Acara BERHASIL menulis RAB divisi Konsumsi (INV-30)';
+
+  ---------------------------------------------------------------------------
+  -- 13. BPH YANG TERCATAT SEBAGAI PANITIA TETAP TIDAK MENULIS (INV-03)
+  --
+  --     my_divisi_aktif() tidak melihat role; helper 039 mensyaratkan role
+  --     non-BPH. Pengguna ANGGOTA+BPH (skenario 4) tetap boleh.
+  ---------------------------------------------------------------------------
+  INSERT INTO divisi_member (divisi_id, user_id) VALUES (v_div1, v_bph);
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_bph::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  v_ditolak := false;
+  BEGIN
+    INSERT INTO rab_section (divisi_id, nama) VALUES (v_div1, 'Ditulis BPH');
+  EXCEPTION WHEN insufficient_privilege THEN v_ditolak := true;
+  END;
+  EXECUTE 'RESET ROLE';
+
+  ASSERT v_ditolak, 'BPH yang menjadi anggota divisi BERHASIL menulis RAB (INV-03)';
+
+  ---------------------------------------------------------------------------
+  -- 14. GANTT DIVISI: PANITIA DIVISI LAIN TIDAK DAPAT MENGGESER TIMELINE
+  --
+  --     Sebelum 039, gantt_task_update = has_role(..., 'ANGGOTA') tanpa syarat
+  --     baris. Kadept PIC dan koordinator divisi itu tetap boleh.
+  ---------------------------------------------------------------------------
+  INSERT INTO gantt_chart (scope, divisi_id, judul) VALUES ('DIVISI', v_div2, 'Gantt Divisi Acara')
+  RETURNING id INTO v_chart2;
+  INSERT INTO gantt_group (chart_id, nama, warna) VALUES (v_chart2, 'Persiapan', '#2563EB')
+  RETURNING id INTO v_grup2;
+  INSERT INTO gantt_task (group_id, nama, tanggal_mulai, tanggal_selesai)
+  VALUES (v_grup2, 'Sewa panggung', '2026-11-01', '2026-11-05') RETURNING id INTO v_task2;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_anggota::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  UPDATE gantt_task SET progres = 90 WHERE id = v_task2;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_n = 0, format('Panitia Konsumsi mengubah %s task Gantt divisi Acara (INV-30)', v_n);
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_koor::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  UPDATE gantt_task SET progres = 40 WHERE id = v_task2;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_n = 1, 'Koordinator divisi Acara TIDAK dapat mengubah Gantt divisinya';
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_kadept::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  UPDATE gantt_task SET progres = 50 WHERE id = v_task2;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_n = 1, 'Kadept departemen PIC TIDAK dapat mengubah Gantt divisi acaranya';
+  ASSERT (SELECT progres FROM gantt_task WHERE id = v_task2) = 50, 'Progres task Gantt tidak sesuai urutan perubahan';
+  RAISE NOTICE 'OK 015c_rls_negatif - 14 skenario, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, BPH tak pernah menulis, approver terpisah per jenis';
 END $$;

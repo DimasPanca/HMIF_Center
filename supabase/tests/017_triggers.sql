@@ -137,10 +137,10 @@ BEGIN
   DELETE FROM rab_item WHERE id = v_item;
 
   ASSERT (SELECT nilai_lama->>'jenis_barang' FROM audit_log
-           WHERE entitas = 'rab_item' AND aksi = 'DELETE') = 'Nasi kotak',
+           WHERE entitas = 'rab_item' AND aksi = 'DELETE' AND entitas_id = v_item::TEXT) = 'Nasi kotak',
     'nilai_lama kosong pada DELETE rab_item — baris yang hilang tidak dapat ditelusuri';
   ASSERT (SELECT nilai_baru FROM audit_log
-           WHERE entitas = 'rab_item' AND aksi = 'DELETE') IS NULL,
+           WHERE entitas = 'rab_item' AND aksi = 'DELETE' AND entitas_id = v_item::TEXT) IS NULL,
     'nilai_baru terisi pada DELETE';
 
   ---------------------------------------------------------------------------

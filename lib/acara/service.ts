@@ -26,6 +26,7 @@ import { Prisma } from '@prisma/client';
 import { lingkupKonteks, type Konteks } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
+import { bisaTulisDivisi } from '@/lib/kepanitiaan/akses';
 
 if (typeof window !== 'undefined') {
   throw new Error('lib/acara/service.ts adalah modul server-only dan tidak boleh diimpor dari sisi klien.');
@@ -359,6 +360,8 @@ export interface RuangDivisi {
   divisi: KartuDivisi;
   anggota: { nama: string; peran: string | null; koordinator: boolean }[];
   job_desk_ada: boolean;
+  /** Hak tulis divisi ini (T-085) — false: tampilan baca saja, tombol tulis tidak dirender. */
+  boleh_tulis: boolean;
   chart: ChartAcara[];
   /** null = tidak berhak membaca RAB. */
   rab: { id: string; nama: string; item: ItemRab[]; subtotal: number }[] | null;
@@ -419,6 +422,7 @@ export async function muatDivisi(konteks: Konteks, acaraId: string, divisiId: st
     divisi: kartu,
     anggota,
     job_desk_ada: d.job_desk?.konten != null,
+    boleh_tulis: await bisaTulisDivisi(konteks, divisiId),
     chart: acara.chart.filter((c) => c.divisi_id === divisiId),
     rab: acara.boleh_rab
       ? d.rab_section.map((s) => {

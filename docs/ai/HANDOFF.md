@@ -65,6 +65,33 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-085 · Visibilitas cross-divisi (2026-10-16)
+
+Migrasi **039_tulis_divisi** + **040_panitia_koordinator** (sudah diterapkan ke
+DB dev lewat `db:migrate`), `lib/kepanitiaan/akses.ts`,
+`components/acara/ModeBacaSajaBanner.tsx`.
+
+- **Satu aturan tulis divisi, dua lapis:** SQL `panitia_tulis_divisi()` /
+  `tulis_divisi()` ⇄ TS `bisaTulisPanitiaDivisi()` / `bisaTulisDivisi()`.
+  Panitia = koordinator, anggota divisi, atau Ketua Pelaksana; periode AKTIF;
+  role non-BPH. `tulis_divisi` menambah Admin & Bendum. **Route tulis RAB
+  (T-087), job desk (T-093), dan nota (T-101) WAJIB memanggil versi TS** — app
+  bypass RLS.
+- Celah yang ditutup 039: Ketua Pelaksana ditolak RLS RAB; `gantt_task_update`
+  terbuka untuk SEMUA Anggota (kini `gantt_divisi_boleh()` untuk chart DIVISI);
+  BPH yang tercatat panitia bisa menulis RAB. 040: koordinator yang tak ada di
+  `divisi_member` kini termasuk `my_kepanitiaan()` (dulu tak bisa membaca RAB
+  divisinya sendiri).
+- Gantt app: chart DIVISI ditulis panitia divisinya / Kadept PIC (role+dept
+  sebaris, `kadeptPic`) / Admin-Ketua-Wakil — bukan lagi setiap Anggota
+  departemen PIC. `GanttEditor` tidak lagi merender "Tambah task" tanpa izin
+  (dulu disabled; INV-30).
+- Halaman divisi: `data-mode="tulis|baca"`, banner untuk divisi lain, aksi
+  tulis (`divisi-aksi-tulis`) hanya dirender bila boleh.
+- Tes DB 014c & 017 dibuat hermetik (menyaring baris ujinya sendiri): audit_log
+  nyata kini memuat DELETE kepanitiaan/rab_item dari pembersihan fixture e2e.
+- `db:reset` dari kosong untuk 039/040 BELUM dijalankan (butuh izin pemilik).
+
 ### T-100 · Kamera & auto-scan dokumen (2026-10-15)
 
 `components/nota/{CameraCapture,ScanPreview,ScanOverlay}.tsx`,

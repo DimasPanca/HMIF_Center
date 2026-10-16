@@ -19,6 +19,7 @@ import { lingkupKonteks, type Konteks } from '@/lib/auth/guard';
 import { can, type Permission } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
+import { faktaDivisi, kadeptPic, putusanPanitiaDivisi } from '@/lib/kepanitiaan/akses';
 import {
   SCOPE_KE_LEVEL,
   SkemaGrupBaru,
@@ -97,6 +98,16 @@ async function panitiaChart(k: Klien, userId: string, m: MetaChart): Promise<boo
 async function punyaHak(k: Klien, konteks: Konteks, m: MetaChart, perm: Permission): Promise<boolean> {
   if (!can(konteks.roles, perm)) return false;
   if (lingkupKonteks(konteks, perm) === null) return true;
+  // Chart DIVISI (T-085, INV-30): menulis hanya panitia divisi itu (termasuk
+  // Ketua Pelaksana) atau Kadept departemen PIC — bukan setiap Anggota
+  // departemen PIC. Cermin gantt_divisi_boleh() migrasi 039. Membaca tetap
+  // lewat jalur di bawah: divisi lain terbaca (PRD F-8.3).
+  if (m.divisi_id && perm !== 'gantt.read') {
+    const d = await faktaDivisi(m.divisi_id, k);
+    if (!d) return false;
+    const pelaku = { userId: konteks.sesi.userId, roles: konteks.roles, periodeId: konteks.periodeId };
+    return putusanPanitiaDivisi(pelaku, d) || kadeptPic(konteks, d.departemenPicId, k);
+  }
   if (m.departemen_id && konteks.departemenIds.includes(m.departemen_id)) return true;
   return panitiaChart(k, konteks.sesi.userId, m);
 }

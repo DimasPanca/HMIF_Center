@@ -135,8 +135,10 @@ BEGIN
 
     DELETE FROM kepanitiaan WHERE kode_kegiatan = 'UJI';
 
+    -- Disaring pada baris uji ini: audit_log nyata memuat DELETE kepanitiaan
+    -- lain (pembersihan fixture e2e), dan SELECT INTO mengambil sembarang satu.
     SELECT * INTO v_row FROM audit_log
-    WHERE entitas = 'kepanitiaan' AND aksi = 'DELETE';
+    WHERE entitas = 'kepanitiaan' AND aksi = 'DELETE' AND nilai_lama->>'proker_id' = v_proker::TEXT;
     ASSERT FOUND, 'DELETE tidak tercatat';
     ASSERT v_row.nilai_lama->>'nama_acara' = 'Kepanitiaan Uji',
       'nilai_lama kosong pada DELETE — baris yang hilang tidak dapat ditelusuri';
