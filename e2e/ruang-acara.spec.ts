@@ -112,8 +112,8 @@ test.beforeAll(async () => {
     (${s!.id}::uuid, 2, 'Makan 3 kali', '58', 58, 30000, 1740000)`;
   const [sp] = await sql<{ id: string }[]>`
     INSERT INTO rab_section (divisi_id, nama, urutan) VALUES (${divisi.pdd}::uuid, 'DOKUMENTASI', 1) RETURNING id::text`;
-  await sql`INSERT INTO rab_item (section_id, no_urut, jenis_barang, jumlah_teks, jumlah_numerik, harga_satuan, total)
-    VALUES (${sp!.id}::uuid, 1, 'Sewa kamera', '2 Hari 1 Malam', NULL, 0, 400000)`;
+  await sql`INSERT INTO rab_item (section_id, no_urut, jenis_barang, jumlah_teks, jumlah_numerik, harga_satuan, total, total_manual)
+    VALUES (${sp!.id}::uuid, 1, 'Sewa kamera', '2 Hari 1 Malam', NULL, 0, 400000, true)`;
 
   await sql`INSERT INTO kanban_card (divisi_id, judul, kolom, created_by) VALUES
     (${divisi.konsumsi}::uuid, 'Survey katering', 'DONE', ${anggota}::uuid),
@@ -189,13 +189,13 @@ test('ruang kerja divisi: breadcrumb, enam bagian, dan divisi lain tetap terbaca
   for (const b of ['job-desk', 'gantt', 'rab', 'progres', 'dokumen', 'nota']) {
     await expect(koor.getByTestId(`divisi-bagian-${b}`)).toBeVisible();
   }
-  await expect(koor.getByTestId('divisi-rab-item')).toHaveCount(2);
-  await expect(koor.getByTestId('divisi-rab-total')).toContainText('Rp1.790.000');
+  await expect(koor.getByTestId('rab-item')).toHaveCount(2);
+  await expect(koor.getByTestId('rab-divisi-total')).toContainText('Rp1.790.000');
 
   // Divisi lain dalam acara yang sama: dapat dibaca (PRD F-8.3).
   await koor.goto(`/acara/${acaraId}/divisi/${divisi.pdd}`, { waitUntil: 'load' });
   await expect(koor.getByTestId('acara-breadcrumb')).toContainText('Divisi PDD', { timeout: 60_000 });
-  await expect(koor.getByTestId('divisi-rab-item')).toContainText('2 Hari 1 Malam');
+  await expect(koor.getByTestId('rab-item')).toContainText('2 Hari 1 Malam');
 
   // Divisi milik acara lain lewat URL acara ini: 404, bukan bocor.
   const r = await koor.goto(`/acara/${acaraId}/divisi/00000000-0000-4000-8000-000000000000`, { waitUntil: 'load' });

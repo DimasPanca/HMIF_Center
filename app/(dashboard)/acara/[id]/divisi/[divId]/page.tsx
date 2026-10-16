@@ -6,13 +6,15 @@ import { AcaraHeader } from '@/components/acara/AcaraHeader';
 import { BelumTersedia } from '@/components/acara/BelumTersedia';
 import { BilahProgres } from '@/components/acara/DivisiCard';
 import { ModeBacaSajaBanner } from '@/components/acara/ModeBacaSajaBanner';
+import { RabGrid } from '@/components/rab/RabGrid';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { STATUS_VALUES, StatusPill, type DomainStatus } from '@/components/ui/status-pill';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { muatDivisi, type RuangDivisi } from '@/lib/acara/service';
+import { muatDivisi } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { muatRab, type DataRab } from '@/lib/rab/service';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 import { formatTanggalPendek } from '@/lib/utils/format-tanggal';
 
@@ -49,8 +51,9 @@ function Bagian({ id, judul, children }: { id: string; judul: string; children: 
   );
 }
 
-function Rab({ r, acaraId }: { r: RuangDivisi; acaraId: string }) {
-  if (!r.rab) {
+/** RAB divisi: grid T-087 terfokus pada divisi ini, atau penjelasan bila angkanya bukan hak pengguna. */
+function Rab({ rab, divisiId, acaraId }: { rab: DataRab | 'TERBATAS' | null; divisiId: string; acaraId: string }) {
+  if (!rab || rab === 'TERBATAS') {
     return (
       <BelumTersedia
         ikon="uang"
@@ -60,61 +63,7 @@ function Rab({ r, acaraId }: { r: RuangDivisi; acaraId: string }) {
       />
     );
   }
-  if (r.rab.length === 0) {
-    return (
-      <BelumTersedia
-        ikon="uang"
-        judul="Belum ada item RAB"
-        penjelasan="Penyusunan RAB per sel belum tersedia di versi ini. Item yang sudah tercatat akan tampil di sini."
-        aksi={{ label: 'Lihat RAB acara', href: `/acara/${acaraId}?tab=rab` }}
-      />
-    );
-  }
-  return (
-    <div className="space-y-4">
-      {r.rab.map((s) => (
-        <div key={s.id}>
-          <h3 className="mb-1 text-[13px] font-semibold tracking-wide uppercase">{s.nama}</h3>
-          <div className="overflow-x-auto">
-            <Table aria-label={`RAB ${s.nama}`} rowCount={s.item.length + 1} emptyState={null}>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">No</TableHead>
-                  <TableHead>Jenis barang</TableHead>
-                  <TableHead>Jumlah</TableHead>
-                  <TableHead className="text-right">Harga satuan</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Keterangan</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {s.item.map((i) => (
-                  <TableRow key={i.id} data-testid="divisi-rab-item">
-                    <TableCell className="tabular-nums">{i.no_urut}</TableCell>
-                    <TableCell>{i.jenis_barang}</TableCell>
-                    <TableCell>{i.jumlah_teks}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatRupiah(i.harga_satuan)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatRupiah(i.total)}</TableCell>
-                    <TableCell className="text-secondary">{i.keterangan ?? ''}</TableCell>
-                  </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell colSpan={4} className="font-medium">
-                    Subtotal {s.nama}
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">{formatRupiah(s.subtotal)}</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      ))}
-      <p className="text-right text-[14px] font-semibold tabular-nums" data-testid="divisi-rab-total">
-        Total RAB divisi: {formatRupiah(r.divisi.total_rab ?? 0)}
-      </p>
-    </div>
-  );
+  return <RabGrid awal={rab} fokusDivisi={divisiId} />;
 }
 
 /**
@@ -132,6 +81,7 @@ export default async function RuangDivisiPage({ params }: PageProps) {
   if (!POLA_UUID.test(id) || !POLA_UUID.test(divId)) notFound();
   const r = await muatDivisi(konteks, id, divId);
   if (!r) notFound();
+  const rab = r.rab ? await muatRab(konteks, id) : null;
 
   return (
     <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6" data-testid="ruang-divisi" data-mode={r.boleh_tulis ? 'tulis' : 'baca'}>
@@ -219,7 +169,7 @@ export default async function RuangDivisiPage({ params }: PageProps) {
 
           <div className="lg:col-span-2">
             <Bagian id="rab" judul="RAB Divisi">
-              <Rab r={r} acaraId={r.acara.id} />
+              <Rab rab={rab} divisiId={divId} acaraId={r.acara.id} />
             </Bagian>
           </div>
 

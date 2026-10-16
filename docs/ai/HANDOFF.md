@@ -65,6 +65,32 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-087 · Grid RAB inline-editable (2026-10-16)
+
+`lib/rab/{item,service}.ts`, `components/rab/{RabGrid,RabRow,RabSectionHeader,RabSummary,CurrencyInput,JumlahInput}.tsx`,
+`GET/POST /api/kepanitiaan/[id]/rab` (pohon + aksi struktur: TAMBAH/HAPUS_DIVISI,
+TAMBAH/UBAH/HAPUS_SECTION, TAMBAH_ITEM), `PATCH/DELETE /api/rab/item/[id]`.
+Dipasang di tab RAB `/acara/[id]?tab=rab` dan bagian RAB ruang kerja divisi
+(`fokusDivisi`).
+
+- **Satu fungsi aturan item:** `terapkanUbah()` di `lib/rab/item.ts` dipakai
+  grid (optimistis, setiap ketikan) DAN server (kebenaran, INV-27). Rupiah =
+  integer; total = round(numerik × harga) kecuali `total_manual`. Jumlah butuh
+  manual → perkiraan angka pertama sampai pengguna mengisi "jumlah untuk
+  perhitungan". **T-088** membuat `hitungRab` lengkap — ganti `jumlahkan*`.
+- Simpan saat sel ditinggalkan (blur/Enter/Tab), PATCH berisi field yang
+  berubah, diantrekan; aksi struktur menunggu antrean. Esc → nilai tersimpan.
+- Hak: item/sub-section = `bisaTulisDivisi` + RAB DRAFT/DIAJUKAN (409
+  `RAB_TERKUNCI`); tambah divisi = pimpinan/Kadept PIC/Ketua Pelaksana; hapus
+  divisi tanpa Ketua Pelaksana (cermin RLS) dan ditolak bila divisi punya nota.
+- "Konfirmasi tingkat sedang" untuk hapus divisi/sub-section ditafsirkan
+  `ConfirmDialog level="typed"` (ketik nama) — tidak ada definisi tingkat di
+  DESIGN_SYSTEM; hapus item tanpa konfirmasi.
+- Grid memberi `data-siap="1"` setelah hydration — test yang mengetik lewat
+  event sintetis WAJIB menunggunya (sebelum itu React belum mendengar).
+- Rekalkulasi terukur ±20 ms (anggaran 100 ms). Fixture e2e harus konsisten:
+  `total` tanpa `total_manual` dihitung ulang grid dari numerik × harga.
+
 ### T-085 · Visibilitas cross-divisi (2026-10-16)
 
 Migrasi **039_tulis_divisi** + **040_panitia_koordinator** (sudah diterapkan ke

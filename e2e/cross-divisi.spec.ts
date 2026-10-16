@@ -105,9 +105,9 @@ test.beforeAll(async () => {
 
   const [s] = await sql<{ id: string }[]>`
     INSERT INTO rab_section (divisi_id, nama, urutan) VALUES (${div.pdd}::uuid, 'DOKUMENTASI', 1) RETURNING id::text`;
-  await sql`INSERT INTO rab_item (section_id, no_urut, jenis_barang, jumlah_teks, jumlah_numerik, harga_satuan, total) VALUES
-    (${s!.id}::uuid, 1, 'Sewa kamera', '2 Hari 1 Malam', NULL, 0, 400000),
-    (${s!.id}::uuid, 2, 'Baterai cadangan', '4', 4, 50000, 200000)`;
+  await sql`INSERT INTO rab_item (section_id, no_urut, jenis_barang, jumlah_teks, jumlah_numerik, harga_satuan, total, total_manual) VALUES
+    (${s!.id}::uuid, 1, 'Sewa kamera', '2 Hari 1 Malam', NULL, 0, 400000, true),
+    (${s!.id}::uuid, 2, 'Baterai cadangan', '4', 4, 50000, 200000, false)`;
 
   const ck = await chartDivisi(div.konsumsi, 'Konsumsi');
   const cp = await chartDivisi(div.pdd, 'PDD');
@@ -129,9 +129,16 @@ test('divisi lain: banner baca saja, RAB terbaca lengkap, tombol tulis tidak ada
   await koor.goto(`/acara/${acaraId}/divisi/${div.pdd}`, { waitUntil: 'load' });
   await expect(koor.getByTestId('ruang-divisi')).toHaveAttribute('data-mode', 'baca', { timeout: 60_000 });
   await expect(koor.getByTestId('mode-baca-saja')).toContainText('Tampilan baca saja — Divisi PDD');
-  await expect(koor.getByTestId('divisi-rab-item')).toHaveCount(2);
-  await expect(koor.getByTestId('divisi-rab-item').first()).toContainText('Sewa kamera');
-  await expect(koor.getByTestId('divisi-rab-total')).toContainText('Rp600.000');
+  await expect(koor.getByTestId('rab-item')).toHaveCount(2);
+  await expect(koor.getByTestId('rab-item').first()).toContainText('Sewa kamera');
+  // Grid RAB (T-087) divisi lain: tanpa satu pun input atau tombol (INV-30).
+  await expect(koor.getByTestId('rab-divisi')).toHaveAttribute('data-boleh-tulis', '0');
+  await expect(
+    koor.locator(
+      '[data-testid="rab-divisi"] :is(input, [data-testid="rab-hapus-item"], [data-testid="rab-tambah-item"], [data-testid="rab-hapus-section"], [data-testid="rab-total-manual"], [data-testid="rab-tambah-section"])',
+    ),
+  ).toHaveCount(0);
+  await expect(koor.getByTestId('rab-divisi-total')).toContainText('Rp600.000');
   // Tidak dirender — bukan disabled.
   await expect(koor.getByTestId('divisi-aksi-tulis')).toHaveCount(0);
   await expect(koor.getByRole('link', { name: /Gantt Divisi PDD/ })).toBeVisible();

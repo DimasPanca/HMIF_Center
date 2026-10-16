@@ -7,12 +7,11 @@ import { BelumTersedia } from '@/components/acara/BelumTersedia';
 import { DivisiCard } from '@/components/acara/DivisiCard';
 import { RingkasanAcara } from '@/components/acara/RingkasanAcara';
 import { TabNav, tabDari, type TabAcara } from '@/components/acara/TabNav';
-import { Card } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RabGrid } from '@/components/rab/RabGrid';
 import { muatAcara, type RuangAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
-import { formatRupiah } from '@/lib/utils/format-rupiah';
+import { muatRab, type DataRab } from '@/lib/rab/service';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +38,7 @@ function PeranSaya({ acara }: { acara: RuangAcara }) {
 
 const ringkasan = (id: string) => ({ label: 'Kembali ke Ringkasan', href: `/acara/${id}?tab=ringkasan` });
 
-function IsiTab({ acara, tab }: { acara: RuangAcara; tab: TabAcara }) {
+function IsiTab({ acara, tab, rab }: { acara: RuangAcara; tab: TabAcara; rab: DataRab | 'TERBATAS' | null }) {
   switch (tab) {
     case 'ringkasan':
       return <RingkasanAcara acara={acara} />;
@@ -98,37 +97,11 @@ function IsiTab({ acara, tab }: { acara: RuangAcara; tab: TabAcara }) {
           penjelasan="Rincian anggaran hanya dapat dibaca pimpinan, Kadept penanggung jawab, dan panitia acara ini."
           aksi={ringkasan(acara.id)}
         />
-      ) : (
-        <Card className="p-0" data-testid="acara-isi-rab">
-          <p className="p-4 pb-2 text-[13px] text-secondary">
-            Total per divisi. Rincian item tampil di ruang kerja masing-masing divisi; penyuntingan RAB per sel belum tersedia di versi ini.
-          </p>
-          <Table aria-label="Total RAB per divisi" rowCount={acara.divisi.length + 1} emptyState={null}>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Divisi</TableHead>
-                <TableHead className="text-right">Total RAB</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {acara.divisi.map((d) => (
-                <TableRow key={d.id}>
-                  <TableCell>
-                    <Link href={`/acara/${acara.id}/divisi/${d.id}#rab`} className="hover:underline">
-                      {d.nama}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatRupiah(d.total_rab ?? 0)}</TableCell>
-                </TableRow>
-              ))}
-              <TableRow>
-                <TableCell className="font-semibold">Total</TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">{formatRupiah(acara.ringkasan.total_rab ?? 0)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </Card>
-      );
+      ) : rab && rab !== 'TERBATAS' ? (
+        <div data-testid="acara-isi-rab">
+          <RabGrid awal={rab} />
+        </div>
+      ) : null;
 
     case 'nota':
       return !acara.ringkasan.nota ? (
@@ -200,6 +173,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
 
   const sp = await searchParams;
   const tab = tabDari(Array.isArray(sp.tab) ? sp.tab[0] : sp.tab);
+  const rab = tab === 'rab' && acara.boleh_rab ? await muatRab(konteks, acara.id) : null;
 
   return (
     <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6">
@@ -208,7 +182,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
         <PeranSaya acara={acara} />
         <TabNav acaraId={acara.id} aktif={tab} />
         <section aria-label={`Tab ${tab}`} data-testid={`acara-panel-${tab}`}>
-          <IsiTab acara={acara} tab={tab} />
+          <IsiTab acara={acara} tab={tab} rab={rab} />
         </section>
       </div>
     </main>
