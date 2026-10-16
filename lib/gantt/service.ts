@@ -32,18 +32,32 @@ import {
 } from '@/lib/gantt/skema';
 
 if (typeof window !== 'undefined') {
-  throw new Error('lib/gantt/service.ts adalah modul server-only dan tidak boleh diimpor dari sisi klien.');
+  throw new Error(
+    'lib/gantt/service.ts adalah modul server-only dan tidak boleh diimpor dari sisi klien.',
+  );
 }
 
 export type KodeGagalGantt = 'VALIDASI_GAGAL' | 'TIDAK_DITEMUKAN' | 'TIDAK_BERWENANG';
-export const STATUS_GAGAL_GANTT: Record<KodeGagalGantt, number> = { VALIDASI_GAGAL: 422, TIDAK_DITEMUKAN: 404, TIDAK_BERWENANG: 403 };
+export const STATUS_GAGAL_GANTT: Record<KodeGagalGantt, number> = {
+  VALIDASI_GAGAL: 422,
+  TIDAK_DITEMUKAN: 404,
+  TIDAK_BERWENANG: 403,
+};
 export type Hasil<T> = { ok: true; nilai: T } | { ok: false; kode: KodeGagalGantt; pesan: string };
 
 type Klien = TxKlien | typeof db;
 
-const tidakAda = (apa = 'Chart'): Hasil<never> => ({ ok: false, kode: 'TIDAK_DITEMUKAN', pesan: `${apa} tidak ditemukan.` });
+const tidakAda = (apa = 'Chart'): Hasil<never> => ({
+  ok: false,
+  kode: 'TIDAK_DITEMUKAN',
+  pesan: `${apa} tidak ditemukan.`,
+});
 const ditolak = (pesan: string): Hasil<never> => ({ ok: false, kode: 'TIDAK_BERWENANG', pesan });
-const salah = (pesan: string | undefined): Hasil<never> => ({ ok: false, kode: 'VALIDASI_GAGAL', pesan: pesan ?? 'Isian tidak valid.' });
+const salah = (pesan: string | undefined): Hasil<never> => ({
+  ok: false,
+  kode: 'VALIDASI_GAGAL',
+  pesan: pesan ?? 'Isian tidak valid.',
+});
 
 // ---------------------------------------------------------------------------
 // Chart & hak
@@ -95,7 +109,12 @@ async function panitiaChart(k: Klien, userId: string, m: MetaChart): Promise<boo
   return r?.ya ?? false;
 }
 
-async function punyaHak(k: Klien, konteks: Konteks, m: MetaChart, perm: Permission): Promise<boolean> {
+async function punyaHak(
+  k: Klien,
+  konteks: Konteks,
+  m: MetaChart,
+  perm: Permission,
+): Promise<boolean> {
   if (!can(konteks.roles, perm)) return false;
   if (lingkupKonteks(konteks, perm) === null) return true;
   // Chart DIVISI (T-085, INV-30): menulis hanya panitia divisi itu (termasuk
@@ -105,7 +124,11 @@ async function punyaHak(k: Klien, konteks: Konteks, m: MetaChart, perm: Permissi
   if (m.divisi_id && perm !== 'gantt.read') {
     const d = await faktaDivisi(m.divisi_id, k);
     if (!d) return false;
-    const pelaku = { userId: konteks.sesi.userId, roles: konteks.roles, periodeId: konteks.periodeId };
+    const pelaku = {
+      userId: konteks.sesi.userId,
+      roles: konteks.roles,
+      periodeId: konteks.periodeId,
+    };
     return putusanPanitiaDivisi(pelaku, d) || kadeptPic(konteks, d.departemenPicId, k);
   }
   if (m.departemen_id && konteks.departemenIds.includes(m.departemen_id)) return true;
@@ -129,7 +152,12 @@ export async function hakChart(k: Klien, konteks: Konteks, m: MetaChart): Promis
     punyaHak(k, konteks, m, 'gantt.delete'),
   ]);
   const berjalan = m.periode_id === konteks.periodeId;
-  return { baca, tulis: baca && berjalan && ubah, tambah: baca && berjalan && buat, hapus: baca && berjalan && hapus };
+  return {
+    baca,
+    tulis: baca && berjalan && ubah,
+    tambah: baca && berjalan && buat,
+    hapus: baca && berjalan && hapus,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +213,13 @@ export async function muatChart(konteks: Konteks, chartId: string): Promise<Data
       JOIN gantt_task t ON t.id = d.to_task WHERE t.chart_id = ${chartId}::uuid AND d.tipe = 'FS'`,
   ]);
   return {
-    chart: { id: m.id, judul: m.judul, level: SCOPE_KE_LEVEL[m.scope], periode_id: m.periode_id, arsip: m.periode_id !== konteks.periodeId },
+    chart: {
+      id: m.id,
+      judul: m.judul,
+      level: SCOPE_KE_LEVEL[m.scope],
+      periode_id: m.periode_id,
+      arsip: m.periode_id !== konteks.periodeId,
+    },
     grup,
     task,
     dependensi,
@@ -221,7 +255,13 @@ export async function daftarChart(konteks: Konteks): Promise<ChartRingkas[]> {
   for (const c of semua) {
     const m = await metaChart(db, c.id);
     if (m && (await punyaHak(db, konteks, m, 'gantt.read'))) {
-      hasil.push({ id: c.id, judul: c.judul, level: SCOPE_KE_LEVEL[c.scope], departemen: c.departemen, jumlah_task: c.jumlah_task });
+      hasil.push({
+        id: c.id,
+        judul: c.judul,
+        level: SCOPE_KE_LEVEL[c.scope],
+        departemen: c.departemen,
+        jumlah_task: c.jumlah_task,
+      });
     }
   }
   return hasil;
@@ -231,7 +271,11 @@ export async function daftarChart(konteks: Konteks): Promise<ChartRingkas[]> {
  * Chart DEPARTEMEN periode berjalan; dibuat saat pertama dibuka bila pengguna
  * boleh membuat. Indeks unik 037 menangani dua pembuka bersamaan.
  */
-export async function pastikanChartDepartemen(tx: TxKlien, konteks: Konteks, departemen: { id: string; nama: string }): Promise<string | null> {
+export async function pastikanChartDepartemen(
+  tx: TxKlien,
+  konteks: Konteks,
+  departemen: { id: string; nama: string },
+): Promise<string | null> {
   const ada = await tx.gantt_chart.findFirst({
     where: { scope: 'DEPARTEMEN', departemen_id: departemen.id, periode_id: konteks.periodeId },
     select: { id: true },
@@ -284,7 +328,12 @@ async function chartDariGrup(tx: TxKlien, grupId: string): Promise<string | null
 }
 
 /** Tetapkan pendahulu FS task (ganti seluruhnya); tolak lintas chart & siklus. */
-async function aturDependensi(tx: TxKlien, chartId: string, taskId: string, pendahulu: string[]): Promise<Hasil<null>> {
+async function aturDependensi(
+  tx: TxKlien,
+  chartId: string,
+  taskId: string,
+  pendahulu: string[],
+): Promise<Hasil<null>> {
   const unik = [...new Set(pendahulu)];
   if (unik.includes(taskId)) return salah('Task tidak dapat bergantung pada dirinya sendiri.');
   if (unik.length) {
@@ -294,21 +343,31 @@ async function aturDependensi(tx: TxKlien, chartId: string, taskId: string, pend
   const deps = await tx.$queryRaw<Dependensi[]>`
     SELECT d.from_task::text AS dari, d.to_task::text AS ke FROM gantt_dependency d
     JOIN gantt_task t ON t.id = d.to_task WHERE t.chart_id = ${chartId}::uuid`;
-  if (membentukSiklus(deps, taskId, unik)) return salah('Dependensi ini membentuk siklus (task saling menunggu).');
+  if (membentukSiklus(deps, taskId, unik))
+    return salah('Dependensi ini membentuk siklus (task saling menunggu).');
   await tx.gantt_dependency.deleteMany({ where: { to_task: taskId } });
-  if (unik.length) await tx.gantt_dependency.createMany({ data: unik.map((dari) => ({ from_task: dari, to_task: taskId, tipe: 'FS' })) });
+  if (unik.length)
+    await tx.gantt_dependency.createMany({
+      data: unik.map((dari) => ({ from_task: dari, to_task: taskId, tipe: 'FS' })),
+    });
   return { ok: true, nilai: null };
 }
 
 const hari = (s: string) => new Date(`${s}T00:00:00.000Z`);
 
-export async function tambahTask(tx: TxKlien, konteks: Konteks, chartId: string, body: unknown): Promise<Hasil<{ id: string }>> {
+export async function tambahTask(
+  tx: TxKlien,
+  konteks: Konteks,
+  chartId: string,
+  body: unknown,
+): Promise<Hasil<{ id: string }>> {
   const c = await chartUntukTulis(tx, konteks, chartId);
   if (!c || !c.hak.baca) return tidakAda();
   if (!c.hak.tambah) return ditolak('Anda tidak dapat menambah task pada chart ini.');
   const p = SkemaTaskBaru.safeParse(body);
   if (!p.success) return salah(p.error.issues[0]?.message);
-  if ((await chartDariGrup(tx, p.data.group_id)) !== chartId) return salah('Grup tidak ditemukan di chart ini.');
+  if ((await chartDariGrup(tx, p.data.group_id)) !== chartId)
+    return salah('Grup tidak ditemukan di chart ini.');
   const urutan = await tx.gantt_task.count({ where: { group_id: p.data.group_id } });
   const t = await tx.gantt_task.create({
     data: {
@@ -330,18 +389,27 @@ export async function tambahTask(tx: TxKlien, konteks: Konteks, chartId: string,
   return { ok: true, nilai: t };
 }
 
-export async function ubahTask(tx: TxKlien, konteks: Konteks, taskId: string, body: unknown): Promise<Hasil<{ id: string }>> {
+export async function ubahTask(
+  tx: TxKlien,
+  konteks: Konteks,
+  taskId: string,
+  body: unknown,
+): Promise<Hasil<{ id: string }>> {
   const chartId = await chartDariTask(tx, taskId);
   const c = chartId ? await chartUntukTulis(tx, konteks, chartId) : null;
   if (!c || !c.hak.baca) return tidakAda('Task');
   if (!c.hak.tulis) return ditolak('Anda hanya dapat membaca chart ini.');
   const p = SkemaUbahTask.safeParse(body);
   if (!p.success) return salah(p.error.issues[0]?.message);
-  const lama = await tx.gantt_task.findUniqueOrThrow({ where: { id: taskId }, select: { tanggal_mulai: true, tanggal_selesai: true } });
+  const lama = await tx.gantt_task.findUniqueOrThrow({
+    where: { id: taskId },
+    select: { tanggal_mulai: true, tanggal_selesai: true },
+  });
   const mulai = p.data.tanggal_mulai ?? lama.tanggal_mulai.toISOString().slice(0, 10);
   const selesai = p.data.tanggal_selesai ?? lama.tanggal_selesai.toISOString().slice(0, 10);
   if (selesai < mulai) return salah('Tanggal selesai tidak boleh mendahului tanggal mulai.');
-  if (p.data.group_id && (await chartDariGrup(tx, p.data.group_id)) !== chartId) return salah('Grup tidak ditemukan di chart ini.');
+  if (p.data.group_id && (await chartDariGrup(tx, p.data.group_id)) !== chartId)
+    return salah('Grup tidak ditemukan di chart ini.');
   await tx.gantt_task.update({
     where: { id: taskId },
     data: {
@@ -360,7 +428,11 @@ export async function ubahTask(tx: TxKlien, konteks: Konteks, taskId: string, bo
   return { ok: true, nilai: { id: taskId } };
 }
 
-export async function hapusTask(tx: TxKlien, konteks: Konteks, taskId: string): Promise<Hasil<{ id: string }>> {
+export async function hapusTask(
+  tx: TxKlien,
+  konteks: Konteks,
+  taskId: string,
+): Promise<Hasil<{ id: string }>> {
   const chartId = await chartDariTask(tx, taskId);
   const c = chartId ? await chartUntukTulis(tx, konteks, chartId) : null;
   if (!c || !c.hak.baca) return tidakAda('Task');
@@ -369,18 +441,31 @@ export async function hapusTask(tx: TxKlien, konteks: Konteks, taskId: string): 
   return { ok: true, nilai: { id: taskId } };
 }
 
-export async function tambahGrup(tx: TxKlien, konteks: Konteks, chartId: string, body: unknown): Promise<Hasil<{ id: string }>> {
+export async function tambahGrup(
+  tx: TxKlien,
+  konteks: Konteks,
+  chartId: string,
+  body: unknown,
+): Promise<Hasil<{ id: string }>> {
   const c = await chartUntukTulis(tx, konteks, chartId);
   if (!c || !c.hak.baca) return tidakAda();
   if (!c.hak.tambah) return ditolak('Anda tidak dapat menambah grup pada chart ini.');
   const p = SkemaGrupBaru.safeParse(body);
   if (!p.success) return salah(p.error.issues[0]?.message);
   const urutan = await tx.gantt_group.count({ where: { chart_id: chartId } });
-  const g = await tx.gantt_group.create({ data: { chart_id: chartId, ...p.data, urutan }, select: { id: true } });
+  const g = await tx.gantt_group.create({
+    data: { chart_id: chartId, ...p.data, urutan },
+    select: { id: true },
+  });
   return { ok: true, nilai: g };
 }
 
-export async function ubahGrup(tx: TxKlien, konteks: Konteks, grupId: string, body: unknown): Promise<Hasil<{ id: string }>> {
+export async function ubahGrup(
+  tx: TxKlien,
+  konteks: Konteks,
+  grupId: string,
+  body: unknown,
+): Promise<Hasil<{ id: string }>> {
   const chartId = await chartDariGrup(tx, grupId);
   const c = chartId ? await chartUntukTulis(tx, konteks, chartId) : null;
   if (!c || !c.hak.baca) return tidakAda('Grup');
@@ -391,7 +476,11 @@ export async function ubahGrup(tx: TxKlien, konteks: Konteks, grupId: string, bo
   return { ok: true, nilai: { id: grupId } };
 }
 
-export async function hapusGrup(tx: TxKlien, konteks: Konteks, grupId: string): Promise<Hasil<{ id: string }>> {
+export async function hapusGrup(
+  tx: TxKlien,
+  konteks: Konteks,
+  grupId: string,
+): Promise<Hasil<{ id: string }>> {
   const chartId = await chartDariGrup(tx, grupId);
   const c = chartId ? await chartUntukTulis(tx, konteks, chartId) : null;
   if (!c || !c.hak.baca) return tidakAda('Grup');
@@ -408,4 +497,69 @@ export class GagalTransaksi extends Error {
   constructor(readonly hasil: Hasil<never>) {
     super(hasil.ok ? '' : hasil.pesan);
   }
+}
+
+/**
+ * Chart DIVISI sebuah divisi; dibuat bila belum ada (T-093). Divisi yang
+ * lahir lewat bentuk_kepanitiaan() atau buatDivisiLengkap() sudah punya chart —
+ * ini untuk divisi lama yang terlanjur tanpa chart. Yang boleh membuatnya sama
+ * dengan yang boleh menulis chart divisi (`punyaHak` gantt.update): panitia
+ * divisi itu yang memegang hak ubah Gantt, Kadept PIC, Admin/Ketua/Wakil
+ * (Sekum/Bendum/BPH tetap baca saja walau menjadi panitia — matriks PRD §5.1). Periode lain (arsip) tidak dibuatkan.
+ */
+async function calonChartDivisi(
+  k: Klien,
+  konteks: Konteks,
+  divisiId: string,
+): Promise<{ nama: string; meta: MetaChart } | null> {
+  const d = await k.divisi.findUnique({
+    where: { id: divisiId },
+    select: {
+      nama: true,
+      kepanitiaan_id: true,
+      kepanitiaan: { select: { proker: { select: { periode_id: true, departemen_id: true } } } },
+    },
+  });
+  if (!d || d.kepanitiaan.proker.periode_id !== konteks.periodeId) return null;
+  const meta: MetaChart = {
+    id: '',
+    scope: 'DIVISI',
+    judul: '',
+    periode_id: konteks.periodeId,
+    proker_id: null,
+    divisi_id: divisiId,
+    departemen_id: d.kepanitiaan.proker.departemen_id,
+    kepanitiaan_id: d.kepanitiaan_id,
+  };
+  return (await punyaHak(k, konteks, meta, 'gantt.update')) ? { nama: d.nama, meta } : null;
+}
+
+/** Apakah pengguna boleh membuatkan chart divisi ini (tombol "Buat timeline divisi"). */
+export async function bolehBuatChartDivisi(konteks: Konteks, divisiId: string): Promise<boolean> {
+  return (await calonChartDivisi(db, konteks, divisiId)) !== null;
+}
+
+export async function pastikanChartDivisi(
+  tx: TxKlien,
+  konteks: Konteks,
+  divisiId: string,
+): Promise<string | null> {
+  const ada = await tx.gantt_chart.findFirst({
+    where: { scope: 'DIVISI', divisi_id: divisiId },
+    orderBy: { created_at: 'asc' },
+    select: { id: true },
+  });
+  if (ada) return ada.id;
+  const calon = await calonChartDivisi(tx, konteks, divisiId);
+  if (!calon) return null;
+  const baru = await tx.gantt_chart.create({
+    data: {
+      scope: 'DIVISI',
+      divisi_id: divisiId,
+      periode_id: konteks.periodeId,
+      judul: `Gantt Divisi ${calon.nama}`,
+    },
+    select: { id: true },
+  });
+  return baru.id;
 }

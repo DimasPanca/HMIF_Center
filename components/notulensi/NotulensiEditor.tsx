@@ -31,6 +31,8 @@ interface NotulensiEditorProps {
   konten: JSONContent;
   editable: boolean;
   onChange?: (konten: JSONContent) => void;
+  /** Nama aksesibel area tulis — editor ini juga dipakai job desk divisi (T-093). */
+  label?: string;
 }
 
 // Hanya node/mark yang lolos allowlist sanitasi server; codeBlock dimatikan karena akan dibuang.
@@ -132,7 +134,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   );
 }
 
-export function NotulensiEditor({ konten, editable, onChange }: NotulensiEditorProps) {
+export function NotulensiEditor({ konten, editable, onChange, label = 'Isi notulensi' }: NotulensiEditorProps) {
   const editor = useEditor({
     extensions: EKSTENSI,
     content: konten,
@@ -140,7 +142,7 @@ export function NotulensiEditor({ konten, editable, onChange }: NotulensiEditorP
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        'aria-label': 'Isi notulensi',
+        'aria-label': label,
         role: 'textbox',
         'aria-multiline': 'true',
         'aria-readonly': editable ? 'false' : 'true',

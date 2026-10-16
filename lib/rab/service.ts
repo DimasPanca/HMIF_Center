@@ -25,6 +25,7 @@ import { can } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
 import { kadeptPic, putusanTulisDivisi } from '@/lib/kepanitiaan/akses';
+import { buatDivisiLengkap } from '@/lib/kepanitiaan/divisi';
 import { bulatkanJumlah, hitungTotalItem } from '@/lib/rab/calculate';
 import type { DataEksporRab } from '@/lib/rab/excel-export';
 import type { RabImpor } from '@/lib/rab/excel-import';
@@ -304,7 +305,7 @@ export async function aksiRab(tx: TxKlien, konteks: Konteks, kepanitiaanId: stri
       if (!hak.tambah) return gagal('TIDAK_BERWENANG', 'Divisi ditambah Ketua Pelaksana, Kadept penanggung jawab, atau pimpinan.');
       const urutan = await tx.divisi.count({ where: { kepanitiaan_id: kepanitiaanId } });
       try {
-        const d = await tx.divisi.create({ data: { kepanitiaan_id: kepanitiaanId, nama: a.nama, urutan }, select: { id: true } });
+        const d = await buatDivisiLengkap(tx, { kepanitiaanId, nama: a.nama, urutan, pembuatId: konteks.sesi.userId });
         return { ok: true, nilai: { id: d.id } };
       } catch (e) {
         if (unik(e)) return gagal('NAMA_TERPAKAI', `Divisi "${a.nama}" sudah ada di acara ini.`);
@@ -782,7 +783,7 @@ export async function simpanImpor(
     });
     if (!divisi) {
       const urutan = await tx.divisi.count({ where: { kepanitiaan_id: kepanitiaanId } });
-      divisi = await tx.divisi.create({ data: { kepanitiaan_id: kepanitiaanId, nama: dv.nama.trim(), urutan }, select: { id: true } });
+      divisi = await buatDivisiLengkap(tx, { kepanitiaanId, nama: dv.nama.trim(), urutan, pembuatId: konteks.sesi.userId });
     }
     for (const sc of dv.sections) {
       const namaSection = sc.nama.trim().toUpperCase();

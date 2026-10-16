@@ -65,6 +65,32 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-093 · Job Desk & Gantt divisi (2026-10-16)
+
+`lib/acara/job-desk.ts`, `GET|PUT /api/divisi/[id]/job-desk`,
+`POST /api/divisi/[id]/gantt`, `components/acara/{JobDeskEditor,DivisiGantt,KontenProsa}.tsx`,
+`lib/kepanitiaan/divisi.ts` (`buatDivisiLengkap`).
+
+- Job desk = JSON ProseMirror di `job_desk.konten`, disanitasi allowlist
+  notulensi (`sanitasiKonten`) sebelum simpan DAN sebelum render. Tampilan baca
+  `KontenProsa` merender JSON tanpa TipTap; TipTap (NotulensiEditor, kini punya
+  prop `label`) dimuat `next/dynamic` hanya setelah "Ubah job desk" — gate e2e
+  memeriksa tidak ada chunk berisi `ProseMirror-hideselection` sebelum klik.
+- Auto-save tiap 10 detik bila ada draf; "Selesai" menyimpan seketika. Hak tulis
+  = `bisaTulisDivisi` (T-085); divisi lain tanpa tombol, PUT → 403.
+- Gantt divisi = `GanttEditor` T-078 tertanam pada chart DIVISI tertua; chart
+  tambahan tampil sebagai tautan. Hak tetap dari `hakChart`, jadi **Sekum/Bendum
+  sebagai Ketua Pelaksana menulis job desk tetapi Gantt-nya baca saja** (matriks
+  PRD §5.1 `gantt`) — tombol "Buat timeline divisi" memakai
+  `bolehBuatChartDivisi` (sama persis dengan `punyaHak gantt.update`).
+- Celah yang ditutup: divisi baru dari grid RAB (T-087) / impor Excel (T-091)
+  sebelumnya lahir tanpa `job_desk` & `gantt_chart`. Kini semua jalur memakai
+  `buatDivisiLengkap` (cermin `bentuk_kepanitiaan()` migrasi 022); divisi lama
+  tanpa chart dibuatkan lewat `pastikanChartDivisi`.
+- `cross-divisi.spec.ts`: testid `divisi-aksi-tulis` diganti `job-desk-ubah`.
+- Catatan gate: `notulensi.spec` "ringkasan kehadiran" sekali gagal di server
+  dev dingin, lulus 7/7 saat diulang.
+
 ### T-092 · Sheet PEMASUKAN & data peserta (2026-10-16)
 
 `lib/rab/{pemasukan-skema,pemasukan}.ts`, `/api/kepanitiaan/[id]/{pemasukan,peserta}`

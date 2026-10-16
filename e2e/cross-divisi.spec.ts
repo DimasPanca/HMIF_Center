@@ -140,7 +140,8 @@ test('divisi lain: banner baca saja, RAB terbaca lengkap, tombol tulis tidak ada
   ).toHaveCount(0);
   await expect(koor.getByTestId('rab-divisi-total')).toContainText('Rp600.000');
   // Tidak dirender — bukan disabled.
-  await expect(koor.getByTestId('divisi-aksi-tulis')).toHaveCount(0);
+  await expect(koor.getByTestId('job-desk-ubah')).toHaveCount(0);
+  await expect(koor.getByTestId('gantt-task-tambah')).toHaveCount(0);
   await expect(koor.getByRole('link', { name: /Gantt Divisi PDD/ })).toBeVisible();
   await koor.context().close();
 });
@@ -150,7 +151,7 @@ test('divisi sendiri: mode tulis, tanpa banner, aksi tulis tersedia', async ({ b
   await koor.goto(`/acara/${acaraId}/divisi/${div.konsumsi}`, { waitUntil: 'load' });
   await expect(koor.getByTestId('ruang-divisi')).toHaveAttribute('data-mode', 'tulis', { timeout: 60_000 });
   await expect(koor.getByTestId('mode-baca-saja')).toHaveCount(0);
-  await expect(koor.getByTestId('divisi-aksi-tulis')).toBeVisible();
+  await expect(koor.getByTestId('job-desk-ubah')).toBeVisible();
   await koor.context().close();
 });
 
