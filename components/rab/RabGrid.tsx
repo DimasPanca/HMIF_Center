@@ -34,6 +34,7 @@ import { RabRow, type Kolom } from '@/components/rab/RabRow';
 import { hitungRab } from '@/lib/rab/calculate';
 import { RabSectionHeader } from '@/components/rab/RabSectionHeader';
 import { RabFooter, RabSummary } from '@/components/rab/RabSummary';
+import { StatusRabBar } from '@/components/rab/StatusRabBar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ToastProvider, useToast } from '@/components/ui/toast';
@@ -200,6 +201,7 @@ function Grid({ awal, fokusDivisi }: { awal: DataRab; fokusDivisi?: string }) {
 
   return (
     <div ref={wadah} className="space-y-4" data-testid="rab-grid" data-status={data.status} data-siap={siap ? '1' : '0'}>
+      {fokusDivisi ? null : <StatusRabBar rab={data} onBerubah={gantiData} onGalat={galat} />}
       {!data.terbuka ? (
         <p role="status" data-testid="rab-terkunci" className="rounded-sm bg-[var(--info-subtle)] p-3 text-[13px]">
           RAB berstatus {data.status} dan terkunci. Perubahan hanya dapat dilakukan setelah Bendahara membuka kuncinya.

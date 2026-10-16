@@ -289,6 +289,8 @@ test('divisi lain: tanpa input dan PATCH langsung ditolak 403 (INV-30)', async (
 
 test('RAB terkunci: tanpa input, PATCH 409 (INV-29)', async () => {
   const page = halaman;
+  // Jalur sah mesin status (trigger 041): DRAFT → DIAJUKAN → DISETUJUI.
+  await sql`UPDATE rab_meta SET status = 'DIAJUKAN' WHERE kepanitiaan_id = ${acaraId}::uuid`;
   await sql`UPDATE rab_meta SET status = 'DISETUJUI' WHERE kepanitiaan_id = ${acaraId}::uuid`;
   try {
     await bukaRab(page);
@@ -297,6 +299,6 @@ test('RAB terkunci: tanpa input, PATCH 409 (INV-29)', async () => {
     const r = await page.request.patch(`/api/rab/item/${item.galon}`, { data: { harga_satuan: 1 } });
     expect(r.status(), await r.text()).toBe(409);
   } finally {
-    await sql`UPDATE rab_meta SET status = 'DRAFT' WHERE kepanitiaan_id = ${acaraId}::uuid`;
+    await sql`UPDATE rab_meta SET status = 'DRAFT', alasan_buka_kunci = ${`Uji e2e membuka kunci ${Date.now()}`} WHERE kepanitiaan_id = ${acaraId}::uuid`;
   }
 });

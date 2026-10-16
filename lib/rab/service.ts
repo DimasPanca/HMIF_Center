@@ -56,7 +56,18 @@ export interface DataRab {
   dana_tak_terduga: number;
   boleh_tambah_divisi: boolean;
   boleh_hapus_divisi: boolean;
+  /** Jejak status untuk StatusRabBar (T-089). */
+  meta: { disetujui_oleh: string | null; disetujui_at: string | null; alasan_buka_kunci: string | null };
+  /** Aksi status yang boleh dijalankan pengguna ini SEKARANG (T-089). */
+  izin_status: IzinStatus;
   divisi: DivisiRab[];
+}
+
+export interface IzinStatus {
+  ajukan: boolean;
+  kunci: boolean;
+  kembalikan: boolean;
+  buka: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -76,9 +87,59 @@ async function hakDivisiAcara(k: Klien, konteks: Konteks, kepanitiaanId: string)
 }
 
 /** Status RAB acara; tanpa rab_meta = DRAFT (sama dengan rab_terbuka() di SQL). */
-async function statusRab(k: Klien, kepanitiaanId: string): Promise<{ status: string; dana: number }> {
-  const m = await k.rab_meta.findUnique({ where: { kepanitiaan_id: kepanitiaanId }, select: { status: true, dana_tak_terduga: true } });
-  return { status: m?.status ?? 'DRAFT', dana: angka(m?.dana_tak_terduga ?? null) ?? 0 };
+async function statusRab(k: Klien, kepanitiaanId: string) {
+  const m = await k.rab_meta.findUnique({
+    where: { kepanitiaan_id: kepanitiaanId },
+    select: { status: true, dana_tak_terduga: true, disetujui_at: true, alasan_buka_kunci: true, app_user: { select: { nama_lengkap: true } } },
+  });
+  return {
+    status: m?.status ?? 'DRAFT',
+    dana: angka(m?.dana_tak_terduga ?? null) ?? 0,
+    meta: {
+      disetujui_oleh: m?.app_user?.nama_lengkap ?? null,
+      disetujui_at: m?.disetujui_at?.toISOString() ?? null,
+      alasan_buka_kunci: m?.alasan_buka_kunci ?? null,
+    },
+  };
+}
+
+/**
+ * Siapa boleh menjalankan transisi apa (USER_FLOW §11.3, T-089):
+ *   ajukan      DRAFT → DIAJUKAN: panitia acara (koordinator/anggota divisi,
+ *               Ketua Pelaksana), Admin, Bendum
+ *   kunci       DIAJUKAN → DISETUJUI: `rab.lock` (Admin, Ketua, Wakil, Bendum)
+ *   kembalikan  DIAJUKAN → DRAFT, wajib catatan: `rab.lock` atau Ketua Pelaksana
+ *   buka        DISETUJUI → DRAFT, wajib alasan: `rab.lock`
+ * Periode lain = arsip: tidak ada aksi. Tidak ada jalur paksa untuk Admin.
+ */
+async function hitungIzinStatus(k: Klien, konteks: Konteks, kepanitiaanId: string, status: string): Promise<IzinStatus> {
+  const kp = await k.kepanitiaan.findUnique({
+    where: { id: kepanitiaanId },
+    select: {
+      ketua_pelaksana: true,
+      proker: { select: { periode_id: true } },
+      divisi: { select: { koordinator_id: true, divisi_member: { select: { user_id: true } } } },
+    },
+  });
+  const tidak = { ajukan: false, kunci: false, kembalikan: false, buka: false };
+  if (!kp || kp.proker.periode_id !== konteks.periodeId) return tidak;
+  const pelaku = { userId: konteks.sesi.userId, roles: konteks.roles, periodeId: konteks.periodeId };
+  const fakta = (d: (typeof kp.divisi)[number]) => ({
+    periodeId: kp.proker.periode_id,
+    ketuaPelaksanaId: kp.ketua_pelaksana,
+    koordinatorId: d.koordinator_id,
+    anggotaIds: d.divisi_member.map((m) => m.user_id),
+  });
+  const bukanBph = konteks.roles.some((r) => r !== 'BPH');
+  const ketuplak = bukanBph && kp.ketua_pelaksana === konteks.sesi.userId;
+  const panitia = ketuplak || kp.divisi.some((d) => putusanTulisDivisi(pelaku, fakta(d)));
+  const pengunci = can(konteks.roles, 'rab.lock');
+  return {
+    ajukan: status === 'DRAFT' && panitia,
+    kunci: status === 'DIAJUKAN' && pengunci,
+    kembalikan: status === 'DIAJUKAN' && (pengunci || ketuplak),
+    buka: status === 'DISETUJUI' && pengunci,
+  };
 }
 
 /** Pemeriksaan tulis satu divisi: ada, periode aktif, hak panitia/Admin/Bendum, RAB terbuka. */
@@ -149,7 +210,7 @@ export async function muatRab(konteks: Konteks, kepanitiaanId: string, klien: Kl
   if (!acara) return null;
   if (!acara.boleh_rab) return 'TERBATAS';
 
-  const [divisi, { status, dana }, hak] = await Promise.all([
+  const [divisi, { status, dana, meta }, hak] = await Promise.all([
     klien.divisi.findMany({
       where: { kepanitiaan_id: kepanitiaanId },
       orderBy: [{ urutan: 'asc' }, { nama: 'asc' }],
@@ -174,6 +235,7 @@ export async function muatRab(konteks: Konteks, kepanitiaanId: string, klien: Kl
   });
   const terbuka = STATUS_TERBUKA.includes(status);
   const pelaku = { userId: konteks.sesi.userId, roles: konteks.roles, periodeId: konteks.periodeId };
+  const izin_status = await hitungIzinStatus(klien, konteks, kepanitiaanId, status);
 
   return {
     kepanitiaan_id: kepanitiaanId,
@@ -183,6 +245,8 @@ export async function muatRab(konteks: Konteks, kepanitiaanId: string, klien: Kl
     dana_tak_terduga: dana,
     boleh_tambah_divisi: terbuka && hak.tambah,
     boleh_hapus_divisi: terbuka && hak.hapus,
+    meta,
+    izin_status,
     divisi: divisi.map((d) => ({
       id: d.id,
       nama: d.nama,
@@ -350,4 +414,95 @@ export async function hapusItem(tx: TxKlien, konteks: Konteks, id: string): Prom
   await tx.$executeRaw`UPDATE rab_item SET no_urut = -no_urut WHERE section_id = ${lama.section_id}::uuid AND no_urut > ${lama.no_urut}`;
   await tx.$executeRaw`UPDATE rab_item SET no_urut = -no_urut - 1 WHERE section_id = ${lama.section_id}::uuid AND no_urut < 0`;
   return { ok: true, nilai: { id } };
+}
+
+// ---------------------------------------------------------------------------
+// Status & penguncian (T-089, PRD F-9.5, USER_FLOW §11.3)
+// ---------------------------------------------------------------------------
+
+export const SkemaAlasan = z.object({
+  alasan: z
+    .string({ error: 'Alasan wajib diisi.' })
+    .trim()
+    .min(10, 'Alasan minimal 10 karakter — tuliskan apa yang perlu diubah.')
+    .max(500, 'Alasan maksimal 500 karakter.'),
+});
+
+export type AksiStatus = 'ajukan' | 'kunci' | 'kembalikan' | 'buka';
+
+const TUJUAN: Record<AksiStatus, { dari: string; ke: 'DIAJUKAN' | 'DISETUJUI' | 'DRAFT' }> = {
+  ajukan: { dari: 'DRAFT', ke: 'DIAJUKAN' },
+  kunci: { dari: 'DIAJUKAN', ke: 'DISETUJUI' },
+  kembalikan: { dari: 'DIAJUKAN', ke: 'DRAFT' },
+  buka: { dari: 'DISETUJUI', ke: 'DRAFT' },
+};
+
+/**
+ * Menjalankan satu transisi status. Hak dihitung ulang di sini (bukan dari
+ * UI); trigger 041 menegakkan ulang mesin status dan kewajiban alasan di
+ * database, jadi tidak ada jalur "paksa" — termasuk untuk Admin.
+ */
+export async function ubahStatusRab(
+  tx: TxKlien,
+  konteks: Konteks,
+  kepanitiaanId: string,
+  aksiDiminta: AksiStatus,
+  body: unknown,
+): Promise<Hasil<{ status: string }>> {
+  const kp = await tx.kepanitiaan.findUnique({ where: { id: kepanitiaanId }, select: { id: true } });
+  if (!kp) return gagal('TIDAK_DITEMUKAN', 'Acara tidak ditemukan.');
+
+  let alasan: string | null = null;
+  if (TUJUAN[aksiDiminta].ke === 'DRAFT') {
+    const p = SkemaAlasan.safeParse(body);
+    if (!p.success) return gagal('VALIDASI_GAGAL', p.error.issues[0]?.message ?? 'Alasan wajib diisi.');
+    alasan = p.data.alasan;
+  }
+
+  // Kunci baris supaya dua penyetuju yang menekan tombol bersamaan tidak
+  // sama-sama membaca DIAJUKAN.
+  await tx.$executeRaw`INSERT INTO rab_meta (kepanitiaan_id) VALUES (${kepanitiaanId}::uuid) ON CONFLICT (kepanitiaan_id) DO NOTHING`;
+  await tx.$queryRaw`SELECT 1 FROM rab_meta WHERE kepanitiaan_id = ${kepanitiaanId}::uuid FOR UPDATE`;
+  const { status, meta } = await statusRab(tx, kepanitiaanId);
+  // "Kembali ke DRAFT" dari DIAJUKAN adalah pengembalian, bukan buka kunci.
+  const aksi: AksiStatus = aksiDiminta === 'buka' && status === 'DIAJUKAN' ? 'kembalikan' : aksiDiminta;
+  const t = TUJUAN[aksi];
+  if (status !== t.dari) return gagal('RAB_TERKUNCI', `RAB berstatus ${status}; aksi ini hanya untuk RAB berstatus ${t.dari}.`);
+  // Diperiksa sebelum UPDATE: penolakan trigger 041 di tengah transaksi
+  // membatalkan seluruh transaksi dan hanya terbaca sebagai galat 500.
+  if (alasan && alasan === meta.alasan_buka_kunci) {
+    return gagal('VALIDASI_GAGAL', 'Tuliskan alasan baru — alasan ini sama persis dengan pembukaan kunci sebelumnya.');
+  }
+
+  const izin = await hitungIzinStatus(tx, konteks, kepanitiaanId, status);
+  if (!izin[aksi]) {
+    const siapa: Record<AksiStatus, string> = {
+      ajukan: 'panitia acara ini',
+      kunci: 'Bendahara, Ketua, Wakil, atau Admin',
+      kembalikan: 'Ketua Pelaksana, Bendahara, Ketua, Wakil, atau Admin',
+      buka: 'Bendahara, Ketua, Wakil, atau Admin',
+    };
+    return gagal('TIDAK_BERWENANG', `Aksi ini hanya untuk ${siapa[aksi]}.`);
+  }
+
+  await tx.rab_meta.update({
+    where: { kepanitiaan_id: kepanitiaanId },
+    data: {
+      status: t.ke,
+      ...(t.ke === 'DISETUJUI' ? { disetujui_oleh: konteks.sesi.userId, disetujui_at: new Date() } : {}),
+      ...(alasan ? { alasan_buka_kunci: alasan } : {}),
+    },
+  });
+  return { ok: true, nilai: { status: t.ke } };
+}
+
+/**
+ * Transisi otomatis sistem: DISETUJUI → REALISASI saat nota pertama
+ * terverifikasi (T-102), REALISASI → SELESAI saat LPJ di-generate (T-105).
+ * Diam bila status sudah di depan; trigger 041 menolak lompatan lain.
+ */
+export async function majukanStatusRab(tx: TxKlien, kepanitiaanId: string, ke: 'REALISASI' | 'SELESAI'): Promise<boolean> {
+  const dari = ke === 'REALISASI' ? 'DISETUJUI' : 'REALISASI';
+  const r = await tx.rab_meta.updateMany({ where: { kepanitiaan_id: kepanitiaanId, status: dari }, data: { status: ke } });
+  return r.count > 0;
 }

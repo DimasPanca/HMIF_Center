@@ -430,6 +430,8 @@ BEGIN
   --    Bukan sekadar tombol yang disembunyikan di antarmuka. Setelah RAB
   --    DISETUJUI, permintaan yang datang langsung ke database pun ditolak.
   ---------------------------------------------------------------------------
+  -- Jalur sah mesin status (041): DRAFT → DIAJUKAN → DISETUJUI.
+  UPDATE rab_meta SET status = 'DIAJUKAN' WHERE kepanitiaan_id = v_kep;
   UPDATE rab_meta SET status = 'DISETUJUI' WHERE kepanitiaan_id = v_kep;
 
   PERFORM set_config('request.jwt.claims',
@@ -449,7 +451,8 @@ BEGIN
 
   -- Dibuka kembali, penulisan harus hidup lagi. Tanpa pemeriksaan ini,
   -- policy yang menolak selamanya juga akan membuat test di atas lulus.
-  UPDATE rab_meta SET status = 'DRAFT' WHERE kepanitiaan_id = v_kep;
+  UPDATE rab_meta SET status = 'DRAFT', alasan_buka_kunci = 'Uji: membuka kunci untuk revisi'
+   WHERE kepanitiaan_id = v_kep;
 
   PERFORM set_config('request.jwt.claims',
                      json_build_object('sub', v_anggota::TEXT)::TEXT, true);
@@ -611,5 +614,52 @@ BEGIN
   EXECUTE 'RESET ROLE';
   ASSERT v_n = 1, 'Kadept departemen PIC TIDAK dapat mengubah Gantt divisi acaranya';
   ASSERT (SELECT progres FROM gantt_task WHERE id = v_task2) = 50, 'Progres task Gantt tidak sesuai urutan perubahan';
-  RAISE NOTICE 'OK 015c_rls_negatif - 14 skenario, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, BPH tak pernah menulis, approver terpisah per jenis';
+  ---------------------------------------------------------------------------
+  -- 15. MESIN STATUS RAB DI DATABASE (T-089, migrasi 041)
+  --
+  --     Bendum boleh UPDATE rab_meta (015b), tetapi lewat jalur langsung pun
+  --     ia tidak dapat membuka kunci tanpa alasan, atau melompati status.
+  ---------------------------------------------------------------------------
+  UPDATE rab_meta SET status = 'DIAJUKAN' WHERE kepanitiaan_id = v_kep;
+  UPDATE rab_meta SET status = 'DISETUJUI' WHERE kepanitiaan_id = v_kep;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_bendum::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  v_ditolak := false;
+  BEGIN
+    UPDATE rab_meta SET status = 'DRAFT' WHERE kepanitiaan_id = v_kep;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  EXECUTE 'RESET ROLE';
+  ASSERT v_ditolak, 'Bendum BERHASIL membuka kunci RAB tanpa alasan (PRD F-9.5)';
+
+  v_ditolak := false;
+  BEGIN
+    UPDATE rab_meta SET status = 'DRAFT', alasan_buka_kunci = 'Uji: membuka kunci untuk revisi'
+     WHERE kepanitiaan_id = v_kep;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'Alasan buka kunci LAMA dipakai ulang tanpa ditolak';
+
+  v_ditolak := false;
+  BEGIN
+    UPDATE rab_meta SET status = 'SELESAI' WHERE kepanitiaan_id = v_kep;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'Transisi DISETUJUI -> SELESAI (melompati REALISASI) DITERIMA';
+  ASSERT (SELECT status FROM rab_meta WHERE kepanitiaan_id = v_kep) = 'DISETUJUI', 'Status RAB berubah walau transisinya ditolak';
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_bendum::TEXT)::TEXT, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  UPDATE rab_meta SET status = 'DRAFT', alasan_buka_kunci = 'Ada tambahan sewa sound system'
+   WHERE kepanitiaan_id = v_kep;
+  EXECUTE 'RESET ROLE';
+  ASSERT (SELECT status FROM rab_meta WHERE kepanitiaan_id = v_kep) = 'DRAFT', 'Bendum tidak dapat membuka kunci dengan alasan sah';
+  ASSERT (SELECT disetujui_at FROM rab_meta WHERE kepanitiaan_id = v_kep) IS NULL, 'Jejak persetujuan lama tidak dibersihkan saat kembali ke DRAFT';
+  ASSERT EXISTS (SELECT 1 FROM audit_log WHERE entitas = 'rab_meta' AND aksi = 'UPDATE'
+                   AND entitas_id = v_kep::TEXT
+                   AND nilai_baru->>'alasan_buka_kunci' = 'Ada tambahan sewa sound system'),
+    'Alasan buka kunci tidak tercatat di audit_log dengan entitas_id acaranya (042)';
+
+  RAISE NOTICE 'OK 015c_rls_negatif - 15 skenario, lintas divisi baca boleh tulis 0 baris, Ketua Pelaksana menulis semua divisi, buka kunci RAB wajib alasan, BPH tak pernah menulis, approver terpisah per jenis';
 END $$;

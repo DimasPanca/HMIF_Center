@@ -65,6 +65,29 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-089 · Status & penguncian RAB (2026-10-16)
+
+Migrasi **041_rab_status** (trigger mesin status `rab_meta`) dan
+**042_audit_entitas_rab_meta** (fn_audit kini mengisi `entitas_id` =
+`kepanitiaan_id` untuk rab_meta — sebelumnya NULL, jejak kunci RAB tak
+tertelusuri; baris lama tidak diubah, audit append-only). Keduanya sudah
+`db:migrate` ke DB dev. Route `POST /api/rab/[kepanitiaanId]/{submit,lock,unlock}`
+(jalur bersama `app/api/rab/_status.ts`), `components/rab/StatusRabBar.tsx`,
+`ubahStatusRab` + `majukanStatusRab` di `lib/rab/service.ts`.
+
+- **Trigger 041 berlaku untuk SEMUA koneksi** (termasuk app/postgres): transisi
+  hanya DRAFT→DIAJUKAN, DIAJUKAN→DRAFT|DISETUJUI, DISETUJUI→DRAFT|REALISASI,
+  REALISASI→SELESAI; kembali ke DRAFT wajib `alasan_buka_kunci` BARU ≥ 10
+  karakter. **Fixture/tes yang mengubah status langsung wajib lewat jalur sah**
+  (lihat 015c skenario 7/15, rab-grid "RAB terkunci").
+- Hak (`hitungIzinStatus`): ajukan = panitia acara/Admin/Bendum; kunci & buka
+  = `rab.lock`; kembalikan (DIAJUKAN→DRAFT) = `rab.lock` atau Ketua
+  Pelaksana. `/unlock` memilih kembalikan vs buka di dalam transaksi
+  (`FOR UPDATE`). Tidak ada jalur paksa untuk Admin.
+- **T-102 & T-105 wajib memanggil `majukanStatusRab(tx, id, 'REALISASI'|'SELESAI')`.**
+- "Konfirmasi tingkat tinggi" buka kunci = `ConfirmDialog level="reason"`
+  (satu-satunya level yang menangkap alasan); tombolnya disabled selama kosong.
+
 ### T-088 · Kalkulasi RAB (2026-10-16)
 
 `lib/rab/calculate.ts`: `hitungRab(divisi, dana)` → per item/sub-section/divisi,
