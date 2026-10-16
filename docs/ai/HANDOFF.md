@@ -65,6 +65,28 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-092 · Sheet PEMASUKAN & data peserta (2026-10-16)
+
+`lib/rab/{pemasukan-skema,pemasukan}.ts`, `/api/kepanitiaan/[id]/{pemasukan,peserta}`
+(+ `_pemasukan.ts` guard bersama), `components/rab/{PemasukanPanel,PesertaTable}.tsx`
+— dipasang di tab RAB di bawah grid.
+
+- Hak: baca = `boleh_rab`; tulis = Admin/Bendum/panitia acara (non-BPH,
+  periode aktif); hapus = Admin/Bendum (cermin RLS 015b pemasukan_/peserta_*).
+- `ringkasPeserta` satu-satunya rumus ringkasan (panel & server); gate e2e
+  mencocokkan ringkasan layar dengan hitungan SQL setelah setiap perubahan.
+- Status bayar boolean; centang optimistis, mengisi tanggal hari ini; batal
+  centang mengosongkan tanggal (CHECK `peserta_tanggal_konsisten` dicerminkan
+  di zod).
+- Import peserta via parse-tabel: `kunciUnik: 'nim'` (ganda di berkas =
+  peringatan, baris pertama dipakai), NIM terdaftar = DIPERBARUI (impor ulang
+  memperbarui status bayar).
+- `excel-export.ts` tidak perlu diubah: `dataEksporRab` (T-090) sudah
+  menyalurkan "Total Pembayaran {acara}" + sumber dana ke PEMASUKAN dan saldo
+  awal PENGELUARAN — dibuktikan gate e2e (unduh & baca sheet).
+- Catatan gate rab-grid: ukuran rekalkulasi < 100 ms sesekali melewati batas
+  pada dev server dingin/terbebani (terukur 24–46 ms pada jalan normal).
+
 ### T-091 · Import Excel (2026-10-16)
 
 `lib/rab/excel-import.ts` (pengurai murni — dipakai juga `scripts/diff-excel.ts`),

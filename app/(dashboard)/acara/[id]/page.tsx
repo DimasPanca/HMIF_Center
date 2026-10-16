@@ -7,10 +7,12 @@ import { BelumTersedia } from '@/components/acara/BelumTersedia';
 import { DivisiCard } from '@/components/acara/DivisiCard';
 import { RingkasanAcara } from '@/components/acara/RingkasanAcara';
 import { TabNav, tabDari, type TabAcara } from '@/components/acara/TabNav';
+import { PemasukanPanel } from '@/components/rab/PemasukanPanel';
 import { RabGrid } from '@/components/rab/RabGrid';
 import { muatAcara, type RuangAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { muatPemasukan, type DataPemasukan } from '@/lib/rab/pemasukan';
 import { muatRab, type DataRab } from '@/lib/rab/service';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +40,17 @@ function PeranSaya({ acara }: { acara: RuangAcara }) {
 
 const ringkasan = (id: string) => ({ label: 'Kembali ke Ringkasan', href: `/acara/${id}?tab=ringkasan` });
 
-function IsiTab({ acara, tab, rab }: { acara: RuangAcara; tab: TabAcara; rab: DataRab | 'TERBATAS' | null }) {
+function IsiTab({
+  acara,
+  tab,
+  rab,
+  pemasukan,
+}: {
+  acara: RuangAcara;
+  tab: TabAcara;
+  rab: DataRab | 'TERBATAS' | null;
+  pemasukan: DataPemasukan | 'TERBATAS' | null;
+}) {
   switch (tab) {
     case 'ringkasan':
       return <RingkasanAcara acara={acara} />;
@@ -98,8 +110,9 @@ function IsiTab({ acara, tab, rab }: { acara: RuangAcara; tab: TabAcara; rab: Da
           aksi={ringkasan(acara.id)}
         />
       ) : rab && rab !== 'TERBATAS' ? (
-        <div data-testid="acara-isi-rab">
+        <div data-testid="acara-isi-rab" className="space-y-6">
           <RabGrid awal={rab} />
+          {pemasukan && pemasukan !== 'TERBATAS' ? <PemasukanPanel awal={pemasukan} /> : null}
         </div>
       ) : null;
 
@@ -174,6 +187,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
   const sp = await searchParams;
   const tab = tabDari(Array.isArray(sp.tab) ? sp.tab[0] : sp.tab);
   const rab = tab === 'rab' && acara.boleh_rab ? await muatRab(konteks, acara.id) : null;
+  const pemasukan = tab === 'rab' && acara.boleh_rab ? await muatPemasukan(konteks, acara.id) : null;
 
   return (
     <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6">
@@ -182,7 +196,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
         <PeranSaya acara={acara} />
         <TabNav acaraId={acara.id} aktif={tab} />
         <section aria-label={`Tab ${tab}`} data-testid={`acara-panel-${tab}`}>
-          <IsiTab acara={acara} tab={tab} rab={rab} />
+          <IsiTab acara={acara} tab={tab} rab={rab} pemasukan={pemasukan} />
         </section>
       </div>
     </main>
