@@ -31,13 +31,14 @@ import { Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
 
 import { RabRow, type Kolom } from '@/components/rab/RabRow';
+import { hitungRab } from '@/lib/rab/calculate';
 import { RabSectionHeader } from '@/components/rab/RabSectionHeader';
 import { RabFooter, RabSummary } from '@/components/rab/RabSummary';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ToastProvider, useToast } from '@/components/ui/toast';
 import {
-  jumlahkanAcara,
+
   jumlahkanDivisi,
   jumlahkanSection,
   terapkanUbah,
@@ -45,7 +46,7 @@ import {
   type ItemRab,
   type UbahItem,
 } from '@/lib/rab/item';
-import type { DataRab } from '@/lib/rab/service';
+import type { DataRab, ItemTerverifikasi } from '@/lib/rab/service';
 import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 
@@ -101,7 +102,8 @@ function Grid({ awal, fokusDivisi }: { awal: DataRab; fokusDivisi?: string }) {
   React.useEffect(() => setSiap(true), []);
 
   const tampil = fokusDivisi ? data.divisi.filter((d) => d.id === fokusDivisi) : data.divisi;
-  const totalAcara = jumlahkanAcara(tampil);
+  // T-088: satu kalkulasi untuk footer & ringkasan; dana tak terduga di luar total divisi.
+  const ringkasan = hitungRab(tampil, fokusDivisi ? 0 : data.dana_tak_terduga);
 
   const galat = (pesan: string) => toast.error({ description: pesan, suggestion: 'Periksa isian, atau muat ulang halaman bila berulang.' });
 
@@ -129,18 +131,22 @@ function Grid({ awal, fokusDivisi }: { awal: DataRab; fokusDivisi?: string }) {
       for (const k of KOLOM_KIRIM) if (kini[k] !== lama[k]) ubah[k] = kini[k];
       if (!Object.keys(ubah).length) return;
       if (!kini.total_manual) delete ubah.total;
+      // Hitungan klien ikut dikirim untuk diverifikasi ulang server (INV-27, T-088).
+      ubah.total_klien = kini.total;
       try {
         const r = await fetch(`/api/rab/item/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(ubah) });
-        const isi = (await r.json().catch(() => null)) as Jawaban<ItemRab> | null;
+        const isi = (await r.json().catch(() => null)) as Jawaban<ItemTerverifikasi> | null;
         if (!r.ok || !isi?.ok || !isi.data) throw new Error(isi?.error?.message ?? 'Item gagal disimpan.');
-        const server = isi.data;
+        const { diverifikasi, ...server } = isi.data;
         tersimpan.current.set(id, server);
         const lokal = semuaItem(dataRef.current.divisi).get(id);
         // Ketikan baru selama permintaan berjalan dipertahankan; selain itu server yang menang.
         if (lokal && KOLOM_KIRIM.every((k) => lokal[k] === kini[k])) {
           setData((d) => ({ ...d, divisi: petaItem(d.divisi, id, () => server) }));
         }
-        if (server.total !== kini.total) toast.info({ description: `Total disesuaikan server menjadi ${formatRupiah(server.total)}.` });
+        if (diverifikasi.selisih) {
+          toast.info({ description: `Total dihitung ulang server menjadi ${formatRupiah(diverifikasi.total_server)} (tampilan sebelumnya ${formatRupiah(kini.total)}).` });
+        }
       } catch (e) {
         batal(id);
         galat(e instanceof Error ? e.message : 'Item gagal disimpan.');
@@ -356,8 +362,8 @@ function Grid({ awal, fokusDivisi }: { awal: DataRab; fokusDivisi?: string }) {
         </form>
       ) : null}
 
-      {!fokusDivisi && tampil.length > 0 ? <RabSummary divisi={tampil} /> : null}
-      <RabFooter total={totalAcara} danaTakTerduga={fokusDivisi ? 0 : data.dana_tak_terduga} />
+      {!fokusDivisi && tampil.length > 0 ? <RabSummary divisi={tampil} danaTakTerduga={ringkasan.danaTakTerduga} itemTanpaJumlah={ringkasan.itemTanpaJumlah} /> : null}
+      <RabFooter total={ringkasan.grandTotal} danaTakTerduga={ringkasan.danaTakTerduga} />
 
       <ConfirmDialog
         level="typed"

@@ -225,6 +225,32 @@ test('override total manual ditandai dan dikunci; dapat dikembalikan', async () 
   await tungguDb(item.galon, (r) => !r.total_manual && Number(r.total) === 27000);
 });
 
+test('server memverifikasi ulang total klien dan melaporkan selisih (INV-27, T-088)', async () => {
+  const r = await halaman.request.patch(`/api/rab/item/${item.galon}`, { data: { harga_satuan: 9000, total_klien: 1 } });
+  expect(r.status(), await r.text()).toBe(200);
+  const isi = (await r.json()) as { data: { total: number; diverifikasi: { total_klien: number; total_server: number; selisih: boolean } } };
+  expect(isi.data.diverifikasi).toEqual({ total_klien: 1, total_server: 27000, selisih: true });
+  expect(isi.data.total).toBe(27000);
+  const cocok = await halaman.request.patch(`/api/rab/item/${item.galon}`, { data: { harga_satuan: 9000, total_klien: 27000 } });
+  expect(((await cocok.json()) as { data: { diverifikasi: { selisih: boolean } } }).data.diverifikasi.selisih).toBe(false);
+});
+
+test('dana tak terduga: baris terakhir ringkasan, masuk TOTAL, tidak masuk total divisi', async () => {
+  const page = halaman;
+  await sql`UPDATE rab_meta SET dana_tak_terduga = 100000 WHERE kepanitiaan_id = ${acaraId}::uuid`;
+  try {
+    await bukaRab(page);
+    await expect(page.getByTestId('rab-ringkasan-dana')).toContainText('Rp100.000');
+    // Konsumsi: Galon 27.000 + Makan 1.740.000; PDD: kamera manual 400.000
+    await expect(divisi(page, div.konsumsi).getByTestId('rab-divisi-total')).toHaveText('Rp1.767.000');
+    await expect(page.getByTestId('rab-total-acara')).toHaveText('Rp2.267.000');
+    await expect(page.getByTestId('rab-dana-tak-terduga')).toContainText('Rp100.000');
+  } finally {
+    await sql`UPDATE rab_meta SET dana_tak_terduga = 0 WHERE kepanitiaan_id = ${acaraId}::uuid`;
+  }
+  await bukaRab(page);
+});
+
 test('tambah item & sub-section; hapus sub-section memakai konfirmasi ketik-nama', async () => {
   const page = halaman;
   const blok = divisi(page, div.konsumsi);

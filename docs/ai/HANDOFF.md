@@ -65,6 +65,24 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-088 · Kalkulasi RAB (2026-10-16)
+
+`lib/rab/calculate.ts`: `hitungRab(divisi, dana)` → per item/sub-section/divisi,
+`totalDivisi` (tanpa dana), `grandTotal` (+ Dana Tak Terduga, baris terakhir
+ringkasan per RAB_CELL_MAP), `itemTanpaJumlah`. Uang = rupiah bulat; jumlah ×
+harga lewat BigInt perseratus + pembulatan setengah-ke-atas (`kaliRupiah`);
+`bulatkanJumlah` meniru NUMERIC(12,2) Postgres (2,675 → 2,68). `item.ts`
+(`totalItem`, `jumlahkan*`) kini membungkusnya → klien = server.
+
+- PATCH item menerima `total_klien` (tak disimpan); jawaban memuat
+  `diverifikasi { total_klien, total_server, selisih }` dan grid memberi tahu
+  bila selisih (INV-27).
+- Tes gate bernama `lib/rab/__tests__/rab-calculate.test.ts` (bukan
+  `calculate.test.ts` seperti di kontrak) supaya `npm run test -- rab-calculate`
+  benar-benar memilihnya.
+- **Untuk T-090/T-103/T-104:** pakai `hitungRab`, jangan menjumlahkan sendiri.
+- tsconfig target < ES2020: tulis `BigInt(50)`, bukan literal `50n`.
+
 ### T-087 · Grid RAB inline-editable (2026-10-16)
 
 `lib/rab/{item,service}.ts`, `components/rab/{RabGrid,RabRow,RabSectionHeader,RabSummary,CurrencyInput,JumlahInput}.tsx`,

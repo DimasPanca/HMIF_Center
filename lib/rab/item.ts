@@ -11,14 +11,15 @@
  * tidak mengenal sen, dan pembulatan di satu tempat ini mencegah klien dan
  * server berselisih satu rupiah.
  *
- * Kalkulasi bertingkat (sub-section → divisi → acara) ada di `jumlahkan*` di
- * bawah; T-088 menggantinya dengan `hitungRab` lengkap.
+ * Aritmetika uang (bilangan bulat, tanpa float) dan kalkulasi bertingkat ada di
+ * lib/rab/calculate.ts (T-088); `jumlahkan*` di bawah hanya pembungkusnya.
  *
  * Sumber: docs/ai/tasks/P5-kepanitiaan-rab.md T-087 · PRD F-9.1, F-9.3 · INV-26, INV-27
  */
 
 import { z } from 'zod';
 
+import { bulatkanJumlah, hitungRab, hitungTotalItem } from '@/lib/rab/calculate';
 import { parseJumlah } from '@/lib/rab/parse-jumlah';
 
 export const MAKS_RUPIAH = 999_999_999_999;
@@ -72,16 +73,18 @@ export const SkemaUbahItem = z
     /** Hanya dipakai bila total_manual. */
     total: rupiah('Total'),
     keterangan: z.string().trim().max(500, 'Keterangan maksimal 500 karakter.').nullable(),
+    /**
+     * Total menurut hitungan klien — TIDAK disimpan. Server menghitung ulang
+     * (INV-27) dan melaporkan selisihnya; nilai server yang menang.
+     */
+    total_klien: z.number().finite(),
   })
   .partial()
   .strict();
 export type UbahItem = z.infer<typeof SkemaUbahItem>;
 
-/** Total satu item. */
-export function totalItem(i: Pick<ItemRab, 'jumlah_numerik' | 'harga_satuan' | 'total' | 'total_manual'>): number {
-  if (i.total_manual) return Math.round(i.total);
-  return Math.round((i.jumlah_numerik ?? 0) * i.harga_satuan);
-}
+/** Total satu item — lib/rab/calculate.ts. */
+export const totalItem = hitungTotalItem;
 
 /**
  * Menerapkan perubahan ke item — dipakai klien (optimistis) dan server
@@ -101,7 +104,7 @@ export function terapkanUbah(lama: ItemRab, u: UbahItem): ItemRab {
     ...lama,
     jenis_barang: u.jenis_barang ?? lama.jenis_barang,
     jumlah_teks: teks,
-    jumlah_numerik: numerik,
+    jumlah_numerik: bulatkanJumlah(numerik),
     harga_satuan: u.harga_satuan ?? lama.harga_satuan,
     total_manual: u.total_manual ?? lama.total_manual,
     total: u.total ?? lama.total,
@@ -111,5 +114,6 @@ export function terapkanUbah(lama: ItemRab, u: UbahItem): ItemRab {
 }
 
 export const jumlahkanSection = (s: SectionRab) => s.items.reduce((x, i) => x + totalItem(i), 0);
-export const jumlahkanDivisi = (d: DivisiRab) => d.sections.reduce((x, s) => x + jumlahkanSection(s), 0);
-export const jumlahkanAcara = (list: readonly DivisiRab[]) => list.reduce((x, d) => x + jumlahkanDivisi(d), 0);
+export const jumlahkanDivisi = (d: DivisiRab) => hitungRab([d]).totalDivisi;
+/** Total seluruh divisi, TANPA dana tak terduga. */
+export const jumlahkanAcara = (list: readonly DivisiRab[]) => hitungRab(list).totalDivisi;

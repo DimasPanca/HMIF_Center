@@ -299,7 +299,12 @@ async function itemDenganDivisi(tx: TxKlien, id: string) {
 }
 
 /** Mengubah satu item. Nilai yang dikembalikan adalah kebenaran server (INV-27). */
-export async function ubahItem(tx: TxKlien, konteks: Konteks, id: string, body: unknown): Promise<Hasil<ItemRab>> {
+/** Item hasil simpan + laporan verifikasi ulang total klien (INV-27, T-088). */
+export type ItemTerverifikasi = ItemRab & {
+  diverifikasi: { total_klien: number | null; total_server: number; selisih: boolean };
+};
+
+export async function ubahItem(tx: TxKlien, konteks: Konteks, id: string, body: unknown): Promise<Hasil<ItemTerverifikasi>> {
   const p = SkemaUbahItem.safeParse(body);
   if (!p.success) return gagal('VALIDASI_GAGAL', p.error.issues[0]?.message ?? 'Isian tidak valid.');
   const lama = await itemDenganDivisi(tx, id);
@@ -322,7 +327,15 @@ export async function ubahItem(tx: TxKlien, konteks: Konteks, id: string, body: 
     },
     select: PILIH_ITEM,
   });
-  return { ok: true, nilai: keItem(r) };
+  const tersimpan = keItem(r);
+  const klien = p.data.total_klien ?? null;
+  return {
+    ok: true,
+    nilai: {
+      ...tersimpan,
+      diverifikasi: { total_klien: klien, total_server: tersimpan.total, selisih: klien !== null && Math.round(klien) !== tersimpan.total },
+    },
+  };
 }
 
 /** Menghapus item lalu merapatkan nomor urut (UNIQUE section_id, no_urut). */
