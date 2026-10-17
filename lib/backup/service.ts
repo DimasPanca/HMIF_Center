@@ -420,7 +420,7 @@ export async function prosesBackup(
       volumeArsip: arsip.volume,
       keterbatasan: [
         ...keterbatasan,
-        'Tabel backup dan _migrasi tidak ikut dipulihkan: riwayat backup dan migrasi milik sistem tujuan.',
+        'Tabel backup, restore_job, dan _migrasi tidak ikut dipulihkan: riwayatnya milik sistem tujuan.',
       ],
     };
     await lapor('MANIFEST', 'Menulis manifest');

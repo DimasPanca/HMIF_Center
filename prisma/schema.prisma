@@ -138,8 +138,35 @@ model backup {
   completed_at  DateTime?     @db.Timestamptz(6)
   app_user      app_user?     @relation(fields: [dibuat_oleh], references: [id], onDelete: NoAction, onUpdate: NoAction)
   periode       periode?      @relation(fields: [periode_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  restore_sumber restore_job[] @relation("restore_job_backup_idTobackup")
+  restore_pra    restore_job[] @relation("restore_job_pra_restore_idTobackup")
 
   @@index([jenis, created_at(sort: Desc)], map: "backup_jenis_waktu")
+}
+
+/// Jejak & progres restore bertahap (T-112, migrasi 048).
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model restore_job {
+  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  backup_id      String        @db.Uuid
+  mode           String
+  modul          String[]      @default([])
+  strategi       String?
+  status         backup_status @default(BERJALAN)
+  tahap          String        @default("PRA_RESTORE")
+  pra_restore_id String?       @db.Uuid
+  progres        Json          @default("{}")
+  laporan        Json          @default("{}")
+  error_message  String?
+  dibuat_oleh    String?       @db.Uuid
+  created_at     DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at   DateTime?     @db.Timestamptz(6)
+  backup         backup        @relation("restore_job_backup_idTobackup", fields: [backup_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pra_restore    backup?       @relation("restore_job_pra_restore_idTobackup", fields: [pra_restore_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "restore_job_waktu")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

@@ -31,7 +31,7 @@ components/         React components (client + server, dibagi per fitur)
 
 lib/                Kode server & shared — inti aplikasi
   auth/             guard, permissions matrix, session, rate-limit
-  backup/           backup tiga lapis: manifest+checksum, modul JSON & dump, arsip storage ber-volume
+  backup/           backup tiga lapis (manifest+checksum, modul JSON & dump, arsip ber-volume), retensi, restore bertahap
   cron/             scheduler tugas berkala
   db/               Prisma client + withAuditContext (WAJIB semua mutasi)
   documents/        renderer DOCX generik (dipakai lpj/proposal/tor/surat)
@@ -73,6 +73,7 @@ scripts/            tooling CLI (tsx)
   bench-gantt.ts    benchmark render Gantt
   rls-coverage.ts   ringkas coverage RLS
   verify-backup.ts  periksa ulang bundel backup (`--jalankan` = buat dulu)
+  e2e-restore.ts    uji restore penuh/per modul di transaksi yang di-rollback
 
 e2e/                Playwright — satu file per fitur
   fixtures/         akun + helper setup/reset

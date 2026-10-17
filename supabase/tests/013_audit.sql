@@ -118,11 +118,12 @@ BEGIN
   --    MANUAL dan PRA_RESTORE tidak boleh pernah terhapus otomatis.
   ---------------------------------------------------------------------------
   SELECT count(*)::INT INTO v_jumlah
-  FROM backup WHERE jenis = 'OTOMATIS' AND status = 'SUKSES';
+  FROM backup WHERE jenis = 'OTOMATIS' AND status = 'SUKSES'
+    AND created_at = now();  -- hanya baris test ini (now() tetap dalam satu transaksi)
   ASSERT v_jumlah = 1, 'Query retensi tidak menemukan backup otomatis';
 
   SELECT count(*)::INT INTO v_jumlah
-  FROM backup WHERE jenis IN ('MANUAL', 'PRA_RESTORE');
+  FROM backup WHERE jenis IN ('MANUAL', 'PRA_RESTORE') AND created_at = now();
   ASSERT v_jumlah = 1, 'Backup non-otomatis tidak tersimpan';
 
   ---------------------------------------------------------------------------

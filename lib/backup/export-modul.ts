@@ -79,9 +79,10 @@ export const DAFTAR_MODUL = Object.keys(MODUL_BACKUP) as ModulBackup[];
 /**
  * Tidak ikut dump maupun modul: `_migrasi` milik runner migrasi (dipulihkan
  * dengan menjalankan migrasi), `backup` adalah catatan backup itu sendiri —
- * memulihkannya akan menghapus jejak backup PRA_RESTORE yang baru dibuat.
+ * memulihkannya akan menghapus jejak backup PRA_RESTORE yang baru dibuat;
+ * `restore_job` (T-112) adalah riwayat restore itu sendiri.
  */
-export const TABEL_DIKECUALIKAN = ['_migrasi', 'backup'] as const;
+export const TABEL_DIKECUALIKAN = ['_migrasi', 'backup', 'restore_job'] as const;
 
 export interface IsiTabel {
   nama: string;
@@ -175,6 +176,45 @@ export function susunModul(modul: string, tabel: IsiTabel[], meta: MetaBundel): 
   return Buffer.from(teks, 'utf8');
 }
 
+/** Batas kasar satu pernyataan INSERT dump — pooler Supabase memutus kueri belasan MB. */
+export const BATAS_PERNYATAAN = 1_000_000;
+
+/**
+ * Memecah larik `jsonb_pretty` (elemen tingkat atas berupa objek yang dibuka
+ * `    {` dan ditutup `    }` pada indentasi 4) menjadi beberapa larik
+ * ≤ `batas` karakter, TANPA parse ulang — angka NUMERIC tetap apa adanya.
+ * Format tak dikenal → satu potong utuh.
+ */
+export function pecahLarikJson(json: string, batas = BATAS_PERNYATAAN): string[] {
+  if (json.length <= batas) return [json];
+  const baris = json.split('\n');
+  if (baris[0] !== '[' || baris.at(-1) !== ']') return [json];
+  const elemen: string[] = [];
+  let kini: string[] = [];
+  for (const b of baris.slice(1, -1)) {
+    kini.push(b);
+    if (b === '    }' || b === '    },') {
+      elemen.push(kini.join('\n').replace(/,$/, ''));
+      kini = [];
+    }
+  }
+  if (kini.length || !elemen.length) return [json];
+  const potong: string[] = [];
+  let isi: string[] = [];
+  let panjang = 0;
+  for (const e of elemen) {
+    if (isi.length && panjang + e.length > batas) {
+      potong.push(`[\n${isi.join(',\n')}\n]`);
+      isi = [];
+      panjang = 0;
+    }
+    isi.push(e);
+    panjang += e.length + 2;
+  }
+  potong.push(`[\n${isi.join(',\n')}\n]`);
+  return potong;
+}
+
 /** Tag dollar-quote yang dijamin tidak muncul di dalam data. */
 function tagAman(teks: string): string {
   for (;;) {
@@ -206,9 +246,11 @@ export function susunDumpSql(tabel: IsiTabel[], meta: MetaBundel): string {
     baris.push(`-- ${t.nama}: ${t.jumlah} baris`);
     if (t.jumlah > 0) {
       const tag = tagAman(t.json);
-      baris.push(
-        `INSERT INTO public.${ident(t.nama)} (${kol})\n  SELECT ${kol} FROM jsonb_populate_recordset(NULL::public.${ident(t.nama)}, ${tag}${t.json}${tag}::jsonb);`,
-      );
+      for (const potong of pecahLarikJson(t.json)) {
+        baris.push(
+          `INSERT INTO public.${ident(t.nama)} (${kol})\n  SELECT ${kol} FROM jsonb_populate_recordset(NULL::public.${ident(t.nama)}, ${tag}${potong}${tag}::jsonb)\n  ON CONFLICT DO NOTHING;`,
+        );
+      }
     }
     for (const s of t.serial) {
       baris.push(

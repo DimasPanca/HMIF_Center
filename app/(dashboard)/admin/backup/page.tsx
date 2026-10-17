@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { BackupPanel } from '@/components/backup/BackupPanel';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { NAMA_SISTEM } from '@/lib/backup/restore';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,7 @@ export default async function BackupPage() {
           </div>
         </header>
 
-        <BackupPanel bolehKelola={can(konteks.roles, 'backup.manage')} />
+        <BackupPanel bolehKelola={can(konteks.roles, 'backup.manage')} namaSistem={NAMA_SISTEM} />
       </div>
     </main>
   );

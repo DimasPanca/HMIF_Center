@@ -65,6 +65,52 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-112 · Restore & import per modul (2026-10-17)
+
+`lib/backup/{restore,import-modul}.ts`, `app/api/backup/[id]/restore/route.ts`
+(GET riwayat `backup.read`; POST `pratinjau` | `mulai` | `lanjut`
+`backup.manage`), `components/backup/{RestoreDialog,ImportModulDialog,ProgresRestore}.tsx`
+(di `BackupPanel`), migrasi `048_restore_job.sql` + `049_restore_job_updated_at.sql`
+(model Prisma ditulis tangan — `db pull` menulis ulang 477 baris schema), `scripts/e2e-restore.ts`,
+test `lib/backup/__tests__/backup-restore.test.ts`, `e2e/restore.spec.ts`.
+Keputusan: **ADR-034**.
+
+- **Bertahap** di `restore_job`: PRA_RESTORE (backup jenis PRA_RESTORE, wajib,
+  tanpa opsi lewati) → VERIFIKASI (seluruh berkas SHA-256 + versi) → TERAPKAN.
+  Berjalan di `after()`; job diam > 6 menit (dan pra-restore-nya tidak lagi
+  BERJALAN) dapat **dilanjutkan** dari tahap tersimpan (tombol di UI).
+- **Per modul** (TAMBAH lewati yang ada · TIMPA ganti seluruh kolom · GABUNG
+  hanya kolom backup yang tidak kosong & berbeda), satu transaksi per modul,
+  `session_replication_role = replica` (trigger domain/updated_at tidak
+  mengubah data yang dipulihkan). Kolom = kolom sekarang ∩ kunci JSON (kolom
+  baru → nilai bawaan). Pratinjau = hitungan baru/berubah/sama per tabel.
+  `audit-log` hanya TAMBAH (INV-06). Laporan mencatat modul yang sudah
+  terpakai bila gagal di tengah.
+- **Penuh**: konfirmasi ketik `HMIF Center`; hanya dari dump `sql_per_tabel`
+  dengan `migrasiTerakhir` = migrasi sekarang (selain itu ditolak dengan pesan
+  kedua versi). Berkas storage di-upsert dulu, lalu database dalam SATU
+  transaksi koneksi langsung (kosongkan tabel kecuali audit_log → jalankan dump
+  per pernyataan).
+- **Format dump diperbaiki (berlaku untuk backup baru)**: INSERT kini `ON
+  CONFLICT DO NOTHING` (audit_log tidak dihapus saat restore) dan dipecah
+  ≤ 1 MB per pernyataan (`pecahLarikJson`) — pooler Supabase memutus koneksi
+  saat menerima satu kueri 17 MB (terbukti; 4 MB masih aman). Backup uji
+  sebelum perubahan ini (`5932954e…`, `fbbbc235…`) gagal pada restore PENUH
+  (transaksi di-rollback utuh); per modul tetap bisa. Backup acuan terbaru:
+  `8a98756c…`.
+- **Verifikasi nyata** (`npx tsx scripts/e2e-restore.ts`, seluruh langkah
+  destruktif di-ROLLBACK karena DB dev dipakai bersama): 17 berkas cocok checksum (65 dtk)
+  dan 132 berkas storage dapat dibuka; restore PENUH dari `.sql.gz`
+  mengosongkan & memulihkan 55 tabel IDENTIK dengan modul JSON dalam 106 dtk
+  (target < 1 jam); `prokers.json` ke tabel kosong → identik; TAMBAH/TIMPA/
+  GABUNG berperilaku sesuai definisi; versi skema berbeda & audit-log TIMPA
+  ditolak. Waktu penuh di produksi ≈ unduh+verifikasi bundel + upsert 132
+  berkas + 106 dtk database — dari laptop jauh di bawah satu jam, tetapi
+  melampaui 300 dtk satu fungsi, karena itu tahapnya dapat dilanjutkan.
+- Kuota backup manual 17-10 habis lagi oleh backup uji T-112.
+- `supabase/tests/013_audit.sql` dibuat hermetis (`created_at = now()`): sejak
+  T-110 database dev berisi backup sungguhan.
+
 ### T-111 · Cron backup & retensi (2026-10-17)
 
 `lib/backup/retensi.ts` (`pilihUntukDihapus` murni, `bersihkanBackupLama`,

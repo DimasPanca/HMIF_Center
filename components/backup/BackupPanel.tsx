@@ -10,6 +10,10 @@ import { StatusPill } from '@/components/ui/status-pill';
 import type { RingkasBackup } from '@/lib/backup/service';
 import { formatTanggalWaktu } from '@/lib/utils/format-tanggal';
 
+import { ImportModulDialog } from './ImportModulDialog';
+import { ProgresRestore } from './ProgresRestore';
+import { RestoreDialog } from './RestoreDialog';
+
 type ResponsApi<T> =
   { ok: true; data: T } | { ok: false; error: { code: string; message: string } };
 
@@ -28,7 +32,14 @@ function ukuran(n: number | null): string {
 }
 
 /** Daftar backup + tombol "Backup Sekarang"; memantau progres selama ada yang BERJALAN (T-110). */
-export function BackupPanel({ bolehKelola }: { bolehKelola: boolean }) {
+export function BackupPanel({
+  bolehKelola,
+  namaSistem,
+}: {
+  bolehKelola: boolean;
+  namaSistem: string;
+}) {
+  const [segarkan, setSegarkan] = useState(0);
   const [daftar, setDaftar] = useState<RingkasBackup[] | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [mengirim, setMengirim] = useState(false);
@@ -161,6 +172,24 @@ export function BackupPanel({ bolehKelola }: { bolehKelola: boolean }) {
                   <p className="text-[12px] text-warning" data-testid="peringatan-backup">
                     {b.peringatan}
                   </p>
+                ) : null}
+                {b.status === 'SUKSES' ? (
+                  <ProgresRestore backupId={b.id} segarkan={segarkan} bolehKelola={bolehKelola} />
+                ) : null}
+                {b.status === 'SUKSES' && bolehKelola ? (
+                  <div className="flex flex-wrap gap-2">
+                    <ImportModulDialog
+                      backupId={b.id}
+                      label={formatTanggalWaktu(b.created_at)}
+                      onMulai={() => setSegarkan((n) => n + 1)}
+                    />
+                    <RestoreDialog
+                      backupId={b.id}
+                      label={formatTanggalWaktu(b.created_at)}
+                      namaSistem={namaSistem}
+                      onMulai={() => setSegarkan((n) => n + 1)}
+                    />
+                  </div>
                 ) : null}
                 {b.keterbatasan.length ? (
                   <ul className="list-disc pl-5 text-[12px] text-secondary">
