@@ -1,4 +1,5 @@
 import { requirePermission } from '@/lib/auth/guard';
+import { can } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
 import { withAuditContext } from '@/lib/db/with-audit-context';
 import { gagal, sukses } from '@/lib/http/respond';
@@ -21,12 +22,19 @@ const MAKS_BADAN = MAKS_BYTE + 6 * 1024 * 1024;
  * T-097) + metadata sumber. Seluruh jenis & keutuhan diperiksa ulang di
  * server — `Content-Type` dan nama berkas dari klien TIDAK dipercaya.
  *
+ * Juga foto dokumentasi LPJ (T-105): penyusun LPJ (`lpj.generate` — Admin,
+ * Bendum) mengunggah lewat pipeline & validasi yang sama walau tanpa
+ * `nota.create`. Gambar baru menjadi nota/LPJ setelah dirujuk; batas per jam tetap.
+ *
  * Sumber: T-098 · SYSTEM_DESIGN §9.3 · INV-21, INV-23
  */
 export async function POST(request: Request) {
-  const guard = await requirePermission('nota.create');
+  const guard = await requirePermission('kepanitiaan.read');
   if (!guard.ok) return guard.nilai;
   const { konteks } = guard;
+  if (!can(konteks.roles, 'nota.create') && !can(konteks.roles, 'lpj.generate')) {
+    return gagal('TIDAK_BERWENANG', 'Anda tidak berwenang mengunggah gambar.', { status: 403, headers: TANPA_CACHE });
+  }
 
   const panjang = Number(request.headers.get('content-length') ?? '0');
   if (panjang > MAKS_BADAN) {

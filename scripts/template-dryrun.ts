@@ -289,6 +289,10 @@ const DUMMY: Record<string, unknown> = {
   perbandingan: [{ item: 'Snack', rencana: 'Rp600.000', aktual: 'Rp575.000', selisih: '-Rp25.000' }],
   sisa_dana: 'Rp43.000',
   nota: [{ divisi: 'Konsumsi', '%gambar': '[nota]', keterangan: 'Struk Indomaret 19 Agustus' }],
+  // LPJ v2 (T-105): lampiran nota master per divisi.
+  lampiran_nota: [
+    { nama_divisi: 'Konsumsi', nota: [{ '%gambar': '[nota]', keterangan: 'Snack Rp50.000 · 19 Agustus' }] },
+  ],
   dokumentasi: [{ '%foto': '[foto]', caption: 'Sesi pembukaan' }],
   evaluasi: teks(2),
   saran: teks(2),

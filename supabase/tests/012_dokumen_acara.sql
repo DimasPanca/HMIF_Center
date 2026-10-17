@@ -75,10 +75,29 @@ BEGIN
   END;
   ASSERT v_ditolak, 'LPJ DIAJUKAN tanpa snapshot analisis DITERIMA';
 
+  -- Melompati DIAJUKAN ditolak trigger 046 walau kolom persetujuan lengkap.
+  v_ditolak := false;
+  BEGIN
+    UPDATE lpj
+    SET analisis = '{"total_aktual":1}'::JSONB, status = 'DISETUJUI_BENDUM',
+        disetujui_bendum_oleh = v_bendum, disetujui_bendum_at = now()
+    WHERE id = v_lpj;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'Transisi DRAFT -> DISETUJUI_BENDUM (melompati DIAJUKAN) DITERIMA';
+
   UPDATE lpj
   SET analisis = '{"total_rencana":26000000,"total_aktual":24580000,"sisa_dana":1420000}'::JSONB,
       status = 'DIAJUKAN'
   WHERE id = v_lpj;
+
+  -- Isi hanya berubah selama DRAFT (046).
+  v_ditolak := false;
+  BEGIN
+    UPDATE lpj SET analisis = '{"total_aktual":1}'::JSONB WHERE id = v_lpj;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'Snapshot analisis LPJ DIAJUKAN dapat diganti';
 
   ---------------------------------------------------------------------------
   -- 4. URUTAN PERSETUJUAN TIDAK BOLEH DILOMPATI (ADR-015)
@@ -125,6 +144,31 @@ BEGIN
 
   ASSERT (SELECT status FROM lpj WHERE id = v_lpj) = 'FINAL',
     'LPJ gagal menjadi FINAL walau kedua persetujuan lengkap';
+
+  ---------------------------------------------------------------------------
+  -- 6b. FINAL BEKU (046/047, ADR-015): tak dapat diubah, dikembalikan, dihapus langsung
+  --     (penghapusan berantai bersama acaranya tetap boleh — lihat akhir berkas)
+  ---------------------------------------------------------------------------
+  v_ditolak := false;
+  BEGIN
+    UPDATE lpj SET data_manual = '{"evaluasi":"diubah setelah final"}'::JSONB WHERE id = v_lpj;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'LPJ FINAL dapat diubah';
+
+  v_ditolak := false;
+  BEGIN
+    UPDATE lpj SET status = 'DRAFT' WHERE id = v_lpj;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'LPJ FINAL dapat dikembalikan ke DRAFT';
+
+  v_ditolak := false;
+  BEGIN
+    DELETE FROM lpj WHERE id = v_lpj;
+  EXCEPTION WHEN check_violation THEN v_ditolak := true;
+  END;
+  ASSERT v_ditolak, 'LPJ FINAL dapat dihapus langsung';
 
   ---------------------------------------------------------------------------
   -- 7. RUNDOWN — satu sumber, banyak baris, waktu harus urut

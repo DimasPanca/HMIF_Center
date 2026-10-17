@@ -43,7 +43,13 @@ if (typeof window !== 'undefined') {
 
 /** Nilai yang diterima tag `{%…}`. `null`/`undefined` → tidak ada gambar. */
 export interface GambarDocx {
+  /** Byte gambar apa adanya — PNG, atau JPEG bila `jenis: 'jpeg'`. */
   png: Buffer;
+  /**
+   * Bawaan 'png' (TTD/stempel). 'jpeg' untuk master nota di lampiran LPJ
+   * (T-105): disematkan tanpa encode ulang, supaya kualitas cetak = master (INV-19).
+   */
+  jenis?: 'png' | 'jpeg';
   /** Ukuran TAMPIL di dokumen, dalam piksel 96 dpi. */
   lebarPx: number;
   tinggiPx: number;
@@ -64,6 +70,7 @@ interface GambarTerpakai {
   rId: string;
   berkas: string;
   png: Buffer;
+  jenis: 'png' | 'jpeg';
 }
 
 function adalahGambar(v: unknown): v is GambarDocx {
@@ -131,12 +138,13 @@ export class ModulGambar implements DXT.Module {
     const nilai: unknown = options.scopeManager.getValue(part.value, { part });
     if (nilai === null || nilai === undefined || nilai === false || nilai === '') return { value: '', errors: [] };
     if (!adalahGambar(nilai)) {
-      return { value: '', errors: [new Error(`Tag {%${part.value}} harus berisi gambar PNG, bukan ${typeof nilai}.`)] };
+      return { value: '', errors: [new Error(`Tag {%${part.value}} harus berisi gambar PNG/JPEG, bukan ${typeof nilai}.`)] };
     }
 
     const nomor = this.terpakai.length + 1;
     const rId = `rIdHmifGambar${nomor}`;
-    this.terpakai.push({ rId, berkas: `media/hmif_gambar${nomor}.png`, png: nilai.png });
+    const jenis = nilai.jenis ?? 'png';
+    this.terpakai.push({ rId, berkas: `media/hmif_gambar${nomor}.${jenis}`, png: nilai.png, jenis });
     return {
       value: `</w:t></w:r><w:r>${drawing(rId, nomor, nilai)}</w:r><w:r><w:t xml:space="preserve">`,
       errors: [],
@@ -162,12 +170,15 @@ export function pasangGambar(zip: PizZip, modul: ModulGambar): void {
   for (const g of modul.terpakai) zip.file(`word/${g.berkas}`, g.png);
 
   const ctPath = '[Content_Types].xml';
-  const ct = zip.file(ctPath)?.asText() ?? '';
+  let ct = zip.file(ctPath)?.asText() ?? '';
   // Urutan atribut bebas — template HMIF menulis ContentType lebih dulu. Default
   // ganda untuk ekstensi yang sama membuat Word menolak membuka berkasnya.
-  if (!/<Default\b[^>]*\bExtension="png"/i.test(ct)) {
-    zip.file(ctPath, ct.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>'));
+  const DEFAULT = { png: /<Default\b[^>]*\bExtension="png"/i, jpeg: /<Default\b[^>]*\bExtension="jpeg"/i } as const;
+  for (const jenis of ['png', 'jpeg'] as const) {
+    if (!modul.terpakai.some((g) => g.jenis === jenis) || DEFAULT[jenis].test(ct)) continue;
+    ct = ct.replace('</Types>', `<Default Extension="${jenis}" ContentType="image/${jenis}"/></Types>`);
   }
+  zip.file(ctPath, ct);
 
   // Gambar inline memakai prefix wp:, a:, pic:, r:. `a:` dan `pic:` dideklarasikan
   // di tempat; `wp:` dan `r:` wajib ada di akar dokumen.

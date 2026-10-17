@@ -510,7 +510,8 @@ export async function ubahStatusRab(
 
 /**
  * Transisi otomatis sistem: DISETUJUI → REALISASI saat nota pertama
- * terverifikasi (T-102), REALISASI → SELESAI saat LPJ di-generate (T-105).
+ * terverifikasi (T-102), REALISASI → SELESAI saat LPJ menjadi FINAL (T-105;
+ * bukan saat generate — LPJ yang dikembalikan masih boleh memperbaiki nota).
  * Diam bila status sudah di depan; trigger 041 menolak lompatan lain.
  */
 export async function majukanStatusRab(tx: TxKlien, kepanitiaanId: string, ke: 'REALISASI' | 'SELESAI'): Promise<boolean> {

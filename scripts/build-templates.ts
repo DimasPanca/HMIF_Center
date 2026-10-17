@@ -52,6 +52,8 @@ type Op =
   | { paragraf: [string, string] }
   /** Sisipkan paragraf baru (salinan) tepat sebelum paragraf yang diawali X. */
   | { sisip: [string, string] }
+  /** Sisipkan paragraf bergaya paragraf A tepat sebelum paragraf yang diawali B: [A, B, teks]. */
+  | { sisipSalin: [string, string, string] }
   /** Hapus blok dari paragraf X sampai paragraf Y; tanpa Y berarti sampai akhir. */
   | { hapus: [string] | [string, string] }
   /** Hapus blok dari paragraf X sampai TEPAT SEBELUM paragraf Y. */
@@ -793,6 +795,24 @@ const RESEP: Resep[] = [
       { paragraf: ['Dokumentasi Instagram', '{caption}'] },
       { sisip: ['Pra Voyage of Informatic', '{/dokumentasi}'] },
       { hapus: ['Pra Voyage of Informatic'] },
+
+      // =====================================================================
+      // v2 (T-105) — LAMPIRAN NOTA & FOTO DOKUMENTASI
+      // =====================================================================
+      // PRD F-12.1: "Lampiran Nota — semua nota master image, dikelompokkan per
+      // divisi". Berkas contoh tidak punya bagian ini. Judul disalin dari judul
+      // lampiran (gayanya ikut), isinya dari paragraf isi {catatan_materi} supaya
+      // tidak bergaya judul. {%gambar} = master JPEG apa adanya (INV-19).
+      { sisip: ['Lampiran Foto/Dokumentasi', 'Lampiran Nota Belanja'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{#lampiran_nota}'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{nama_divisi}'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{#nota}'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{%gambar}'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{keterangan}'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{/nota}'] },
+      { sisipSalin: ['{catatan_materi}', 'Lampiran Foto/Dokumentasi', '{/lampiran_nota}'] },
+      // Foto dokumentasi kegiatan: gambar di atas keterangannya.
+      { sisipSalin: ['{catatan_materi}', '{caption}', '{%foto}'] },
     ],
   },
   // =========================================================================
@@ -866,6 +886,11 @@ function jalankan(resep: Resep): { ok: boolean; pesan: string[] } {
       const [awalan, teks] = op.sisip;
       if (!dok.sisipSebelum(awalan, teks)) {
         pesan.push(`sisip sebelum ${JSON.stringify(awalan)} tidak ditemukan`);
+      }
+    } else if ('sisipSalin' in op) {
+      const [sumber, sebelum, teks] = op.sisipSalin;
+      if (!dok.sisipSalinSebelum(sumber, sebelum, teks)) {
+        pesan.push(`sisipSalin ${JSON.stringify(sumber)} sebelum ${JSON.stringify(sebelum)} tidak ditemukan`);
       }
     } else if ('hapus' in op) {
       const [dari, sampai] = op.hapus;

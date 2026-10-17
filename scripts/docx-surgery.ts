@@ -281,6 +281,22 @@ export class Dokumen {
   }
 
   /**
+   * Seperti `sisipSebelum`, tetapi gaya paragraf disalin dari paragraf LAIN
+   * (diawali `awalanSumber`). Dipakai saat sasaran sisip adalah judul: paragraf
+   * isi yang disisipkan sebelum judul tidak boleh ikut bergaya judul (T-105).
+   */
+  sisipSalinSebelum(awalanSumber: string, awalanSebelum: string, teks: string): boolean {
+    const semua = this.paragraf();
+    const cocok = (awalan: string) => semua.find((p) => teksParagraf(p.xml).trimStart().startsWith(awalan));
+    const sumber = cocok(awalanSumber);
+    const sasaran = cocok(awalanSebelum);
+    if (!sumber || !sasaran) return false;
+    const salinan = terapkan(sumber.xml, [[0, teksParagraf(sumber.xml).length, teks]]);
+    this.xml = this.xml.slice(0, sasaran.awal) + salinan + this.xml.slice(sasaran.awal);
+    return true;
+  }
+
+  /**
    * Menghapus blok tingkat atas dari paragraf yang diawali `dari` sampai
    * paragraf yang diawali `sampai`, keduanya ikut terhapus. Bila `sampai`
    * kosong, penghapusan berlanjut sampai akhir badan dokumen.

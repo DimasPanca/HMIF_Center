@@ -61,7 +61,7 @@ export type JenisDokumen = 'TOR' | 'PROPOSAL' | 'LPJ' | 'NOTULENSI';
 export const TEMPLATE_DOKUMEN: readonly { slug: string; dokumen: JenisDokumen; versi: number }[] = [
   { slug: 'tor', dokumen: 'TOR', versi: 1 },
   { slug: 'proposal', dokumen: 'PROPOSAL', versi: 1 },
-  { slug: 'lpj', dokumen: 'LPJ', versi: 1 },
+  { slug: 'lpj', dokumen: 'LPJ', versi: 2 },
   { slug: 'notulensi', dokumen: 'NOTULENSI', versi: 1 },
 ];
 

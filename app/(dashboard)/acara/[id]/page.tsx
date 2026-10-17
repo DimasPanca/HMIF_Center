@@ -224,9 +224,9 @@ function IsiTab({
         <BelumTersedia
           testid="acara-isi-lpj"
           ikon="dokumen"
-          judul="Generator LPJ belum tersedia"
-          penjelasan="Laporan pertanggungjawaban akan dibuat dari RAB, nota terverifikasi, dan pemasukan setelah acara selesai."
-          aksi={ringkasan(acara.id)}
+          judul="Laporan Pertanggungjawaban"
+          penjelasan="LPJ disusun dari RAB, nota terverifikasi, dan pemasukan acara ini — laporan keuangan, kepanitiaan, dan lampiran nota terisi otomatis; disetujui Bendahara lalu Ketua Himpunan."
+          aksi={{ label: 'Buka LPJ', href: `/acara/${acara.id}/lpj` }}
         />
       );
   }

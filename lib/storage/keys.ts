@@ -107,6 +107,8 @@ export const keys = {
     `dokumen/proposal/${aman(kepanitiaanId, 'kepanitiaanId')}.docx`,
   torDocx: (kepanitiaanId: string): string =>
     `dokumen/tor/${aman(kepanitiaanId, 'kepanitiaanId')}.docx`,
+  lpjPdf: (kepanitiaanId: string): string =>
+    `dokumen/lpj/${aman(kepanitiaanId, 'kepanitiaanId')}.pdf`,
   lpjDocx: (kepanitiaanId: string): string =>
     `dokumen/lpj/${aman(kepanitiaanId, 'kepanitiaanId')}.docx`,
   rabXlsx: (kepanitiaanId: string): string =>

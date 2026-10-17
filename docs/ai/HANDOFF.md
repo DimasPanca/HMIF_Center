@@ -65,6 +65,48 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-105 · Generator LPJ (2026-10-17)
+
+`lib/lpj/{schema,generate}.ts`, `app/api/lpj/[kepanitiaanId]/{route,generate,approve}`,
+`app/(dashboard)/acara/[id]/lpj/page.tsx`,
+`components/lpj/{PrasyaratChecklist,LampiranNota,BagianManual,LpjAksi}.tsx`,
+migrasi `046_lpj_alur_final.sql` + `047_lpj_hapus_kaskade.sql`, test
+`lib/lpj/__tests__/lpj-generate.test.ts`, `e2e/lpj-generate.spec.ts`,
+`supabase/tests/012_dokumen_acara.sql` (alur LPJ).
+
+- **Alur status ditegakkan trigger `fn_lpj_alur`** (046): DRAFT → DIAJUKAN →
+  DISETUJUI_BENDUM → FINAL; DIAJUKAN/DISETUJUI_BENDUM boleh kembali ke DRAFT
+  (alasan ≥5 huruf, disimpan di `catatan_pengembalian`, persetujuan dihapus).
+  Isi hanya boleh berubah di DRAFT; FINAL beku. Policy `lpj_update_ketua`
+  untuk Ketua pada DISETUJUI_BENDUM. 047: DELETE langsung LPJ FINAL ditolak
+  hanya bila `pg_trigger_depth() = 1`, supaya kaskade FK (hapus proker) tetap
+  jalan.
+- **RAB → SELESAI saat LPJ FINAL** (persetujuan Ketua), bukan saat generate
+  seperti tertulis di komentar lama `majukanStatusRab` — LPJ yang dikembalikan
+  masih perlu bisa memperbaiki nota.
+- Generate: cek prasyarat (≥1 nota terverifikasi, RAB REALISASI/SELESAI,
+  ≥1 foto dokumentasi; TOR/proposal opsional) + field manual wajib → 422
+  `details.kurang`; hanya di DRAFT (lainnya 409). Snapshot analisis T-104 +
+  baris pengeluaran ditulis ke `lpj.analisis`; laporan keuangan di DOCX dan
+  halaman diambil dari snapshot begitu status ≠ DRAFT.
+- **Template LPJ v2** (`templates/lpj.docx`, registry versi 2, `lpj_v2` SUDAH
+  diunggah ke storage): bagian "Lampiran Nota Belanja"
+  (`{#lampiran_nota}…{%gambar}{keterangan}…`) dan `{%foto}` dokumentasi.
+  Op baru `sisipSalin` di `scripts/build-templates.ts`
+  (`sisipSalinSebelum` di `scripts/docx-surgery.ts`). Ingat: build tidak
+  deterministik — kembalikan template lain dengan `git checkout`.
+- `lib/documents/image-module.ts` kini menerima JPEG (`jenis: 'jpeg'`):
+  master JPEG/PNG disematkan apa adanya (byte identik), WebP → PNG; tampil
+  maks 600×800 px.
+- **Izin baca LPJ = `lpj.read || lpj.generate`** (`bolehBacaLpj`): matriks
+  memberi Admin/Bendum C tanpa R. Upload gambar (`/api/images/upload`) kini
+  `nota.create || lpj.generate` agar penyusun LPJ bisa unggah foto.
+- PDF LPJ (`keys.lpjPdf`) hanya bila konversi PDF aktif (lihat keputusan
+  PDF dilewati).
+- Sekalian: `supabase/tests/{006,014a,015c}` dibuat hermetis (commit
+  terpisah) — sebelumnya menghitung baris global dan gagal karena data dummy
+  owner.
+
 ### T-104 · Analisis LPJ (2026-10-16)
 
 `lib/lpj/analyze.ts` (`analisisLpj` murni + `muatBahanLpj`),

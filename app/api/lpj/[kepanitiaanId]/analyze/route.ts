@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requirePermission } from '@/lib/auth/guard';
 import { db } from '@/lib/db/client';
 import { gagal, sukses } from '@/lib/http/respond';
+import { bolehBacaLpj } from '@/lib/lpj/generate';
 import { analisisLpj, muatBahanLpj } from '@/lib/lpj/analyze';
 
 interface RouteContext {
@@ -17,8 +18,14 @@ const TANPA_CACHE = { 'Cache-Control': 'no-store' };
  * di-generate (T-105) — LPJ terbit selalu menampilkan snapshot, bukan hitungan ulang.
  */
 export async function GET(_request: Request, context: RouteContext) {
-  const guard = await requirePermission('lpj.read');
+  const guard = await requirePermission('kepanitiaan.read');
   if (!guard.ok) return guard.nilai;
+  if (!bolehBacaLpj(guard.konteks.roles)) {
+    return gagal('TIDAK_BERWENANG', 'LPJ tidak dapat Anda buka.', {
+      status: 403,
+      headers: TANPA_CACHE,
+    });
+  }
   const { kepanitiaanId } = await context.params;
   if (!z.uuid().safeParse(kepanitiaanId).success)
     return gagal('VALIDASI_GAGAL', 'ID tidak valid.', { status: 422, headers: TANPA_CACHE });
