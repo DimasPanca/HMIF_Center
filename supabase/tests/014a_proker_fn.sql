@@ -184,6 +184,10 @@ BEGIN
   ---------------------------------------------------------------------------
   -- 7. lepas_kunci_selesai — tiga langkah lifecycle
   ---------------------------------------------------------------------------
+  -- Rapikan dulu proker sungguhan di database dev agar hitungan di bawah hanya
+  -- milik test (hermetis); proker test belum memenuhi syarat transisi apa pun.
+  PERFORM lepas_kunci_selesai();
+
   -- Proker A dibuat seolah acaranya sudah lewat.
   UPDATE proker SET status = 'BERJALAN',
     tanggal_mulai_persiapan = CURRENT_DATE - 60,

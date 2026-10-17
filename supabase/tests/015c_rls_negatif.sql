@@ -213,7 +213,8 @@ BEGIN
   -- Tetapi membaca harus tetap bisa — itu memang perannya sebagai pengawas.
   DECLARE v_baca INT;
   BEGIN
-    SELECT count(*)::INT INTO v_baca FROM proker;
+    -- Hanya periode test: proker sungguhan di database dev tidak ikut terhitung.
+    SELECT count(*)::INT INTO v_baca FROM proker WHERE periode_id = v_periode;
     EXECUTE 'RESET ROLE';
     ASSERT v_ditolak, 'BPH BERHASIL membuat proker (INV-03)';
     ASSERT v_n = 0, format('BPH mengubah %s baris departemen (INV-03)', v_n);

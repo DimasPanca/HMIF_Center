@@ -77,7 +77,9 @@ BEGIN
   INSERT INTO gantt_chart (scope, departemen_id, judul)  VALUES ('DEPARTEMEN', v_dept, 'Gantt Departemen');
   INSERT INTO gantt_chart (scope, kepanitiaan_id, judul) VALUES ('KETUPLAK', v_kep, 'Gantt Ketuplak');
 
-  ASSERT (SELECT count(*) FROM gantt_chart) = 4, 'Keempat level chart tidak tersimpan';
+  -- Hanya chart milik test: database dev berisi chart sungguhan (hermetis).
+  ASSERT (SELECT count(*) FROM gantt_chart
+          WHERE judul IN ('Gantt Proker','Gantt Divisi','Gantt Departemen','Gantt Ketuplak')) = 4, 'Keempat level chart tidak tersimpan';
 
   ---------------------------------------------------------------------------
   -- 4. SCOPE DI LUAR DAFTAR DITOLAK
@@ -165,7 +167,8 @@ BEGIN
     'Dependensi tidak ikut terhapus';
 
   -- Chart level lain tidak terpengaruh.
-  ASSERT (SELECT count(*) FROM gantt_chart) = 3, 'Chart level lain ikut terhapus';
+  ASSERT (SELECT count(*) FROM gantt_chart
+          WHERE judul IN ('Gantt Proker','Gantt Divisi','Gantt Departemen','Gantt Ketuplak')) = 3, 'Chart level lain ikut terhapus';
 
   RAISE NOTICE 'OK 006_gantt - tepat satu pemilik ditegakkan, 4 level sah, cascade tepat';
 END $$;
