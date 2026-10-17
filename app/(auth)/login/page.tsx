@@ -86,13 +86,13 @@ function LoginPage() {
       >
         <div className="relative z-10 max-w-xl">
           {/*
-            Logo beranimasi (permintaan pemilik 2026-10-17). Video berlatar putih
-            dipotong melingkar mengikuti roda gigi logo. Poster = logo statis:
+            Logo beranimasi (permintaan pemilik 2026-10-17). Video WebM tanpa latar
+            (transparan). Poster = logo statis:
             tampil seketika selagi video dimuat dan bila video gagal. Pengguna
             dengan "kurangi gerakan" hanya melihat logo statis.
           */}
           <video
-            src="/logo-hmif-animasi.mp4"
+            src="/logo-hmif-animasi.webm"
             poster="/logo-hmif.png"
             autoPlay
             muted
@@ -100,7 +100,7 @@ function LoginPage() {
             playsInline
             aria-label="Logo HMIF Fakultas Teknik UNTIRTA"
             data-testid="login-logo-animasi"
-            className="size-[68px] rounded-full bg-white object-cover shadow-md motion-reduce:hidden sm:size-[84px]"
+            className="size-[68px] object-contain motion-reduce:hidden sm:size-[84px]"
           />
           <Image
             src="/logo-hmif.png"
