@@ -176,17 +176,32 @@ export class SupabaseStorageAdapter implements StorageAdapter {
    * semuanya.
    */
   async list(prefix: string): Promise<StorageObject[]> {
-    const jenis = bucketUntuk(prefix || 'nota/master/');
-    return this.telusuri(this.konteks().bucket[jenis], prefix);
+    const { bucket } = this.konteks();
+    // Prefix kosong = isi KEDUA bucket (kontrak adapter); dipakai backup (T-110).
+    // Objek yang tersimpan di bucket yang TIDAK sesuai bentuk key-nya (sisa uji
+    // lama) tak terjangkau `get()` — bucket selalu diturunkan dari key — jadi
+    // tidak dilaporkan.
+    if (!prefix) {
+      const [privat, publik] = await Promise.all([this.telusuri(bucket.private, ''), this.telusuri(bucket.public, '')]);
+      return [...privat.filter((o) => bucketUntuk(o.key) === 'private'), ...publik.filter((o) => bucketUntuk(o.key) === 'public')];
+    }
+    return this.telusuri(bucket[bucketUntuk(prefix)], prefix);
   }
 
   private async telusuri(bucket: string, prefix: string): Promise<StorageObject[]> {
     const hasil: StorageObject[] = [];
     const jalur = prefix.replace(/\/+$/, '');
 
-    const { data, error } = await this.konteks().klien.storage.from(bucket).list(jalur, { limit: 1000 });
-    if (error) throw new Error(`Gagal mendaftar "${prefix}": ${error.message}`);
-    if (!data) return hasil;
+    // Satu panggilan list dibatasi satu halaman; nota/master melewati 1000
+    // berkas dalam satu periode — tanpa paging sisanya diam-diam terlewat.
+    const HALAMAN = 1000;
+    const data = [];
+    for (let offset = 0; ; offset += HALAMAN) {
+      const r = await this.konteks().klien.storage.from(bucket).list(jalur, { limit: HALAMAN, offset });
+      if (r.error) throw new Error(`Gagal mendaftar "${prefix}": ${r.error.message}`);
+      data.push(...(r.data ?? []));
+      if (!r.data || r.data.length < HALAMAN) break;
+    }
 
     for (const item of data) {
       const key = jalur ? `${jalur}/${item.name}` : item.name;

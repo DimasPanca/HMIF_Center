@@ -108,7 +108,9 @@ Dashboard Supabase → **Storage → New bucket**
 | Variable | Nilai | Cara mendapatkan |
 |---|---|---|
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` saat pengembangan | Di produksi: URL deployment Vercel |
-| `SCHEMA_VERSION` | `1` | Dinaikkan manual saat skema berubah tidak kompatibel |
+| `SCHEMA_VERSION` | `1` | Dinaikkan manual saat skema berubah tidak kompatibel. Ditulis ke `manifest.json` backup sebagai `versiSkema`; restore menolak bundel ber-versi lain (T-110/T-112) |
+| `BACKUP_BATAS_VOLUME_MB` | `45` (opsional) | Batas isi satu volume `files/storage-archive*.zip`. Harus di bawah batas unggah objek Supabase Storage (50 MB paket gratis) |
+| `PG_DUMP_PATH` | kosong (opsional) | Path binary `pg_dump` bila tidak di PATH. Tanpa binary (Vercel), backup memakai dump data per tabel dan mencatatnya di manifest |
 | `MAX_UPLOAD_BYTES` | `15728640` | 15 MB, ditetapkan [ADR-014](../adr/ADR-014-batas-upload-nota.md) |
 
 ### `CRON_SECRET`

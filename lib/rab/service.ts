@@ -539,6 +539,43 @@ export async function majukanStatusRab(tx: TxKlien, kepanitiaanId: string, ke: '
 export async function dataEksporRab(konteks: Konteks, kepanitiaanId: string): Promise<DataEksporRab | 'TERBATAS' | null> {
   const rab = await muatRab(konteks, kepanitiaanId);
   if (rab === null || rab === 'TERBATAS') return rab;
+  return rakitEksporRab(kepanitiaanId, rab);
+}
+
+/**
+ * Bahan ekspor tanpa konteks pengguna — HANYA untuk backup sistem (T-110),
+ * yang sudah dijaga `backup.manage`/cron. Satu perakit dengan unduhan biasa
+ * supaya berkas di bundel identik dengan yang diunduh Bendum.
+ */
+export async function dataEksporRabSistem(kepanitiaanId: string): Promise<DataEksporRab | null> {
+  const kp = await db.kepanitiaan.findUnique({ where: { id: kepanitiaanId }, select: { nama_acara: true } });
+  if (!kp) return null;
+  const [divisi, { dana }] = await Promise.all([
+    db.divisi.findMany({
+      where: { kepanitiaan_id: kepanitiaanId },
+      orderBy: [{ urutan: 'asc' }, { nama: 'asc' }],
+      select: {
+        id: true,
+        nama: true,
+        rab_section: { orderBy: [{ urutan: 'asc' }, { nama: 'asc' }], select: { nama: true, rab_item: { orderBy: { no_urut: 'asc' }, select: PILIH_ITEM } } },
+      },
+    }),
+    statusRab(db, kepanitiaanId),
+  ]);
+  return rakitEksporRab(kepanitiaanId, {
+    nama_acara: kp.nama_acara,
+    dana_tak_terduga: dana,
+    divisi: divisi.map((d) => ({ id: d.id, nama: d.nama, sections: d.rab_section.map((x) => ({ nama: x.nama, items: x.rab_item.map(keItem) })) })),
+  });
+}
+
+interface IntiRab {
+  nama_acara: string;
+  dana_tak_terduga: number;
+  divisi: { id: string; nama: string; sections: { nama: string; items: ItemRab[] }[] }[];
+}
+
+async function rakitEksporRab(kepanitiaanId: string, rab: IntiRab): Promise<DataEksporRab> {
   const divisiIds = rab.divisi.map((d) => d.id);
 
   const [nota, pemasukan, peserta] = await Promise.all([

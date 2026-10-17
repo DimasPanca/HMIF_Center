@@ -65,6 +65,57 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-110 · Backup tiga lapis (2026-10-17)
+
+`lib/backup/{manifest,export-modul,zip-storage,service}.ts`,
+`app/api/backup/route.ts` (GET daftar+progres `backup.read`; POST "Backup
+Sekarang" `backup.manage` → 202, dikerjakan di `after()`),
+`app/(dashboard)/admin/backup/page.tsx` + `components/backup/BackupPanel.tsx`,
+`scripts/verify-backup.ts`, test `lib/backup/__tests__/backup-service.test.ts`,
+`e2e/backup.spec.ts`. `dataEksporRabSistem` (tanpa konteks, satu perakit
+dengan unduhan RAB biasa) di `lib/rab/service.ts`.
+
+- Bundel di `backup/{id}/…` (`keys.backupBerkas`): `manifest.json` (ditulis
+  PALING AKHIR), `database/full-dump.sql.gz`, `modules/*.json` (12 modul —
+  pemetaan 56 tabel di `MODUL_BACKUP`; tabel baru yang lupa dipetakan tetap
+  ikut dump dan tercatat di `keterbatasan`), `exports/rab-{slug}.xlsx` per
+  acara + `exports/daftar-surat.xlsx`, `files/storage-archive.zip`.
+- **Arsip storage dipecah per volume** (`storage-archive.zip`,
+  `storage-archive-2.zip`, …; `BACKUP_BATAS_VOLUME_MB`, bawaan 45): Supabase
+  menolak objek > 50 MB, dan storage dev sudah 79 MB (template LPJ 16 MB per
+  versi, LPJ hasil 14 MB). Setiap volume punya `_indeks.json` (SHA-256 per
+  berkas) untuk restore T-112. `manifest.volumeArsip` = jumlah volume.
+- **Lapis 1**: `pg_dump` dicoba (PGPASSWORD, bukan argumen); di Vercel tidak
+  ada → dump DATA per tabel (`jsonb_populate_recordset`,
+  `session_replication_role = replica`, setval sequence), tanpa DDL —
+  keterbatasan ditulis di manifest. `_migrasi` dan `backup` sengaja tidak ikut.
+- `manifest.versiSkema` = env `SCHEMA_VERSION` (ENV_SETUP: dinaikkan manual
+  saat tak kompatibel) — ini yang dibandingkan T-112;
+  `manifest.migrasiTerakhir` = migrasi terakhir di `_migrasi` (titik migrasi
+  yang dibutuhkan dump data).
+- SUKSES hanya setelah semua berkas diunduh ulang & cocok checksum, lalu
+  manifest terbaca ulang identik; gagal di mana pun → berkas terunggah
+  dihapus, baris GAGAL + pesan. Baris BERJALAN > 20 menit ditandai GAGAL
+  (`tandaiTerhenti`, dipanggil GET/POST dan `jalankanBackup`). Satu backup pada satu waktu
+  (advisory lock + 409). Audit: `BACKUP_MULAI` (dengan IP) dan `BACKUP`
+  (status akhir) di `audit_log`.
+- **Perbaikan adapter Supabase**: `list('')` dulu hanya membaca bucket privat
+  (bertentangan dengan kontrak adapter) dan tidak paging (>1000 berkas
+  terlewat). Kini dua bucket + paging; objek yang tersimpan di bucket yang
+  tidak sesuai bentuk key-nya tidak dilaporkan (tak terjangkau `get()`).
+  Ada sisa uji lama `nota/master/uji-t044-*` di bucket PUBLIK — aman
+  dihapus manual oleh pemilik.
+- **Ukuran & waktu nyata (dev, dijalankan dari laptop)**: backup `5932954e…` (MANUAL, terverifikasi) ±80 MB, 17 berkas,
+  ~4,5 menit — dominan arsip storage. Di Vercel (sin1, dekat Supabase) mestinya
+  lebih cepat, tetapi `maxDuration = 300` bisa terlampaui bila storage tumbuh;
+  `modules/audit-log.json` sudah 20 MB (data uji e2e) dan akan menabrak batas
+  50 MB per objek kelak. Bila itu terjadi, backup GAGAL dengan pesan jelas —
+  perlu pemecahan audit per tahun atau paket Supabase berbatas lebih besar.
+- Sisa uji: dua baris GAGAL hasil percobaan pertama (batas ukuran & objek
+  salah bucket) sengaja dibiarkan sebagai riwayat; berkasnya sudah bersih.
+- Retensi, cron tanggal 1, rate limit 3/hari, Google Drive = T-111. Restore &
+  import per modul = T-112.
+
 ### T-105 · Generator LPJ (2026-10-17)
 
 `lib/lpj/{schema,generate}.ts`, `app/api/lpj/[kepanitiaanId]/{route,generate,approve}`,

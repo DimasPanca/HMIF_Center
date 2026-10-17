@@ -127,6 +127,10 @@ export const keys = {
   backup: (backupId: string, berkas: string): string =>
     `backup/${aman(backupId, 'backupId')}/${aman(berkas, 'berkas')}`,
   backupPrefix: (backupId: string): string => `backup/${aman(backupId, 'backupId')}/`,
+  /** Berkas bundel backup (T-110), `jalur` relatif seperti `modules/rab.json` — setiap segmen diperiksa. */
+  backupBerkas: (backupId: string, jalur: string): string =>
+    `backup/${aman(backupId, 'backupId')}/${jalur.split('/').map((s) => aman(s, 'jalur')).join('/')}`,
+  prefixBackup: 'backup/',
 
   // --- Prefix untuk list() -------------------------------------------------
   prefixNotaMaster: 'nota/master/',

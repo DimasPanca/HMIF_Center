@@ -31,7 +31,7 @@ components/         React components (client + server, dibagi per fitur)
 
 lib/                Kode server & shared — inti aplikasi
   auth/             guard, permissions matrix, session, rate-limit
-  backup/           dump/restore job
+  backup/           backup tiga lapis: manifest+checksum, modul JSON & dump, arsip storage ber-volume
   cron/             scheduler tugas berkala
   db/               Prisma client + withAuditContext (WAJIB semua mutasi)
   documents/        renderer DOCX generik (dipakai lpj/proposal/tor/surat)
@@ -72,6 +72,7 @@ scripts/            tooling CLI (tsx)
   seed-e2e-auth.ts  buat akun test e2e (WAJIB setelah db:reset)
   bench-gantt.ts    benchmark render Gantt
   rls-coverage.ts   ringkas coverage RLS
+  verify-backup.ts  periksa ulang bundel backup (`--jalankan` = buat dulu)
 
 e2e/                Playwright — satu file per fitur
   fixtures/         akun + helper setup/reset
