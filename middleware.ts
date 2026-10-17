@@ -109,10 +109,10 @@ export const config = {
     /*
      * Semua kecuali:
      *   _next/static, _next/image   berkas hasil build
-     *   favicon.ico, aset gambar    aset statis
+     *   favicon.ico, aset gambar    aset statis (termasuk video logo login — mp4/webm)
      *   /api/cron                   dijaga CRON_SECRET, bukan sesi (ADR-009)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)',
   ],
 };
 

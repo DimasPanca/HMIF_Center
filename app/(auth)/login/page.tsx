@@ -85,13 +85,30 @@ function LoginPage() {
         style={{ background: 'var(--gradient-primary)' }}
       >
         <div className="relative z-10 max-w-xl">
+          {/*
+            Logo beranimasi (permintaan pemilik 2026-10-17). Video berlatar putih
+            dipotong melingkar mengikuti roda gigi logo. Poster = logo statis:
+            tampil seketika selagi video dimuat dan bila video gagal. Pengguna
+            dengan "kurangi gerakan" hanya melihat logo statis.
+          */}
+          <video
+            src="/logo-hmif-animasi.mp4"
+            poster="/logo-hmif.png"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="Logo HMIF Fakultas Teknik UNTIRTA"
+            data-testid="login-logo-animasi"
+            className="size-[68px] rounded-full bg-white object-cover shadow-md motion-reduce:hidden sm:size-[84px]"
+          />
           <Image
             src="/logo-hmif.png"
             alt="Logo HMIF Fakultas Teknik UNTIRTA"
             width={84}
             height={84}
             priority
-            className="h-auto w-[68px] sm:w-[84px]"
+            className="hidden h-auto w-[68px] motion-reduce:block sm:w-[84px]"
           />
           <p className="mt-6 text-[11px] leading-4 font-semibold tracking-[0.16em] uppercase">
             Sistem E-Administrasi
