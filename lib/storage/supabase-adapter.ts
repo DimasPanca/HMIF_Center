@@ -146,6 +146,25 @@ export class SupabaseStorageAdapter implements StorageAdapter {
     return data.signedUrl;
   }
 
+  async getSignedUrls(keys: string[], expiresInSeconds: number): Promise<Map<string, string>> {
+    const hasil = new Map<string, string>();
+    if (!keys.length) return hasil;
+    if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0 || expiresInSeconds > MAKS_DETIK_SIGNED_URL) {
+      throw new Error(`expiresInSeconds harus 1–${MAKS_DETIK_SIGNED_URL}, diterima: ${expiresInSeconds}`);
+    }
+    const perBucket = new Map<string, string[]>();
+    for (const k of new Set(keys)) {
+      const b = this.bucketNyata(k);
+      perBucket.set(b, [...(perBucket.get(b) ?? []), k]);
+    }
+    for (const [bucket, daftar] of perBucket) {
+      const { data, error } = await this.konteks().klien.storage.from(bucket).createSignedUrls(daftar, Math.trunc(expiresInSeconds));
+      if (error || !data) throw new Error(`Gagal membuat signed URL batch: ${error?.message ?? 'kosong'}`);
+      for (const d of data) if (d.path && d.signedUrl && !d.error) hasil.set(d.path, d.signedUrl);
+    }
+    return hasil;
+  }
+
   getPublicUrl(key: string): string {
     // Objek privat TIDAK punya URL publik. Mengembalikan sesuatu yang
     // berbentuk URL tetapi selalu ditolak server hanya memindahkan

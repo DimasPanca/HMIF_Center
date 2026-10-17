@@ -65,6 +65,41 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-113 · Hardening keamanan (2026-10-17)
+
+`lib/security/{rate-limit,sanitize}.ts`, `docs/ai/SECURITY_AUDIT.md` (hasil uji
+penetrasi + temuan + mitigasi), `scripts/security-scan.ts` (butuh server
+berjalan; seluruh 29 pemeriksaan lulus), migrasi `050_rate_limit.sql`,
+`scripts/pindah-turunan-nota.ts`.
+
+- **Temuan utama S-01 (diperbaiki):** preview & thumbnail nota ternyata di
+  bucket PUBLIK sejak T-044 (`keys.ts` PREFIX_PUBLIK), melanggar ADR-011.
+  Kini privat; tampilan memakai signed URL 5 menit secara batch
+  (`urlBertanda` di `lib/storage`, `getSignedUrls` opsional di adapter,
+  `urlGambarNotaBanyak`). `urlGambarNota` kini **async**. 64 berkas lama sudah
+  dipindah (SHA-256 dicocokkan, salinan publik dihapus). Bila ada lingkungan
+  lain (staging/produksi) dengan data lama: jalankan
+  `npx tsx scripts/pindah-turunan-nota.ts` sekali.
+- **Rate limit** (§18.3): approve surat 100/jam/user (route approve & batch
+  setujui) dan umum 300/menit/IP (middleware, HANYA produksi) memakai
+  `rate_limit_cek` (migrasi 050) lewat PostgREST — satu implementasi untuk
+  edge & node, fail-open. Login/upload/backup tetap dihitung dari tabel
+  domainnya. PostgREST perlu `NOTIFY pgrst, 'reload schema'` setelah fungsi
+  baru (sudah dijalankan di dev). Cron harian membersihkan jendela lama.
+- **CSRF:** middleware menolak `POST/PUT/PATCH/DELETE /api/*` ber-Origin asing
+  (403 `ORIGIN_DITOLAK`); cookie Supabase `SameSite=Lax` eksplisit + `Secure`
+  di produksi.
+- **CSP** tanpa `script-src` (Next menyisipkan skrip inline) — lihat
+  SECURITY_AUDIT M-02. Header lain sudah ada sejak awal.
+- Sanitasi baca ditambahkan di `detailNotulensi`; tempat lain sudah dua sisi.
+- `rate_limit` dikecualikan dari backup (ephemeral).
+
+- `e2e/login.spec.ts` "keluar mengakhiri sesi" diperbaiki: tombol keluar ada
+  di dalam menu pengguna `<details>` (T-051) — test kini membukanya dulu
+  (gagal sejak T-051, bukan regresi). Gate e2e T-113: login 16/16 (desktop,
+  1 worker), upload-nota & verifikasi-nota lulus, surat-approval lulus kecuali
+  batas 120 dtk langkah unduh terakhir saat server lokal kelebihan beban (2
+  worker, DB jarak jauh) — bukan regresi; jalankan `--workers=1` di laptop.
 ### T-112 · Restore & import per modul (2026-10-17)
 
 `lib/backup/{restore,import-modul}.ts`, `app/api/backup/[id]/restore/route.ts`

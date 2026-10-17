@@ -141,6 +141,8 @@ test.describe('login berhasil', () => {
     await isiDanKirim(page, AKUN.aktif.email, PASSWORD_UJI);
     await expect(page.getByTestId('app-shell')).toBeVisible({ timeout: 10_000 });
 
+    // Tombol keluar ada di dalam menu pengguna (<details>, T-051) — buka dulu.
+    await page.locator('details:has([data-testid="logout-submit"]) > summary').click();
     await page.getByTestId('logout-submit').click();
     await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
 

@@ -129,6 +129,8 @@ export async function klienAuth(): Promise<SupabaseClient> {
     wajib('NEXT_PUBLIC_SUPABASE_URL'),
     wajib('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'),
     {
+      // SameSite=Lax + Secure di produksi (T-113) — sama dengan middleware.ts.
+      cookieOptions: { sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' },
       cookies: {
         getAll: () => jar.getAll(),
         setAll: (daftar) => {

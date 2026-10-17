@@ -258,7 +258,9 @@ export async function detailNotulensi(
 
   return {
     ...n,
-    konten: n.konten ?? { type: 'doc', content: [{ type: 'paragraph' }] },
+    // Disaring ulang saat dibaca (T-113, pertahanan berlapis): baris lama atau
+    // yang ditulis di luar service tetap tidak membawa node/atribut asing.
+    konten: n.konten ? sanitasiKonten(n.konten) : { type: 'doc', content: [{ type: 'paragraph' }] },
     keputusan: n.keputusan ?? [],
     kehadiran,
     ringkasan: await ringkasKehadiran(klien, id),

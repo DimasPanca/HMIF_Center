@@ -1,6 +1,7 @@
 import { requirePermission } from '@/lib/auth/guard';
 import { withAuditContext } from '@/lib/db/with-audit-context';
 import { gagal, sukses } from '@/lib/http/respond';
+import { BATAS, cekBatas, respons429 } from '@/lib/security/rate-limit';
 import { SkemaSetujui, setujuiSurat, terbitkanSurat } from '@/lib/surat/status';
 
 import { TANPA_CACHE, bacaBody, idSah, idTidakValid, responsGuard, responsSurat } from '@/app/api/surat/_respons';
@@ -21,6 +22,9 @@ export async function POST(request: Request, context: RouteContext) {
   if (!guard.ok) return responsGuard(guard.nilai);
   const { id } = await context.params;
   if (!idSah(id)) return idTidakValid();
+  // T-113 / SYSTEM_DESIGN §18.3: 100 persetujuan surat per jam per user.
+  const batas = await cekBatas(`approve-surat:${guard.konteks.sesi.userId}`, BATAS.approveSurat.batas, BATAS.approveSurat.jendelaDetik);
+  if (!batas.ok) return respons429(batas, `Batas ${BATAS.approveSurat.batas} persetujuan surat per jam tercapai.`);
 
   const opsi = SkemaSetujui.safeParse((await bacaBody(request)) ?? {});
   if (!opsi.success) return gagal('VALIDASI_GAGAL', 'Isian tidak valid.', { status: 422, headers: TANPA_CACHE });

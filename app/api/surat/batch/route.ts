@@ -15,6 +15,7 @@ import {
   type ItemBatch,
   type ProgresBatch,
 } from '@/lib/surat/batch';
+import { BATAS, cekBatas, respons429 } from '@/lib/security/rate-limit';
 import { STATUS_GAGAL_SURAT } from '@/lib/surat/draft';
 
 import { TANPA_CACHE, bacaBody, responsGuard, responsSurat } from '@/app/api/surat/_respons';
@@ -81,6 +82,9 @@ export async function POST(request: Request) {
     return streamProgres(items, penerbitSungguhan(request, guard.konteks), { tipe: 'mulai', total: items.length });
   }
 
+  // T-113 / SYSTEM_DESIGN §18.3: 100 persetujuan surat per jam per user.
+  const batas = await cekBatas(`approve-surat:${guard.konteks.sesi.userId}`, BATAS.approveSurat.batas, BATAS.approveSurat.jendelaDetik);
+  if (!batas.ok) return respons429(batas, `Batas ${BATAS.approveSurat.batas} persetujuan surat per jam tercapai.`);
   const disetujui = await withAuditContext(request, guard.konteks, (tx) => setujuiBatch(tx, guard.konteks, batch), {
     timeout: BATAS_TRANSAKSI_BATCH_MS,
   });

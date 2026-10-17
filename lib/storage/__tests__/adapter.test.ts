@@ -53,12 +53,12 @@ const adaKredensial = Boolean(
 // ===========================================================================
 
 describe('keys — bentuk key menentukan bucket', () => {
-  it('menaruh master nota di bucket privat dan turunannya di publik', () => {
-    // Inti INV-19. Master hanya boleh keluar lewat endpoint unduh; preview dan
-    // thumbnail memang dimaksudkan untuk ditampilkan langsung lewat CDN.
+  it('menaruh master nota DAN seluruh turunannya di bucket privat (ADR-011)', () => {
+    // Inti INV-19 + ADR-011. Master hanya keluar lewat endpoint unduh;
+    // preview/thumbnail memuat data keuangan yang sama — hanya lewat signed URL.
     expect(bucketUntuk(keys.notaMaster('abc'))).toBe('private');
-    expect(bucketUntuk(keys.notaPreview('abc'))).toBe('public');
-    expect(bucketUntuk(keys.notaThumb('abc'))).toBe('public');
+    expect(bucketUntuk(keys.notaPreview('abc'))).toBe('private');
+    expect(bucketUntuk(keys.notaThumb('abc'))).toBe('private');
   });
 
   it('menaruh tanda tangan di privat, avatar di publik', () => {
@@ -113,13 +113,14 @@ describe('pastikanBucketCocok — permintaan pemanggil tidak boleh menang', () =
     expect(() => pastikanBucketCocok(keys.notaMaster('x'), true)).toThrow(SalahBucketError);
   });
 
-  it('menolak thumbnail yang diminta privat', () => {
-    expect(() => pastikanBucketCocok(keys.notaThumb('x'), false)).toThrow(SalahBucketError);
+  it('menolak thumbnail nota yang diminta publik, dan avatar yang diminta privat', () => {
+    expect(() => pastikanBucketCocok(keys.notaThumb('x'), true)).toThrow(SalahBucketError);
+    expect(() => pastikanBucketCocok(keys.avatar('x'), false)).toThrow(SalahBucketError);
   });
 
   it('menerima bila permintaan cocok, dan bila tidak diminta apa-apa', () => {
     expect(pastikanBucketCocok(keys.notaMaster('x'), false)).toBe('private');
-    expect(pastikanBucketCocok(keys.notaThumb('x'), true)).toBe('public');
+    expect(pastikanBucketCocok(keys.avatar('x'), true)).toBe('public');
     expect(pastikanBucketCocok(keys.notaMaster('x'))).toBe('private');
   });
 });
@@ -216,7 +217,7 @@ describe.skipIf(!adaKredensial)('batas umur signed URL', () => {
 
 const UJI = `uji-t044-${Date.now()}`;
 const KUNCI_PRIVAT = keys.notaMaster(UJI);
-const KUNCI_PUBLIK = keys.notaThumb(UJI);
+const KUNCI_PUBLIK = keys.avatar(UJI);
 const ISI = Buffer.from(`berkas uji T-044 ${UJI}`, 'utf8');
 
 afterAll(async () => {

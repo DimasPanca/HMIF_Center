@@ -54,6 +54,14 @@ export interface StorageAdapter {
    */
   getSignedUrl(key: string, expiresInSeconds: number): Promise<string>;
 
+  /**
+   * Banyak signed URL sekaligus (opsional). Galeri nota menampilkan puluhan
+   * thumbnail privat (ADR-011); satu permintaan per gambar membuat halaman
+   * menunggu puluhan round trip. Adapter tanpa dukungan batch dilayani
+   * `urlBertanda()` dengan `getSignedUrl` paralel.
+   */
+  getSignedUrls?(keys: string[], expiresInSeconds: number): Promise<Map<string, string>>;
+
   /** URL permanen. Hanya sah untuk key bucket publik; selain itu melempar. */
   getPublicUrl(key: string): string;
 

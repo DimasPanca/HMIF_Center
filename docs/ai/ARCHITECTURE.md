@@ -47,6 +47,7 @@ lib/                Kode server & shared — inti aplikasi
   proker/           service Proker (anti-bentrok, approval)
   proposal/         service Proposal
   rab/              service RAB (kalkulasi + import Excel)
+  security/         rate-limit (tabel batas §18.3, edge-safe) + sanitize (pintu tunggal)
   realtime/         hook Supabase realtime (setAuth JWT wajib)
   storage/          adapter Supabase Storage
   surat/            service Surat + penomoran (advisory lock)
@@ -74,6 +75,7 @@ scripts/            tooling CLI (tsx)
   rls-coverage.ts   ringkas coverage RLS
   verify-backup.ts  periksa ulang bundel backup (`--jalankan` = buat dulu)
   e2e-restore.ts    uji restore penuh/per modul di transaksi yang di-rollback
+  security-scan.ts  uji penetrasi internal T-113 (butuh server berjalan) — docs/ai/SECURITY_AUDIT.md
 
 e2e/                Playwright — satu file per fitur
   fixtures/         akun + helper setup/reset

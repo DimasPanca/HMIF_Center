@@ -17,6 +17,18 @@ const securityHeaders = [
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
   },
+  /**
+   * CSP (SYSTEM_DESIGN §18.1 "CSP header", T-113). Sengaja TANPA `script-src`:
+   * Next.js menyisipkan skrip inline (hidrasi, skrip tema di app/layout.tsx)
+   * dan membatasinya menuntut nonce per permintaan. Yang ditutup di sini:
+   * pembingkaian (clickjacking, melengkapi X-Frame-Options), plugin/objek,
+   * pembajakan <base>, dan pengiriman form ke situs lain. XSS dicegah oleh
+   * sanitasi allowlist di kedua sisi (lib/security/sanitize.ts) — SECURITY_AUDIT M-02.
+   */
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+  },
 ];
 
 const nextConfig: NextConfig = {

@@ -10,7 +10,7 @@ import { konteksSaatIni } from '@/lib/auth/guard';
 import { db } from '@/lib/db/client';
 import type { AnalisisLpj } from '@/lib/lpj/analyze';
 import { bolehBacaLpj, dokumenLpjTerakhir, muatLpj } from '@/lib/lpj/generate';
-import { storage } from '@/lib/storage';
+import { urlBertanda } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 import { formatTanggalWaktu } from '@/lib/utils/format-tanggal';
@@ -153,9 +153,9 @@ export default async function LpjPage({ params }: PageProps) {
         select: { id: true, thumbnail_path: true },
       })
     : [];
-  const thumbFoto = Object.fromEntries(
-    foto.map((f) => [f.id, storage.getPublicUrl(f.thumbnail_path)]),
-  );
+  // ADR-011: thumbnail nota & foto dokumentasi privat — satu batch signed URL.
+  const url = await urlBertanda([...foto.map((f) => f.thumbnail_path), ...lpj.lampiran.map((n) => n.thumbnail_path)]);
+  const thumbFoto = Object.fromEntries(foto.map((f) => [f.id, url.get(f.thumbnail_path) ?? '']));
 
   return (
     <main
@@ -193,7 +193,7 @@ export default async function LpjPage({ params }: PageProps) {
                 id: n.id,
                 divisi: n.divisi,
                 keterangan: n.keterangan,
-                thumbUrl: storage.getPublicUrl(n.thumbnail_path),
+                thumbUrl: url.get(n.thumbnail_path) ?? '',
               }))}
             />
           </div>

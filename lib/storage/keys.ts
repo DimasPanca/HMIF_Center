@@ -31,7 +31,12 @@ export type EkstensiGambar = 'jpg' | 'png' | 'webp';
  * merepotkan, tetapi tidak membocorkan apa pun. Dengan daftar hitam,
  * kelalaian yang sama akan membuatnya terbuka.
  */
-const PREFIX_PUBLIK = ['nota/preview/', 'nota/thumb/', 'avatar/', 'aset/'] as const;
+//
+// ADR-011: SELURUH turunan nota (master, preview, thumbnail) privat — nota
+// memuat data keuangan; preview/thumb disajikan lewat signed URL 5 menit
+// (`urlBertanda`). Versi awal T-044 masih menaruh preview/thumb di sini
+// mengikuti SYSTEM_DESIGN §12.2; diperbaiki T-113 (temuan SECURITY_AUDIT S-01).
+const PREFIX_PUBLIK = ['avatar/', 'aset/'] as const;
 
 /**
  * Bucket tempat sebuah key seharusnya berada, ditentukan dari bentuk key-nya

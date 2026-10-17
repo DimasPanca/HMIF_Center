@@ -33,7 +33,7 @@ export default async function UploadNotaPage({ searchParams }: PageProps) {
       id: n.id,
       alasan_penolakan: n.alasan_penolakan,
       isian: n.isian,
-      urlPratinjau: urlGambarNota(n.gambar).previewUrl,
+      urlPratinjau: (await urlGambarNota(n.gambar)).previewUrl,
     };
   }
   const divisi = await divisiUntukUpload(konteks);

@@ -14,7 +14,7 @@
  * Sumber: SYSTEM_DESIGN §12.1 · docs/ai/tasks/P1-fondasi.md T-044
  */
 
-import type { StorageAdapter } from './adapter';
+import { DETIK_SIGNED_URL as DETIK_SIGNED_URL_BAWAAN, type StorageAdapter } from './adapter';
 import { GoogleDriveAdapter } from './gdrive-adapter';
 import { LocalDiskAdapter } from './local-adapter';
 import { S3Adapter } from './s3-adapter';
@@ -69,6 +69,23 @@ export const storage: StorageAdapter = new Proxy({} as StorageAdapter, {
     return typeof nilai === 'function' ? nilai.bind(instans) : nilai;
   },
 });
+
+/**
+ * Signed URL (bawaan 5 menit, SYSTEM_DESIGN §18.1) untuk banyak key privat
+ * sekaligus. Key yang gagal ditandatangani (berkas hilang) tidak ada di hasil.
+ */
+export async function urlBertanda(daftar: string[], detik = DETIK_SIGNED_URL_BAWAAN): Promise<Map<string, string>> {
+  const a = storage;
+  if (a.getSignedUrls) return a.getSignedUrls(daftar, detik);
+  const hasil = new Map<string, string>();
+  await Promise.all(
+    [...new Set(daftar)].map(async (k) => {
+      const u = await a.getSignedUrl(k, detik).catch(() => null);
+      if (u) hasil.set(k, u);
+    }),
+  );
+  return hasil;
+}
 
 /** Membuang instans yang tersimpan. Untuk test yang mengganti driver. */
 export function resetStorage(): void {

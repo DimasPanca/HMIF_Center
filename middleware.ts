@@ -30,6 +30,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { BATAS, cekBatas, ipDari, originSah, respons429 } from '@/lib/security/rate-limit';
+
 /**
  * Rute yang boleh dibuka tanpa sesi.
  *
@@ -135,6 +137,22 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next({ request: req });
   }
 
+  // CSRF (T-113, SYSTEM_DESIGN §18.1): mutasi API dari halaman situs lain
+  // ditolak sebelum menyentuh apa pun. Server Actions dijaga Next.js sendiri
+  // (Origin harus sama dengan Host).
+  if (req.nextUrl.pathname.startsWith('/api/') && !originSah(req.method, req.headers, req.nextUrl.host)) {
+    return NextResponse.json(
+      { ok: false, error: { code: 'ORIGIN_DITOLAK', message: 'Permintaan lintas situs ditolak.' } },
+      { status: 403 },
+    );
+  }
+
+  // Batas umum 300/menit per IP (§18.3) — hanya produksi (lib/security/rate-limit.ts).
+  // Dijalankan paralel dengan getUser() supaya tidak menambah latensi berurutan.
+  const batasUmum = bukanProduksi
+    ? null
+    : cekBatas(`umum:${ipDari(req.headers)}`, BATAS.umum.batas, BATAS.umum.jendelaDetik);
+
   // Respons dibuat lebih dulu supaya Supabase punya tempat menulis cookie
   // yang diperbarui. Sesi 7 hari diperpanjang lewat cookie ini setiap kali
   // pengguna aktif (PRD F-1.1) — itulah yang membuat "diperpanjang otomatis"
@@ -145,6 +163,9 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      // Eksplisit (T-113): SameSite=Lax menahan cookie sesi pada POST lintas
+      // situs; Secure di produksi. Sama dengan bawaan @supabase/ssr + Secure.
+      cookieOptions: { sameSite: 'lax', secure: !bukanProduksi, path: '/' },
       cookies: {
         getAll: () => req.cookies.getAll(),
         setAll: (daftar) => {
@@ -162,6 +183,11 @@ export async function middleware(req: NextRequest) {
   const {
     data: { user },
   } = await sb.auth.getUser();
+
+  if (batasUmum) {
+    const h = await batasUmum;
+    if (!h.ok) return respons429(h, 'Terlalu banyak permintaan. Coba lagi sebentar lagi.');
+  }
 
   const path = req.nextUrl.pathname;
 

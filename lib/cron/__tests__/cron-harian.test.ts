@@ -77,6 +77,7 @@ describe('jalankanCronHarian', () => {
 
     expect(adaSql(panggilan, 'lepas_kunci_selesai()')).toBe(true);
     expect(adaSql(panggilan, 'kanban_card')).toBe(true);
+    expect(adaSql(panggilan, 'rate_limit_bersihkan()')).toBe(true);
     // Audit CRON dengan ringkasan ('CRON' adalah literal di SQL, bukan param).
     expect(panggilan.some((p) => p.sql.includes('INSERT INTO audit_log') && p.sql.includes("'CRON'"))).toBe(true);
     expect(r.tanggal).toBe('2026-09-11');

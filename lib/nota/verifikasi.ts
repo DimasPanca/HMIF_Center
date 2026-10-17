@@ -21,7 +21,7 @@ import type { Konteks } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
 import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
-import { urlGambarNota, type UrlGambarNota } from '@/lib/images/url-gambar';
+import { urlGambarNota, urlGambarNotaBanyak, type UrlGambarNota } from '@/lib/images/url-gambar';
 import { hitungTotalItem } from '@/lib/rab/calculate';
 import { majukanStatusRab } from '@/lib/rab/service';
 
@@ -131,8 +131,10 @@ export async function antrianNota(konteks: Konteks): Promise<GrupAntrian[]> {
       kepanitiaan: { id: r.acara_id, nama_acara: r.acara_nama },
     },
   }));
+  // ADR-011: thumbnail privat — signed URL seluruh antrian dalam satu permintaan.
+  const gambar = await urlGambarNotaBanyak(rows.map((r) => r.image));
   const grup = new Map<string, GrupAntrian & { urutan: number }>();
-  for (const r of rows) {
+  for (const [i, r] of rows.entries()) {
     const kunci = r.divisi.id;
     if (!grup.has(kunci)) {
       grup.set(kunci, {
@@ -149,7 +151,7 @@ export async function antrianNota(konteks: Konteks): Promise<GrupAntrian[]> {
       pengunggah: r.app_user_nota_uploader_idToapp_user.nama_lengkap,
       diunggah_at: r.created_at.toISOString(),
       jumlah_alokasi: r._count.nota_alokasi,
-      gambar: urlGambarNota(r.image),
+      gambar: gambar[i]!,
     });
   }
   return [...grup.values()]
@@ -280,7 +282,7 @@ export async function detailNota(konteks: Konteks, id: string): Promise<DetailNo
     total_nota: Number(n.total_nota),
     keterangan: n.keterangan,
     alasan_penolakan: n.alasan_penolakan,
-    gambar: urlGambarNota({
+    gambar: await urlGambarNota({
       id: n.img_id,
       thumbnail_path: n.thumbnail_path,
       preview_path: n.preview_path,

@@ -59,6 +59,9 @@ export async function jalankanCronHarian(tx: TxKlien): Promise<RingkasanCron> {
     VALUES ('CRON', 'proker', NULL, ${ringkasan as unknown as Prisma.InputJsonValue}::jsonb, 'sistem', periode_aktif())
   `;
 
+  // T-113: jendela rate limit yang sudah lewat (migrasi 050) — bukan bagian ringkasan.
+  await tx.$executeRaw`SELECT rate_limit_bersihkan()`;
+
   return ringkasan;
 }
 

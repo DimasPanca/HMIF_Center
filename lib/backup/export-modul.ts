@@ -80,9 +80,10 @@ export const DAFTAR_MODUL = Object.keys(MODUL_BACKUP) as ModulBackup[];
  * Tidak ikut dump maupun modul: `_migrasi` milik runner migrasi (dipulihkan
  * dengan menjalankan migrasi), `backup` adalah catatan backup itu sendiri —
  * memulihkannya akan menghapus jejak backup PRA_RESTORE yang baru dibuat;
- * `restore_job` (T-112) adalah riwayat restore itu sendiri.
+ * `restore_job` (T-112) adalah riwayat restore itu sendiri; `rate_limit`
+ * (T-113) hanya penghitung sementara.
  */
-export const TABEL_DIKECUALIKAN = ['_migrasi', 'backup', 'restore_job'] as const;
+export const TABEL_DIKECUALIKAN = ['_migrasi', 'backup', 'restore_job', 'rate_limit'] as const;
 
 export interface IsiTabel {
   nama: string;
