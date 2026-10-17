@@ -65,6 +65,37 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-111 · Cron backup & retensi (2026-10-17)
+
+`lib/backup/retensi.ts` (`pilihUntukDihapus` murni, `bersihkanBackupLama`,
+`backupBulanan`), cabang tanggal 1 di `app/api/cron/harian/route.ts`,
+`vercel.json` (`functions.maxDuration` 300 untuk cron & `/api/backup`), test
+`lib/backup/__tests__/backup-retensi.test.ts`.
+
+- **Tetap satu entri cron** (ADR-009): bila `ringkasan.tanggal_1`, route
+  menjadwalkan `backupBulanan()` di `after()` — lifecycle harian tidak
+  tertahan backup yang memakan menit. Respons memuat
+  `backup_bulanan: 'DIJADWALKAN' | 'BUKAN_TANGGAL_1'`. `backupBulanan`
+  idempoten per bulan WIB (dilewati bila OTOMATIS SUKSES/BERJALAN bulan ini
+  sudah ada); retensi hanya jalan setelah backup baru SUKSES.
+- **Retensi ADR-016**: 12 OTOMATIS SUKSES terbaru; MANUAL & PRA_RESTORE tak
+  pernah terpilih; OTOMATIS GAGAL tidak dihitung/dihapus (berkasnya sudah
+  bersih). Hapus berkas dulu, lalu baris + `audit_log` `BACKUP_HAPUS` dalam
+  satu transaksi — bila hapus berkas gagal, baris dipertahankan untuk
+  percobaan berikutnya. Diuji juga ke DB sungguhan (13 baris palsu → yang
+  tertua terhapus + audit; baris palsu dibersihkan).
+- **Batas manual 3/hari WIB** (`BATAS_MANUAL_PER_HARI` di service.ts) di
+  `mulaiBackup`, dihitung SETELAH cek KONFLIK; setiap percobaan dihitung
+  (yang GAGAL pun). POST → 429 `BATAS_HARIAN`. Catatan: hari ini (17-10) kuota
+  manual dev sudah habis oleh percobaan T-110.
+- **Google Drive**: hanya bila `GDRIVE_ENABLED=true`, setelah SUKSES di
+  Supabase — seluruh berkas + manifest disalin dengan key yang sama lewat
+  `buatAdapter('gdrive')`. Gagal → backup tetap SUKSES, hasil ditulis ke kolom
+  `backup.manifest.sinkron.gdrive` (BUKAN ke manifest.json ber-checksum;
+  `verify-backup.ts` mengabaikan key itu) + audit `BACKUP_SINKRON`, tampil
+  sebagai peringatan di halaman Admin. `GoogleDriveAdapter` masih stub
+  (NotImplemented) — mengaktifkan flag sekarang menghasilkan peringatan.
+
 ### T-110 · Backup tiga lapis (2026-10-17)
 
 `lib/backup/{manifest,export-modul,zip-storage,service}.ts`,

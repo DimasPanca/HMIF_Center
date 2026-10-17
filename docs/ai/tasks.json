@@ -1329,9 +1329,9 @@
         "T-110",
         "T-079"
       ],
-      "status": "TODO",
+      "status": "DONE",
       "butuh_manusia": false,
-      "completed_at": null
+      "completed_at": "2026-10-17"
     },
     {
       "id": "T-112",

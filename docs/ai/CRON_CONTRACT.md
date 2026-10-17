@@ -74,9 +74,12 @@ Mengembalikan `RingkasanCron`:
 **Idempoten (ADR-009):** `lepas_kunci_selesai` dijaga status (dua kali jalan tak
 menggandakan transisi), `cekDeadline` read-only. Aman dipanggil berulang.
 
-**Backup bulanan (tanggal 1):** `ringkasan.tanggal_1` menandai tanggal 1 supaya
-backup bulanan menyusul di **T-111** — backup-nya BELUM dijalankan di sini
-(cabang tanggal-1 sengaja disiapkan tanpa menambah cron kedua).
+**Backup bulanan (tanggal 1, T-111):** bila `ringkasan.tanggal_1`, route
+menjadwalkan `backupBulanan()` (`lib/backup/retensi.ts`) di `after()` — tetap
+satu entri cron. Respons memuat `backup_bulanan: 'DIJADWALKAN' | 'BUKAN_TANGGAL_1'`.
+`backupBulanan` idempoten per bulan WIB (dilewati bila backup OTOMATIS SUKSES/
+BERJALAN bulan ini sudah ada), lalu retensi ADR-016 (12 OTOMATIS terbaru)
+hanya setelah backup baru SUKSES.
 
 ---
 

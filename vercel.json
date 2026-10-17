@@ -1,6 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["sin1"],
+  "functions": {
+    "app/api/cron/harian/route.ts": { "maxDuration": 300 },
+    "app/api/backup/route.ts": { "maxDuration": 300 }
+  },
   "crons": [
     {
       "path": "/api/cron/harian",

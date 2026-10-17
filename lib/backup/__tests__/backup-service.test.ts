@@ -94,6 +94,7 @@ function sumber(
     ],
     eksporRab: async (id) => Buffer.from(`xlsx-${id}`),
     daftarSurat: async () => ({ xlsx: Buffer.from('xlsx-surat') }),
+    drive: null,
     ...ubah,
   };
 }
@@ -103,11 +104,13 @@ function catatanMemori() {
     progres: Progres[];
     sukses?: { manifest: Manifest; ukuran: number };
     gagal?: string;
+    sinkron?: { ok: boolean; pesan: string };
   } = { progres: [] };
   const c: CatatanBackup = {
     progres: async (_id, p) => void log.progres.push(p),
     sukses: async (_id, manifest, ukuran) => void (log.sukses = { manifest, ukuran }),
     gagal: async (_id, pesan) => void (log.gagal = pesan),
+    sinkron: async (_id, h) => void (log.sinkron = h),
   };
   return { c, log };
 }
@@ -265,6 +268,36 @@ describe('backup-service: prosesBackup', () => {
       if (lama === undefined) delete process.env.BACKUP_BATAS_VOLUME_MB;
       else process.env.BACKUP_BATAS_VOLUME_MB = lama;
     }
+  });
+
+  it('GDRIVE aktif: seluruh berkas + manifest tersalin ke Drive setelah SUKSES', async () => {
+    const st = storageMemori({ ...BERKAS_STORAGE });
+    const drive = storageMemori();
+    const { c, log } = catatanMemori();
+    const h = await prosesBackup(ID, 'OTOMATIS', sumber(st, { drive }), c);
+    expect(h.ok && h.peringatan).toBe(null);
+    expect(log.sinkron?.ok).toBe(true);
+    const diBundel = [...st.isi.keys()].filter((k) => k.startsWith(awalan)).sort();
+    expect([...drive.isi.keys()].sort()).toEqual(diBundel);
+    for (const k of diBundel) expect(drive.isi.get(k)!.equals(st.isi.get(k)!)).toBe(true);
+  });
+
+  it('sinkronisasi Drive gagal → backup TETAP SUKSES, kegagalan dicatat sebagai peringatan', async () => {
+    const st = storageMemori();
+    const { c, log } = catatanMemori();
+    const drive = {
+      put: async () =>
+        Promise.reject(new Error('GoogleDriveAdapter.put() belum diimplementasikan')),
+    };
+    const h = await prosesBackup(ID, 'OTOMATIS', sumber(st, { drive }), c);
+    expect(h.ok).toBe(true);
+    expect(log.sukses).toBeDefined();
+    expect(log.gagal).toBeUndefined();
+    expect(h.ok && h.peringatan).toMatch(
+      /^Sinkronisasi Google Drive gagal: GoogleDriveAdapter.put()/,
+    );
+    expect(log.sinkron).toMatchObject({ ok: false });
+    expect(st.isi.has(`${awalan}${JALUR.manifest}`)).toBe(true);
   });
 
   it('pg_dump tersedia → dump-nya dipakai apa adanya', async () => {

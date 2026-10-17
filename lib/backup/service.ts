@@ -32,7 +32,7 @@ import { db } from '@/lib/db/client';
 import type { TxKlien } from '@/lib/db/with-audit-context';
 import { eksporRabXlsx } from '@/lib/rab/excel-export';
 import { dataEksporRabSistem } from '@/lib/rab/service';
-import { storage as storageBawaan } from '@/lib/storage';
+import { buatAdapter, storage as storageBawaan } from '@/lib/storage';
 import type { StorageAdapter } from '@/lib/storage/adapter';
 import { keys } from '@/lib/storage/keys';
 
@@ -66,6 +66,9 @@ if (typeof window !== 'undefined') {
 }
 
 export type JenisBackup = 'OTOMATIS' | 'MANUAL' | 'PRA_RESTORE';
+
+/** PRD F-16.2 / T-111 kontrak 4: backup manual per hari kalender WIB. */
+export const BATAS_MANUAL_PER_HARI = 3;
 
 /** Lebih lama dari ini masih BERJALAN = fungsinya sudah mati di tengah jalan. */
 export const BATAS_BERJALAN_MS = 20 * 60_000;
@@ -101,6 +104,8 @@ export interface SumberBackup {
   daftarAcara(): Promise<{ id: string; nama_acara: string }[]>;
   eksporRab(kepanitiaanId: string): Promise<Buffer | null>;
   daftarSurat(): Promise<{ xlsx: Buffer }>;
+  /** Tujuan sinkronisasi kedua (Google Drive) — `null` bila `GDRIVE_ENABLED` bukan `true`. */
+  drive: Pick<StorageAdapter, 'put'> | null;
 }
 
 /** Tempat status backup dicatat — baris `backup` + audit. */
@@ -108,6 +113,8 @@ export interface CatatanBackup {
   progres(id: string, p: Progres): Promise<void>;
   sukses(id: string, manifest: Manifest, ukuran: number): Promise<void>;
   gagal(id: string, pesan: string): Promise<void>;
+  /** Hasil sinkronisasi Drive — kegagalannya PERINGATAN, backup tetap SUKSES (T-111). */
+  sinkron(id: string, hasil: { ok: boolean; pesan: string }): Promise<void>;
 }
 
 export function sumberBawaan(): SumberBackup {
@@ -128,6 +135,7 @@ export function sumberBawaan(): SumberBackup {
       return d ? eksporRabXlsx(d) : null;
     },
     daftarSurat: () => daftarSuratXlsx(),
+    drive: process.env.GDRIVE_ENABLED === 'true' ? buatAdapter('gdrive') : null,
   };
 }
 
@@ -195,6 +203,15 @@ export function catatanBawaan(): CatatanBackup {
         b.dibuat_oleh,
       );
     },
+    async sinkron(id, hasil) {
+      // Disimpan di kolom manifest DB (bukan manifest.json yang ber-checksum)
+      // di bawah key `sinkron` — scripts/verify-backup.ts mengabaikannya.
+      const nilai = { gdrive: { ...hasil, pada: new Date().toISOString() } };
+      await db.$executeRaw`
+        UPDATE backup SET manifest = manifest || jsonb_build_object('sinkron', ${nilai as Prisma.InputJsonValue}::jsonb)
+        WHERE id = ${id}::uuid`;
+      await audit('BACKUP_SINKRON', id, { tujuan: 'gdrive', ...hasil }, null);
+    },
   };
 }
 
@@ -214,7 +231,8 @@ export async function tandaiTerhenti(sekarang = new Date()): Promise<number> {
   return r.count;
 }
 
-export type HasilMulai = { ok: true; id: string } | { ok: false; kode: 'KONFLIK'; pesan: string };
+export type HasilMulai =
+  { ok: true; id: string } | { ok: false; kode: 'KONFLIK' | 'BATAS_HARIAN'; pesan: string };
 
 /**
  * Membuat baris BERJALAN. Dipanggil di dalam `withAuditContext` (manual) atau
@@ -239,6 +257,21 @@ export async function mulaiBackup(
       pesan: 'Backup lain sedang berjalan. Tunggu sampai selesai.',
     };
 
+  // T-111 kontrak 4: backup manual maksimal 3 per hari kalender WIB — setiap
+  // percobaan dihitung (yang gagal pun membebani database dan storage).
+  if (opts.jenis === 'MANUAL') {
+    const [n] = await tx.$queryRaw<{ jumlah: number }[]>`
+      SELECT count(*)::int AS jumlah FROM backup
+      WHERE jenis = 'MANUAL' AND created_at >= (hari_ini_jakarta()::timestamp AT TIME ZONE 'Asia/Jakarta')`;
+    if ((n?.jumlah ?? 0) >= BATAS_MANUAL_PER_HARI) {
+      return {
+        ok: false,
+        kode: 'BATAS_HARIAN',
+        pesan: `Backup manual dibatasi ${BATAS_MANUAL_PER_HARI} kali per hari. Coba lagi besok.`,
+      };
+    }
+  }
+
   const id = crypto.randomUUID();
   const periode = await tx.$queryRaw<{ id: string | null }[]>`SELECT periode_aktif() AS id`;
   await tx.backup.create({
@@ -261,7 +294,7 @@ export async function mulaiBackup(
 }
 
 export type HasilBackup =
-  | { ok: true; id: string; manifest: Manifest; ukuran: number }
+  | { ok: true; id: string; manifest: Manifest; ukuran: number; peringatan: string | null }
   | { ok: false; id: string; pesan: string };
 
 /**
@@ -400,7 +433,30 @@ export async function prosesBackup(
 
     const ukuran = berkas.reduce((n, f) => n + f.size, 0) + isiManifest.length;
     await catatan.sukses(id, manifest, ukuran);
-    return { ok: true, id, manifest, ukuran };
+
+    // Sinkronisasi Google Drive SETELAH sukses di Supabase Storage: gagalnya
+    // hanya peringatan — salinan utama sudah aman dan terverifikasi.
+    let peringatan: string | null = null;
+    if (sumber.drive) {
+      try {
+        for (const p of [...berkas.map((f) => f.path), JALUR.manifest]) {
+          const key = keys.backupBerkas(id, p);
+          await sumber.drive.put(
+            key,
+            await sumber.storage.get(key),
+            p.endsWith('.json') ? MIME.json : 'application/octet-stream',
+            { upsert: true },
+          );
+        }
+        await catatan
+          .sinkron(id, { ok: true, pesan: `${berkas.length + 1} berkas tersalin ke Google Drive` })
+          .catch(() => undefined);
+      } catch (e) {
+        peringatan = `Sinkronisasi Google Drive gagal: ${e instanceof Error ? e.message : String(e)}`;
+        await catatan.sinkron(id, { ok: false, pesan: peringatan }).catch(() => undefined);
+      }
+    }
+    return { ok: true, id, manifest, ukuran, peringatan };
   } catch (e) {
     const pesan = e instanceof Error ? e.message : String(e);
     // Bersihkan: tidak boleh ada bundel parsial yang tertinggal.
@@ -436,6 +492,8 @@ export interface RingkasBackup {
   jumlah_berkas: number | null;
   jumlah_record: number | null;
   keterbatasan: string[];
+  /** Peringatan non-fatal, mis. sinkronisasi Google Drive gagal. */
+  peringatan: string | null;
 }
 
 export async function daftarBackup(batas = 50): Promise<RingkasBackup[]> {
@@ -456,7 +514,10 @@ export async function daftarBackup(batas = 50): Promise<RingkasBackup[]> {
     },
   });
   return baris.map((b) => {
-    const m = (b.manifest ?? {}) as Partial<Manifest> & { progres?: Progres };
+    const m = (b.manifest ?? {}) as Partial<Manifest> & {
+      progres?: Progres;
+      sinkron?: { gdrive?: { ok: boolean; pesan: string } };
+    };
     return {
       id: b.id,
       jenis: b.jenis,
@@ -474,6 +535,7 @@ export async function daftarBackup(batas = 50): Promise<RingkasBackup[]> {
         ? Object.values(m.jumlahRecord).reduce((x, y) => x + y, 0)
         : null,
       keterbatasan: m.keterbatasan ?? [],
+      peringatan: m.sinkron?.gdrive && !m.sinkron.gdrive.ok ? m.sinkron.gdrive.pesan : null,
     };
   });
 }

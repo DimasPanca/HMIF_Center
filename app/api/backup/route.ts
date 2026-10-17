@@ -32,7 +32,12 @@ export async function POST(request: Request) {
   const m = await withAuditContext(request, guard.konteks, (tx) =>
     mulaiBackup(tx, { jenis: 'MANUAL', userId: guard.konteks.sesi.userId }),
   );
-  if (!m.ok) return gagal(m.kode, m.pesan, { status: 409, headers: TANPA_CACHE });
+  if (!m.ok) {
+    return gagal(m.kode, m.pesan, {
+      status: m.kode === 'BATAS_HARIAN' ? 429 : 409,
+      headers: TANPA_CACHE,
+    });
+  }
 
   after(() => prosesBackup(m.id, 'MANUAL'));
   return sukses({ id: m.id }, { status: 202, headers: TANPA_CACHE });

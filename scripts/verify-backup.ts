@@ -101,8 +101,11 @@ async function main(): Promise<number> {
   cek(parse.success, 'manifest.json sesuai skema');
   if (!parse.success) return 1;
   const m = parse.data;
-  // jsonb mengurutkan ulang key — bandingkan bentuk kanonik.
-  cek(kanonik(baris.manifest) === kanonik(m), 'manifest di DB identik dengan manifest.json');
+  // jsonb mengurutkan ulang key — bandingkan bentuk kanonik. `sinkron` (hasil
+  // salin ke Google Drive, T-111) hanya ada di kolom DB, bukan di manifest.json.
+  const manifestDb = { ...((baris.manifest ?? {}) as Record<string, unknown>) };
+  delete manifestDb.sinkron;
+  cek(kanonik(manifestDb) === kanonik(m), 'manifest di DB identik dengan manifest.json');
   cek(
     Number(baris.ukuran_bytes) === m.files.reduce((n, f) => n + f.size, 0) + isiManifest.length,
     'ukuran_bytes = Σ berkas + manifest',

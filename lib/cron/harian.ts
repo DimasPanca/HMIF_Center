@@ -10,8 +10,8 @@
  * lewat `withServiceContext` (tanpa pengguna; audit tercatat sebagai 'sistem').
  * Fungsi ini yang bercabang, bukan tiga cron terpisah:
  *   - Setiap hari: lepas_kunci_selesai() + hitung ulang urgensi deadline.
- *   - Tanggal 1: `tanggal_1` = true supaya backup bulanan dapat menyusul
- *     (diaktifkan T-111) — backup-nya sendiri BELUM dijalankan di sini.
+ *   - Tanggal 1: `tanggal_1` = true → route menjadwalkan `backupBulanan()`
+ *     (T-111, lib/backup/retensi.ts) di `after()`, di luar transaksi ini.
  *
  * IDEMPOTEN: `lepasKunciSelesai` dijaga status, `cekDeadline` read-only. Dua kali
  * jalan sehari tidak menggandakan transisi. Baris audit memang bertambah tiap

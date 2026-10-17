@@ -157,6 +157,11 @@ export function BackupPanel({ bolehKelola }: { bolehKelola: boolean }) {
                 {b.error_message ? (
                   <p className="text-[12px] text-danger">{b.error_message}</p>
                 ) : null}
+                {b.peringatan ? (
+                  <p className="text-[12px] text-warning" data-testid="peringatan-backup">
+                    {b.peringatan}
+                  </p>
+                ) : null}
                 {b.keterbatasan.length ? (
                   <ul className="list-disc pl-5 text-[12px] text-secondary">
                     {b.keterbatasan.map((k) => (
