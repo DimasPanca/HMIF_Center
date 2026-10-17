@@ -26,16 +26,40 @@ function hariH(mulai: string | null, selesai: string | null): string {
 }
 
 /**
+ * `?buka=` — daftar ini dipakai sebagai PEMILIH acara oleh menu sidebar yang
+ * fiturnya milik satu acara (ruang divisi, TOR, proposal, RAB, LPJ). Tanpa
+ * pemilih, menu itu menautkan ke halaman indeks yang memang tidak ada (404).
+ */
+const TUJUAN = {
+  divisi: { label: 'ruang kerja divisi', ke: (id: string) => `/acara/${id}?tab=divisi` },
+  tor: { label: 'TOR', ke: (id: string) => `/acara/${id}?tab=tor` },
+  proposal: { label: 'proposal', ke: (id: string) => `/acara/${id}?tab=proposal` },
+  rab: { label: 'RAB', ke: (id: string) => `/acara/${id}?tab=rab` },
+  lpj: { label: 'LPJ', ke: (id: string) => `/acara/${id}/lpj` },
+} as const;
+type Tujuan = keyof typeof TUJUAN;
+
+interface PageProps {
+  searchParams: Promise<{ buka?: string | string[] }>;
+}
+
+/**
  * Daftar acara besar periode aktif (T-084 kontrak 1): status, tanggal, PIC
  * departemen, total RAB, progres. Sumber: tabel `kepanitiaan` — terbentuk
  * otomatis saat proker TERJADWAL disetujui (PRD F-8.1).
  */
-export default async function DaftarAcaraPage() {
+export default async function DaftarAcaraPage({ searchParams }: PageProps) {
   const konteks = await konteksSaatIni();
   if (!konteks?.sesi.isActive || !konteks.periodeId) redirect('/login');
   if (!can(konteks.roles, 'kepanitiaan.read')) notFound();
 
+  const sp = await searchParams;
+  const kunci = Array.isArray(sp.buka) ? sp.buka[0] : sp.buka;
+  const tujuan = kunci && kunci in TUJUAN ? TUJUAN[kunci as Tujuan] : null;
+
   const acara = await daftarAcara(konteks);
+  // Satu-satunya acara: tidak ada yang perlu dipilih.
+  if (tujuan && acara.length === 1) redirect(tujuan.ke(acara[0]!.id));
 
   return (
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
@@ -51,10 +75,13 @@ export default async function DaftarAcaraPage() {
             <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
               Acara Besar
             </p>
-            <h1 className="mt-0.5 text-2xl font-semibold">Daftar acara</h1>
+            <h1 className="mt-0.5 text-2xl font-semibold" data-testid="acara-judul">
+              {tujuan ? `Pilih acara untuk membuka ${tujuan.label}` : 'Daftar acara'}
+            </h1>
             <p className="mt-1 max-w-2xl text-[14px] leading-5 text-secondary">
-              Acara besar periode ini. Kepanitiaan terbentuk otomatis saat proker terjadwal
-              disetujui; panitianya boleh lintas departemen.
+              {tujuan
+                ? `Setiap acara punya ${tujuan.label} sendiri. Pilih acaranya untuk langsung membukanya.`
+                : 'Acara besar periode ini. Kepanitiaan terbentuk otomatis saat proker terjadwal disetujui; panitianya boleh lintas departemen.'}
             </p>
           </div>
         </header>
@@ -79,7 +106,7 @@ export default async function DaftarAcaraPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <Link
-                          href={`/acara/${a.id}`}
+                          href={tujuan ? tujuan.ke(a.id) : `/acara/${a.id}`}
                           className="text-[16px] font-semibold hover:underline"
                           data-testid="acara-item-buka"
                         >

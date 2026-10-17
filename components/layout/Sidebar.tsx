@@ -66,6 +66,12 @@ interface MenuUtama {
     'beranda' | 'proker' | 'acara' | 'surat' | 'keuangan' | 'sekretariat' | 'departemen' | 'admin';
   label: string;
   href: string;
+  /**
+   * Prefix jalur yang menandai grup ini aktif, bila berbeda dari `href`.
+   * Grup tanpa halaman indeks sendiri menautkan ke halaman yang ada, tetapi
+   * tetap aktif untuk seluruh jalur di bawah prefiksnya.
+   */
+  awalan?: string;
   icon: ComponentType<LucideProps>;
   mode: (roles: readonly RoleCode[]) => ModeMenu | null;
   submenu?: Submenu[];
@@ -135,9 +141,11 @@ const MENU: MenuUtama[] = [
     mode: (roles) => akses(roles, 'kepanitiaan.read', ['surat.create', 'kanban.create']),
     submenu: [
       { label: 'Daftar Acara', href: '/acara', icon: Target },
-      { label: 'Ruang Kerja Divisi', href: '/acara/ruang-kerja', icon: Users },
-      { label: 'TOR', href: '/acara/tor', icon: ScrollText },
-      { label: 'Proposal', href: '/acara/proposal', icon: FileText },
+      // Ruang divisi, TOR, proposal, RAB, dan LPJ milik SATU acara: tautan ini
+      // membuka daftar acara sebagai pemilih (`?buka=`), lalu langsung ke tab acara itu.
+      { label: 'Ruang Kerja Divisi', href: '/acara?buka=divisi', icon: Users },
+      { label: 'TOR', href: '/acara?buka=tor', icon: ScrollText },
+      { label: 'Proposal', href: '/acara?buka=proposal', icon: FileText },
     ],
   },
   {
@@ -167,11 +175,12 @@ const MENU: MenuUtama[] = [
   {
     slug: 'keuangan',
     label: 'Keuangan',
-    href: '/keuangan',
+    href: '/acara?buka=rab',
+    awalan: '/keuangan',
     icon: CircleDollarSign,
     mode: (roles) => akses(roles, 'rab.read', ['rab.create', 'rab.update']),
     submenu: [
-      { label: 'RAB', href: '/keuangan/rab', icon: WalletCards },
+      { label: 'RAB', href: '/acara?buka=rab', icon: WalletCards },
       {
         label: 'Upload Nota',
         href: '/keuangan/nota',
@@ -184,13 +193,14 @@ const MENU: MenuUtama[] = [
         icon: ShieldCheck,
         tampil: (roles) => punya(roles, 'nota.verify'),
       },
-      { label: 'LPJ', href: '/keuangan/lpj', icon: Banknote },
+      { label: 'LPJ', href: '/acara?buka=lpj', icon: Banknote },
     ],
   },
   {
     slug: 'sekretariat',
     label: 'Kesekretariatan',
-    href: '/sekretariat',
+    href: '/sekretariat/notulensi',
+    awalan: '/sekretariat',
     icon: FolderArchive,
     mode: (roles) => akses(roles, 'notulensi.read', ['notulensi.delete']),
     submenu: [
@@ -203,7 +213,6 @@ const MENU: MenuUtama[] = [
         // Anggota tidak punya hak apa pun di modul ini (PRD §5.1); Kadept hanya C*.
         tampil: (roles) => punya(roles, 'ruangan.read') || punya(roles, 'ruangan.create'),
       },
-      { label: 'Arsip Dokumen', href: '/sekretariat/arsip', icon: Archive },
     ],
   },
   {
@@ -220,7 +229,8 @@ const MENU: MenuUtama[] = [
   {
     slug: 'admin',
     label: 'Administrasi',
-    href: '/admin',
+    href: '/admin/backup',
+    awalan: '/admin',
     icon: Settings,
     mode: (roles) => akses(roles, 'backup.read', ['user.create']),
     submenu: [
@@ -235,12 +245,6 @@ const MENU: MenuUtama[] = [
         href: '/admin/periode',
         icon: CalendarDays,
         tampil: (roles) => punya(roles, 'periode.create'),
-      },
-      {
-        label: 'Konfigurasi Sistem',
-        href: '/admin/konfigurasi',
-        icon: Settings,
-        tampil: (roles) => punya(roles, 'user.create'),
       },
       {
         label: 'Backup & Restore',
@@ -346,7 +350,7 @@ export function Sidebar({
         <ul className="space-y-1">
           {daftar.map((item) => {
             const Icon = item.icon;
-            const itemAktif = aktif(pathname, item.href);
+            const itemAktif = aktif(pathname, item.awalan ?? item.href);
             const submenu = item.submenu?.filter((sub) => !sub.tampil || sub.tampil(roles)) ?? [];
 
             return (

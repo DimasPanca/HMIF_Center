@@ -65,6 +65,19 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Perbaikan tautan sidebar (2026-10-17, laporan pemilik)
+
+Menu **TOR, Proposal, Ruang Kerja Divisi, RAB, LPJ** menautkan ke halaman
+indeks yang tidak pernah ada (`/acara/tor`, `/keuangan/lpj`, …) → 404 di
+produksi. Fiturnya milik satu acara, jadi menu kini membuka **Daftar Acara
+sebagai pemilih** (`/acara?buka=divisi|tor|proposal|rab|lpj`): judul berubah,
+tautan tiap acara langsung ke tabnya, dan bila hanya ada satu acara langsung
+dialihkan. Grup Keuangan/Kesekretariatan/Administrasi menautkan ke halaman yang
+ada dan tetap aktif lewat field `awalan`. **Arsip Dokumen** dan **Konfigurasi
+Sistem** disembunyikan (tanpa kontrak — BACKLOG). Gate baru
+`e2e/sidebar-tautan.spec.ts` mengunjungi setiap tautan sidebar (Admin & Ketua)
+dan menolak 404.
+
 ### T-113 · Hardening keamanan (2026-10-17)
 
 `lib/security/{rate-limit,sanitize}.ts`, `docs/ai/SECURITY_AUDIT.md` (hasil uji

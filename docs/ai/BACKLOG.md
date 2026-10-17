@@ -106,3 +106,16 @@ plus test di `supabase/tests/` dengan counter diset 999. Jangan menyunting 014b
   `{%ttd}{%stempel}` Keterangan Aktif; kini tag itu di akhir paragraf nama
   (`{nama}{%ttd}{%stempel}`) karena paragraf sisipan menghasilkan halaman
   kosong kedua.
+
+## Menu tanpa kontrak task — disembunyikan dari sidebar (dicatat 2026-10-17)
+
+Sidebar (T-051) memuat dua menu yang tidak pernah punya kontrak task maupun
+halaman, sehingga selalu 404. Keduanya dikeluarkan dari `components/layout/Sidebar.tsx`
+(gate `e2e/sidebar-tautan.spec.ts` kini menolak tautan sidebar yang 404):
+
+- **Kesekretariatan → Arsip Dokumen** (`/sekretariat/arsip`) — arsip dokumen
+  umum himpunan. Dokumen acara (TOR/proposal/LPJ) sudah tersimpan per acara
+  (`dokumen`, T-095); surat punya Arsip Surat (`/surat`). Perlu keputusan
+  produk: apa yang diarsip di luar keduanya, siapa yang boleh mengunggah.
+- **Administrasi → Konfigurasi Sistem** (`/admin/konfigurasi`) — penyunting
+  `app_config` (ambang deadline, dsb.). Nilainya kini diubah lewat migrasi/SQL.
