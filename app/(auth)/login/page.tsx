@@ -81,7 +81,7 @@ function LoginPage() {
     <main className="grid min-h-dvh bg-app text-primary lg:grid-cols-[minmax(0,1.08fr)_minmax(28rem,0.92fr)]">
       <section
         data-testid="login-hero"
-        className="relative flex min-h-[17rem] items-end overflow-hidden px-6 py-8 text-[var(--primary-text)] sm:min-h-[20rem] sm:px-10 sm:py-10 lg:min-h-dvh lg:items-center lg:px-14 xl:px-20"
+        className="relative flex min-h-[17rem] items-end overflow-hidden px-6 py-8 text-white sm:min-h-[20rem] sm:px-10 sm:py-10 lg:min-h-dvh lg:items-center lg:px-14 xl:px-20"
         style={{ background: 'var(--gradient-primary)' }}
       >
         <div className="relative z-10 max-w-xl">

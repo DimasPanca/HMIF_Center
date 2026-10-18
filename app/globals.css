@@ -52,7 +52,7 @@
   /* Teks */
   --text-primary:   #111C44;
   --text-secondary: #3D5A80;
-  --text-tertiary:  #6C757D;
+  --text-tertiary:  #5B6672; /* T-115: #6C757D 3,89:1 di bg-muted */
   --text-disabled:  #A0AEC0;
   --text-inverse:   #FFFFFF;
   --text-link:      #0066A9;
@@ -74,13 +74,13 @@
   --accent-subtle:  #E9F3FF;
 
   /* Status */
-  --success:        #0E9F6E;
+  --success:        #05714F; /* T-115: #0E9F6E 3,39:1 */
   --success-subtle: #E6F6F0;
-  --warning:        #D97706;
+  --warning:        #A84B05; /* T-115: #D97706 3,19:1 */
   --warning-subtle: #FEF3E2;
-  --danger:         #DC2626;
+  --danger:         #C42020; /* T-115: #DC2626 4,01:1 di bg-muted */
   --danger-subtle:  #FEE9E9;
-  --info:           #00B4D8;
+  --info:           #0891B2; /* T-115: ikon #00B4D8 2,23:1 */
   --info-subtle:    #E3F7FB;
   --neutral:        #6C757D;
   --neutral-subtle: #F1F3F5;
@@ -98,7 +98,7 @@
   /* Teks */
   --text-primary:   #F0F4FA;
   --text-secondary: #A8BBD6;
-  --text-tertiary:  #6C757D;
+  --text-tertiary:  #94A3B8; /* T-115: #6C757D 3,13:1 */
   --text-disabled:  #4A5568;
   --text-inverse:   #111C44;
   --text-link:      #1E90FF;
@@ -112,9 +112,9 @@
   /* Brand */
   --primary:        #1E90FF;
   --primary-hover:  #3D9FFF;
-  --primary-active: #0F7AE0;
+  --primary-active: #4FA8FF; /* T-115: teks gelap di atasnya ≥ 4,5:1 */
   --primary-subtle: #14243F;
-  --primary-text:   #FFFFFF;
+  --primary-text:   #111C44; /* T-115: putih di #1E90FF 3,24:1 */
 
   --accent:         #00B4D8;
   --accent-subtle:  #0D2A33;

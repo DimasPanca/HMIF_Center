@@ -57,7 +57,12 @@ async function masuk(page: Page, akun: AkunUji): Promise<void> {
 }
 
 async function sesi(browser: Browser, akun: AkunUji): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+  // Proyek "mobile": ponsel 375 px bersentuh (T-115 — panitia mengunggah dari
+  // lapangan). browser.newContext() TIDAK mewarisi profil proyek.
+  const ponsel = test.info().project.name === 'mobile';
+  const page = await (
+    await browser.newContext(ponsel ? { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true } : {})
+  ).newPage();
   await masuk(page, akun);
   return page;
 }

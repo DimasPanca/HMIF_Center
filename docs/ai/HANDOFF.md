@@ -65,6 +65,23 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-115 · Aksesibilitas & responsif (2026-10-19)
+
+`docs/ai/A11Y_REPORT.md`, `lib/a11y/kontras.ts` + test `a11y-kontras` (ikut
+`npm run verify`), gate `e2e/a11y.spec.ts` (`npm run test:e2e -- a11y`).
+
+- **Kontras:** 117 pasangan token diaudit di kedua tema; 23 gagal → token
+  diperbaiki (tertiary, danger, warning, success, info di terang; tertiary,
+  primary-text, primary-active di gelap). Hero login kini `text-white` tetap.
+  Warna berubah sedikit dari DESIGN_SYSTEM — dicatat di laporan.
+- **Gate a11y (desktop, viewport diatur per test):** 375 px tanpa gulir
+  horizontal di 10 halaman inti (Nota, Kanban, dll.), kontrol berlabel, tombol
+  bernama, login tanpa mouse + indikator fokus + galat `aria-describedby`,
+  reduced-motion, StatusPill ikon+teks (K-15). Lulus 4/4.
+- **Temuan:** proyek Playwright "mobile" + `browser.newContext()` TIDAK
+  mewarisi profil perangkat. `upload-nota.spec` kini membuka konteks 375 px
+  bersentuh di proyek mobile — alur unggah nota lengkap lulus 4/4.
+
 ### Perbaikan tautan sidebar (2026-10-17, laporan pemilik)
 
 Menu **TOR, Proposal, Ruang Kerja Divisi, RAB, LPJ** menautkan ke halaman
