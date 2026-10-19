@@ -65,6 +65,40 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-114 · Verifikasi performa — BLOCKED menunggu ADR-035 (2026-10-19)
+
+`scripts/bench-all.ts`, `docs/ai/PERFORMANCE_REPORT.md`, ADR-035 (Usulan),
+`lib/gantt/geser.ts`, `lib/realtime/klien-browser.ts`.
+
+- **10/10 metrik PRD §8.1 terukur dan lulus** pada build produksi, 4G
+  tersimulasi + CPU 4×, data realistis (60 proker · 100 item RAB · 100 task ·
+  50 nota bergambar · 500 surat; disemai & dibersihkan oleh skrip, penanda
+  `BENCH114`). Angka sebelum/sesudah di laporan.
+- **Diperbaiki:** bundle beranda 256 → 165 KB (supabase-js lewat `import()`
+  di `muatKlienRealtime`; helper Gantt tanpa zod dipisah ke `geser.ts` —
+  komponen chart JANGAN mengimpor `lib/gantt/skema.ts`); scroll vertikal Gantt
+  12% → ≤ 4% frame tersendat (baris di-memo: `BarisTask`/`BarisGrup`/
+  `LabelBaris` + objek `aksi` berumur tetap, `TimelineHeader` & garis kolom
+  di-memo); login siap dipakai 1,1–1,3 s → 0,90–0,96 s (video logo 4,6 MB →
+  0,35 MB di-encode ulang 256 px, dipasang setelah hidrasi, poster lewat
+  optimizer Next).
+- **Belum tercapai:** anggaran JS login 80 KB (terukur 119,1). Runtime
+  Next 15 + React 19 sendiri 100,4 KB — di bawah lantai stack §2. ADR-035
+  mengusulkan "runtime + ≤ 20 KB JS halaman"; LCP/TTI login sudah lulus.
+  **Keputusan pemilik produk dibutuhkan**; setelah diterima, ubah anggaran
+  login di `ukurBundle()` (bench-all) ke 120 KB dan tandai T-114 DONE.
+- Margin tipis di CPU 4×: Gantt 100 task 402–460 ms (satu sampel 531),
+  pratinjau surat 250–279 ms. Ukur ulang di Vercel staging (cold start tidak
+  tercakup).
+- **Kegagalan e2e yang ditemukan dan TERBUKTI sudah ada sebelum T-114**
+  (dijalankan ulang pada `7a1d84b` lewat `git stash -u`): `gantt-editor`
+  "mengganti skala…" (lebar SVG mentok di lebar kontainer pada kedua skala —
+  data harness tetap Okt–Des 2026) dan `login` "keluar mengakhiri sesi" di
+  stack lokal (logout manual berhasil; perlu diselidiki). `realtime-gantt`
+  gagal hanya bila berjalan paralel dengan `master-gantt` (48 proker semaian
+  menggeser bar baseline keluar jendela virtual); sendirian 4/4. `a11y` K-15
+  dan `sidebar-tautan` menu TOR butuh data proker/acara/surat yang sudah ada.
+
 ### T-115 · Aksesibilitas & responsif (2026-10-19)
 
 `docs/ai/A11Y_REPORT.md`, `lib/a11y/kontras.ts` + test `a11y-kontras` (ikut
@@ -1244,7 +1278,7 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Dua belas hal yang tidak obvious dari kode:
+Empat belas hal yang tidak obvious dari kode:
 
 0. **Node 22 wajib (`.nvmrc`, `engines.node >=22`).** Di Node 20, 6 test
    storage gagal palsu ("native WebSocket not found", `markAsUncloneable is not
@@ -1302,6 +1336,27 @@ Dua belas hal yang tidak obvious dari kode:
    bersamaan. Spec baru yang menyentuh tanda tangan Ketua WAJIB memakainya.
    `next.config.ts` `onDemandEntries` (1 jam) mencegah dev server
    mengompilasi ulang rute di tengah gate panjang.
+
+12. **Sesi cloud (kontainer tanpa `.env.local`): stack Supabase lokal.**
+   Kontainer Claude Code cloud tidak membawa `.env.local`; T-114 diukur pada
+   stack lokal. Resepnya (semua di luar repo): jalankan `dockerd`; unduh
+   Supabase CLI dari rilis GitHub; `supabase init` di folder scratch, matikan
+   studio/inbucket/edge_runtime/analytics dan migrasi/seed bawaan; registri
+   ECR menolak (`Data limit exceeded`) → `SUPABASE_INTERNAL_IMAGE_REGISTRY=
+   docker.io supabase start`. Kernel kontainer tanpa IPv6, sedangkan Realtime
+   v2.57.3 mengikat `socket_opts: [:inet6]` → bangun ulang image
+   `supabase/realtime:v2.57.3` lokal dengan `sed` ke `[:inet]`. Skrip proyek
+   memakai `ssl: 'require'` → aktifkan SSL Postgres (sertifikat self-signed +
+   `ALTER SYSTEM SET ssl = on` sebagai `supabase_admin`). Lalu buat schema
+   `extensions` + 3 extension (ENV_SETUP §1.3), bucket `private`/`public`,
+   `.env.local` ke `127.0.0.1:54321/54322`, `npm run db:reset`,
+   `seed:e2e-auth`, `upload-templates.ts`. Playwright 1.62 meminta Chromium
+   build 1234 sedangkan kontainer membawa 1194 → symlink direktori 1234 ke
+   biner 1194 (jangan `playwright install`).
+13. **`page.evaluate` dari skrip tsx:** esbuild `keepNames` membungkus fungsi
+   bernama di dalam callback dengan `__name()` yang tidak ada di browser —
+   ReferenceError diam-diam di init script. `bench-all.ts` memasang shim
+   `globalThis.__name = (f) => f` per konteks.
 
 ---
 

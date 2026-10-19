@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import type { GanttBarRect } from '@/lib/gantt/geometry';
-import { pxKeHari, type ModeGeser } from '@/lib/gantt/skema';
+import { pxKeHari, type ModeGeser } from '@/lib/gantt/geser';
 import type { GanttTaskVM } from '@/lib/gantt/types';
 import { cn } from '@/lib/utils';
 

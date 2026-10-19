@@ -5,7 +5,7 @@
  * Test id: gantt-scale-switcher, gantt-scale-{skala}.
  */
 
-import { LABEL_SKALA, SKALA, type Skala } from '@/lib/gantt/skema';
+import { LABEL_SKALA, SKALA, type Skala } from '@/lib/gantt/geser';
 import { cn } from '@/lib/utils';
 
 export function ScaleSwitcher({ nilai, onChange }: { nilai: Skala; onChange: (s: Skala) => void }) {

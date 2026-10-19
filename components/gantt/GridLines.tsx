@@ -10,15 +10,14 @@ type GridLinesProps = {
   className?: string;
 };
 
-function GridLines({
+/** Garis kolom tidak berubah saat scroll vertikal — dipisah supaya ikut memo. */
+const GarisKolom = React.memo(function GarisKolom({
   columns,
   width,
   height,
-  rowLines = [],
-  className,
-}: GridLinesProps): React.ReactElement {
+}: Pick<GridLinesProps, 'columns' | 'width' | 'height'>) {
   return (
-    <g data-slot="gantt-grid-lines" className={className} aria-hidden="true" pointerEvents="none">
+    <>
       <rect
         data-slot="gantt-grid-background"
         width={width}
@@ -55,10 +54,26 @@ function GridLines({
         strokeWidth={1}
         vectorEffect="non-scaling-stroke"
       />
+    </>
+  );
+});
 
-      {rowLines.map((y, index) => (
+function GridLines({
+  columns,
+  width,
+  height,
+  rowLines = [],
+  className,
+}: GridLinesProps): React.ReactElement {
+  return (
+    <g data-slot="gantt-grid-lines" className={className} aria-hidden="true" pointerEvents="none">
+      <GarisKolom columns={columns} width={width} height={height} />
+
+      {/* Kunci = posisi y (unik per baris): saat jendela virtual bergeser,
+          garis yang tetap terlihat dipakai ulang, bukan dibuat ulang. */}
+      {rowLines.map((y) => (
         <line
-          key={`${y}-${index}`}
+          key={y}
           data-slot="gantt-grid-row"
           x1={0}
           x2={width}

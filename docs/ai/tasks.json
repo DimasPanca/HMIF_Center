@@ -1366,7 +1366,8 @@
       "depends_on": [
         "T-113"
       ],
-      "status": "TODO",
+      "status": "BLOCKED",
+      "blocked_reason": "10/10 metrik terukur & lulus, bundle beranda/RAB/upload lulus (2026-10-19, docs/ai/PERFORMANCE_REPORT.md). Anggaran JS login 80 KB di bawah runtime Next 15 + React 19 (100,4 KB) — menunggu keputusan ADR-035 (Usulan).",
       "butuh_manusia": true,
       "completed_at": null
     },

@@ -1,8 +1,8 @@
 'use client';
 
 import { AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
-import Image from 'next/image';
-import { useCallback, useState, type FormEvent } from 'react';
+import Image, { getImageProps } from 'next/image';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,9 +28,15 @@ function readErrorMessage(payload: unknown): string | null {
   return root?.ok === false && typeof error?.message === 'string' ? error.message : null;
 }
 
+// Poster lewat optimizer Next (WebP seukuran tampilan, ±5 KB) alih-alih PNG
+// mentah 113 KB yang berebut bandwidth dengan JS halaman di 4G (T-114).
+const POSTER_LOGO = getImageProps({ src: '/logo-hmif.png', alt: '', width: 84, height: 84 }).props.src;
+
 function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [videoAktif, setVideoAktif] = useState(false);
+  useEffect(() => setVideoAktif(true), []);
   const setFormRef = useCallback((node: HTMLFormElement | null) => {
     if (node) node.setAttribute('data-testid', 'login-form');
   }, []);
@@ -90,10 +96,13 @@ function LoginPage() {
             (transparan). Poster = logo statis:
             tampil seketika selagi video dimuat dan bila video gagal. Pengguna
             dengan "kurangi gerakan" hanya melihat logo statis.
+            Video baru dipasang setelah hidrasi, dan berkasnya di-encode ulang
+            ke 256 px (4,6 MB → 0,35 MB): unduhan & decoding-nya tidak lagi
+            berebut dengan JS halaman — siap pakai di 4G turun ±200 ms (T-114).
           */}
           <video
-            src="/logo-hmif-animasi.webm"
-            poster="/logo-hmif.png"
+            src={videoAktif ? '/logo-hmif-animasi.webm' : undefined}
+            poster={POSTER_LOGO}
             autoPlay
             muted
             loop

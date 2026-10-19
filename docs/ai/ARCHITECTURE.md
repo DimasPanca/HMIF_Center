@@ -35,7 +35,7 @@ lib/                Kode server & shared — inti aplikasi
   cron/             scheduler tugas berkala
   db/               Prisma client + withAuditContext (WAJIB semua mutasi)
   documents/        renderer DOCX generik (dipakai lpj/proposal/tor/surat)
-  gantt/            geometri & agregasi (pure functions)
+  gantt/            geometri & agregasi (pure functions); geser.ts = konstanta + aritmetika tanggal TANPA zod (aman untuk bundle awal beranda), skema.ts = skema Zod + ekspor ulang
   http/             respond.ts — satu-satunya perakit K-02
   images/           pipeline gambar sisi klien (magic-byte, EXIF, resize)
   import/           import CSV/Excel
@@ -48,7 +48,7 @@ lib/                Kode server & shared — inti aplikasi
   proposal/         service Proposal
   rab/              service RAB (kalkulasi + import Excel)
   security/         rate-limit (tabel batas §18.3, edge-safe) + sanitize (pintu tunggal)
-  realtime/         hook Supabase realtime (setAuth JWT wajib)
+  realtime/         hook Supabase realtime (setAuth JWT wajib); klien dibuat lewat klien-browser.ts (import() malas — jangan impor @supabase/ssr statis dari komponen beranda)
   storage/          adapter Supabase Storage
   surat/            service Surat + penomoran (advisory lock)
   tor/              service TOR
@@ -72,6 +72,8 @@ scripts/            tooling CLI (tsx)
   check-secrets.ts  scan file client tak boleh impor secret
   seed-e2e-auth.ts  buat akun test e2e (WAJIB setelah db:reset)
   bench-gantt.ts    benchmark render Gantt
+  bench-all.ts      10 metrik PRD §8.1 + anggaran bundle §19.1 di build produksi (4G + CPU 4×) — docs/ai/PERFORMANCE_REPORT.md
+  bench-bundle.ts   ukuran JS awal satu rute (gzip) dari .next
   rls-coverage.ts   ringkas coverage RLS
   verify-backup.ts  periksa ulang bundel backup (`--jalankan` = buat dulu)
   e2e-restore.ts    uji restore penuh/per modul di transaksi yang di-rollback
