@@ -1391,7 +1391,8 @@
         "T-114",
         "T-115"
       ],
-      "status": "TODO",
+      "status": "BLOCKED",
+      "blocked_reason": "Delapan panduan role (docs/panduan/), UAT_SKENARIO.md, UAT_HASIL.md (templat + gladi otomatis), dan README selesai 2026-10-19. Menunggu sesi onboarding & UAT nyata bersama Ketua, Sekum, Bendum, dan 2 Kadept; juga T-114 menunggu ADR-035.",
       "butuh_manusia": true,
       "completed_at": null
     }

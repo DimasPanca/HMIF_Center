@@ -74,6 +74,7 @@ scripts/            tooling CLI (tsx)
   bench-gantt.ts    benchmark render Gantt
   bench-all.ts      10 metrik PRD §8.1 + anggaran bundle §19.1 di build produksi (4G + CPU 4×) — docs/ai/PERFORMANCE_REPORT.md
   bench-bundle.ts   ukuran JS awal satu rute (gzip) dari .next
+  tangkap-panduan.ts  tangkapan layar docs/panduan/img (semai data demo → potret 8 role → bersihkan)
   rls-coverage.ts   ringkas coverage RLS
   verify-backup.ts  periksa ulang bundel backup (`--jalankan` = buat dulu)
   e2e-restore.ts    uji restore penuh/per modul di transaksi yang di-rollback
@@ -96,6 +97,8 @@ docs/
   ai/BACKLOG.md                                               ide out-of-scope
   ai/ENV_SETUP.md                                             daftar env var
   adr/ADR-*.md                                                keputusan
+  panduan/{admin,ketua,…,bph}.md + img/                       panduan pengguna per role (T-116)
+  ai/{PERFORMANCE_REPORT,UAT_SKENARIO,UAT_HASIL}.md          rilis: performa & UAT
 ```
 
 ---

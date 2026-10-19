@@ -65,6 +65,29 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-116 · Dokumentasi pengguna & UAT — BLOCKED menunggu UAT nyata (2026-10-19)
+
+`docs/panduan/{admin,ketua,wakil,sekum,bendum,kadept,anggota,bph}.md` +
+`docs/panduan/img/` (46 PNG terpalet, 1,7 MB), `docs/ai/UAT_SKENARIO.md`,
+`docs/ai/UAT_HASIL.md`, `README.md` (cara menjalankan, deploy, tautan seluruh
+dokumen), `scripts/tangkap-panduan.ts`.
+
+- **Tangkapan layar dibuat ulang otomatis:** `tangkap-panduan.ts` menyemai data
+  demo bernama wajar (penanda U+2063 tak terlihat di akhir deskripsi,
+  `surat.data_dinamis.demo_panduan`, `image demo-panduan-*`), mengganti
+  sementara nama tampilan akun uji & periode menjadi nama jabatan
+  ("Ketua Umum HMIF", "Kepengurusan 2026/2027") lalu **memulihkannya** (gate
+  e2e bergantung pada `Periode Uji E2E`), mencatat menu sidebar nyata per role
+  (`--menu`), memotret, lalu membersihkan. Jalankan di build produksi supaya
+  indikator dev Next tidak ikut terpotret.
+- Tabel "Menu Anda" tiap panduan diambil dari sidebar sungguhan, bukan
+  USER_FLOW §1.2 (keduanya cocok kecuali yang dicatat di panduan).
+- **UAT_HASIL.md sengaja kosong** (templat) — sesi onboarding & UAT belum
+  terjadwal. Lampirannya memuat gladi otomatis gate e2e yang memetakan
+  skenario, ditandai jelas "bukan UAT".
+- Kriteria selesai T-116 butuh manusia: Ketua, Sekum, Bendum, dan 2 Kadept
+  menyelesaikan UAT-01…05 tanpa bantuan dan seluruh temuan diklasifikasi.
+
 ### T-114 · Verifikasi performa — BLOCKED menunggu ADR-035 (2026-10-19)
 
 `scripts/bench-all.ts`, `docs/ai/PERFORMANCE_REPORT.md`, ADR-035 (Usulan),
@@ -1362,16 +1385,23 @@ Empat belas hal yang tidak obvious dari kode:
 
 ## 5. Langkah berikutnya (rekomendasi)
 
-1. **Jalankan `npm run db:reset && npm run seed:e2e-auth`** untuk verifikasi migrasi 028 dari kosong (menghapus isi DB dev). Perbaikan `audit_log.user_id` — pelanggaran invariant yang
-   diam-diam, makin banyak baris audit tanpa pelaku setiap hari.
-2. **T-107 Data pengurus** — pakai ulang `ImportPreview` dan pola
-   `import-pengguna.ts`. Ini yang membuat daftar hadir notulensi berisi. Bagian
-   surat massal menunggu T-064 (lihat blocker #2).
-3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
-   T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
-   `depends_on`-nya DONE.
-4. **Rantai surat selesai.** Lanjutan alami: T-107 (Data Pengurus — mengisi
-   sumber surat massal), T-083, T-108, T-084…T-105 (acara/RAB/nota/LPJ).
+Per 2026-10-19 seluruh fitur fase 0–9 sudah berkode. Yang tersisa menunggu
+manusia:
+
+1. **Akses push GitHub untuk sesi Claude Code cloud.** Commit T-114/T-116 dibuat
+   di cabang `claude/sharp-gates-ngoq4i` tetapi push ditolak 403 ("Claude
+   doesn't have GitHub access…"). Pemilik: sambungkan ulang GitHub / instal
+   Claude GitHub App pada repo, lalu push cabang itu.
+2. **ADR-035** — terima/tolak anggaran JS login "runtime + ≤ 20 KB". Setelah
+   diterima: anggaran login di `scripts/bench-all.ts` → 120 KB, T-114 DONE.
+3. **Sesi onboarding + UAT** (T-116) memakai `UAT_SKENARIO.md`; isi
+   `UAT_HASIL.md`.
+4. **T-062** Gotenberg (PDF) dan **T-099** uji cetak nota — tetap menunggu
+   pemilik (lihat GOTENBERG_SETUP.md, UJI_CETAK.md).
+5. Ukur ulang performa di Vercel staging (`bench-all.ts --url …`) — cold start
+   belum tercakup.
+6. Perbaiki gate e2e lama yang ditemukan T-114 (lihat bagian T-114 di atas):
+   `gantt-editor` "mengganti skala…" dan `login` "keluar mengakhiri sesi".
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah
