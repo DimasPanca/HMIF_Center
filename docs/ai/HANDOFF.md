@@ -65,6 +65,63 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### T-116 · Dokumentasi pengguna & UAT — BLOCKED menunggu UAT nyata (2026-10-19)
+
+`docs/panduan/{admin,ketua,wakil,sekum,bendum,kadept,anggota,bph}.md` +
+`docs/panduan/img/` (46 PNG terpalet, 1,7 MB), `docs/ai/UAT_SKENARIO.md`,
+`docs/ai/UAT_HASIL.md`, `README.md` (cara menjalankan, deploy, tautan seluruh
+dokumen), `scripts/tangkap-panduan.ts`.
+
+- **Tangkapan layar dibuat ulang otomatis:** `tangkap-panduan.ts` menyemai data
+  demo bernama wajar (penanda U+2063 tak terlihat di akhir deskripsi,
+  `surat.data_dinamis.demo_panduan`, `image demo-panduan-*`), mengganti
+  sementara nama tampilan akun uji & periode menjadi nama jabatan
+  ("Ketua Umum HMIF", "Kepengurusan 2026/2027") lalu **memulihkannya** (gate
+  e2e bergantung pada `Periode Uji E2E`), mencatat menu sidebar nyata per role
+  (`--menu`), memotret, lalu membersihkan. Jalankan di build produksi supaya
+  indikator dev Next tidak ikut terpotret.
+- Tabel "Menu Anda" tiap panduan diambil dari sidebar sungguhan, bukan
+  USER_FLOW §1.2 (keduanya cocok kecuali yang dicatat di panduan).
+- **UAT_HASIL.md sengaja kosong** (templat) — sesi onboarding & UAT belum
+  terjadwal. Lampirannya memuat gladi otomatis gate e2e yang memetakan
+  skenario, ditandai jelas "bukan UAT".
+- Kriteria selesai T-116 butuh manusia: Ketua, Sekum, Bendum, dan 2 Kadept
+  menyelesaikan UAT-01…05 tanpa bantuan dan seluruh temuan diklasifikasi.
+
+### T-114 · Verifikasi performa — BLOCKED menunggu ADR-035 (2026-10-19)
+
+`scripts/bench-all.ts`, `docs/ai/PERFORMANCE_REPORT.md`, ADR-035 (Usulan),
+`lib/gantt/geser.ts`, `lib/realtime/klien-browser.ts`.
+
+- **10/10 metrik PRD §8.1 terukur dan lulus** pada build produksi, 4G
+  tersimulasi + CPU 4×, data realistis (60 proker · 100 item RAB · 100 task ·
+  50 nota bergambar · 500 surat; disemai & dibersihkan oleh skrip, penanda
+  `BENCH114`). Angka sebelum/sesudah di laporan.
+- **Diperbaiki:** bundle beranda 256 → 165 KB (supabase-js lewat `import()`
+  di `muatKlienRealtime`; helper Gantt tanpa zod dipisah ke `geser.ts` —
+  komponen chart JANGAN mengimpor `lib/gantt/skema.ts`); scroll vertikal Gantt
+  12% → ≤ 4% frame tersendat (baris di-memo: `BarisTask`/`BarisGrup`/
+  `LabelBaris` + objek `aksi` berumur tetap, `TimelineHeader` & garis kolom
+  di-memo); login siap dipakai 1,1–1,3 s → 0,90–0,96 s (video logo 4,6 MB →
+  0,35 MB di-encode ulang 256 px, dipasang setelah hidrasi, poster lewat
+  optimizer Next).
+- **Belum tercapai:** anggaran JS login 80 KB (terukur 119,1). Runtime
+  Next 15 + React 19 sendiri 100,4 KB — di bawah lantai stack §2. ADR-035
+  mengusulkan "runtime + ≤ 20 KB JS halaman"; LCP/TTI login sudah lulus.
+  **Keputusan pemilik produk dibutuhkan**; setelah diterima, ubah anggaran
+  login di `ukurBundle()` (bench-all) ke 120 KB dan tandai T-114 DONE.
+- Margin tipis di CPU 4×: Gantt 100 task 402–460 ms (satu sampel 531),
+  pratinjau surat 250–279 ms. Ukur ulang di Vercel staging (cold start tidak
+  tercakup).
+- **Kegagalan e2e yang ditemukan dan TERBUKTI sudah ada sebelum T-114**
+  (dijalankan ulang pada `7a1d84b` lewat `git stash -u`): `gantt-editor`
+  "mengganti skala…" (lebar SVG mentok di lebar kontainer pada kedua skala —
+  data harness tetap Okt–Des 2026) dan `login` "keluar mengakhiri sesi" di
+  stack lokal (logout manual berhasil; perlu diselidiki). `realtime-gantt`
+  gagal hanya bila berjalan paralel dengan `master-gantt` (48 proker semaian
+  menggeser bar baseline keluar jendela virtual); sendirian 4/4. `a11y` K-15
+  dan `sidebar-tautan` menu TOR butuh data proker/acara/surat yang sudah ada.
+
 ### T-115 · Aksesibilitas & responsif (2026-10-19)
 
 `docs/ai/A11Y_REPORT.md`, `lib/a11y/kontras.ts` + test `a11y-kontras` (ikut
@@ -1244,7 +1301,7 @@ Commit `b30f61d`. 11 file dibuat/diubah, 1646 baris ditambah.
 
 ## 4. Jebakan lingkungan yang sudah ditemukan
 
-Dua belas hal yang tidak obvious dari kode:
+Empat belas hal yang tidak obvious dari kode:
 
 0. **Node 22 wajib (`.nvmrc`, `engines.node >=22`).** Di Node 20, 6 test
    storage gagal palsu ("native WebSocket not found", `markAsUncloneable is not
@@ -1303,20 +1360,49 @@ Dua belas hal yang tidak obvious dari kode:
    `next.config.ts` `onDemandEntries` (1 jam) mencegah dev server
    mengompilasi ulang rute di tengah gate panjang.
 
+12. **Sesi cloud (kontainer tanpa `.env.local`): stack Supabase lokal.**
+   Kontainer Claude Code cloud tidak membawa `.env.local`; T-114 diukur pada
+   stack lokal. Resepnya (semua di luar repo): jalankan `dockerd`; unduh
+   Supabase CLI dari rilis GitHub; `supabase init` di folder scratch, matikan
+   studio/inbucket/edge_runtime/analytics dan migrasi/seed bawaan; registri
+   ECR menolak (`Data limit exceeded`) → `SUPABASE_INTERNAL_IMAGE_REGISTRY=
+   docker.io supabase start`. Kernel kontainer tanpa IPv6, sedangkan Realtime
+   v2.57.3 mengikat `socket_opts: [:inet6]` → bangun ulang image
+   `supabase/realtime:v2.57.3` lokal dengan `sed` ke `[:inet]`. Skrip proyek
+   memakai `ssl: 'require'` → aktifkan SSL Postgres (sertifikat self-signed +
+   `ALTER SYSTEM SET ssl = on` sebagai `supabase_admin`). Lalu buat schema
+   `extensions` + 3 extension (ENV_SETUP §1.3), bucket `private`/`public`,
+   `.env.local` ke `127.0.0.1:54321/54322`, `npm run db:reset`,
+   `seed:e2e-auth`, `upload-templates.ts`. Playwright 1.62 meminta Chromium
+   build 1234 sedangkan kontainer membawa 1194 → symlink direktori 1234 ke
+   biner 1194 (jangan `playwright install`).
+13. **`page.evaluate` dari skrip tsx:** esbuild `keepNames` membungkus fungsi
+   bernama di dalam callback dengan `__name()` yang tidak ada di browser —
+   ReferenceError diam-diam di init script. `bench-all.ts` memasang shim
+   `globalThis.__name = (f) => f` per konteks.
+
 ---
 
 ## 5. Langkah berikutnya (rekomendasi)
 
-1. **Jalankan `npm run db:reset && npm run seed:e2e-auth`** untuk verifikasi migrasi 028 dari kosong (menghapus isi DB dev). Perbaikan `audit_log.user_id` — pelanggaran invariant yang
-   diam-diam, makin banyak baris audit tanpa pelaku setiap hari.
-2. **T-107 Data pengurus** — pakai ulang `ImportPreview` dan pola
-   `import-pengguna.ts`. Ini yang membuat daftar hadir notulensi berisi. Bagian
-   surat massal menunggu T-064 (lihat blocker #2).
-3. **Task di luar rantai surat** (21 task, mis. T-083 peringatan deadline,
-   T-084…T-094 acara/RAB, T-097…T-104 nota, T-110…T-112 backup) — pilih yang
-   `depends_on`-nya DONE.
-4. **Rantai surat selesai.** Lanjutan alami: T-107 (Data Pengurus — mengisi
-   sumber surat massal), T-083, T-108, T-084…T-105 (acara/RAB/nota/LPJ).
+Per 2026-10-19 seluruh fitur fase 0–9 sudah berkode. Yang tersisa menunggu
+manusia:
+
+1. **Gabungkan cabang `claude/sharp-gates-ngoq4i`** (T-114 + T-116) ke `main`.
+   Catatan sesi cloud: push butuh **Claude GitHub App terinstal** di akun
+   pemilik repo, bukan sekadar akun GitHub terhubung — tanpa itu push ditolak
+   403 (terjadi 2026-10-19, diperbaiki pemilik lewat claude.ai → GitHub
+   Integration → Fix).
+2. **ADR-035** — terima/tolak anggaran JS login "runtime + ≤ 20 KB". Setelah
+   diterima: anggaran login di `scripts/bench-all.ts` → 120 KB, T-114 DONE.
+3. **Sesi onboarding + UAT** (T-116) memakai `UAT_SKENARIO.md`; isi
+   `UAT_HASIL.md`.
+4. **T-062** Gotenberg (PDF) dan **T-099** uji cetak nota — tetap menunggu
+   pemilik (lihat GOTENBERG_SETUP.md, UJI_CETAK.md).
+5. Ukur ulang performa di Vercel staging (`bench-all.ts --url …`) — cold start
+   belum tercakup.
+6. Perbaiki gate e2e lama yang ditemukan T-114 (lihat bagian T-114 di atas):
+   `gantt-editor` "mengganti skala…" dan `login` "keluar mengakhiri sesi".
 
 `tasks.json` tidak bisa dipercaya untuk status task lama (dibekukan selama fase
 paralel): cek `git log --oneline | grep " T-0XX"` sebelum menganggap sebuah

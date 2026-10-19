@@ -1,6 +1,5 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CalendarRange, Filter, Layers3, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -13,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { transformGanttRows, type MasterGanttRow } from '@/lib/gantt/transform';
 import type { GanttScale } from '@/lib/gantt/geometry';
+import { muatKlienRealtime } from '@/lib/realtime/klien-browser';
 import {
   useMasterGanttRealtime,
   type StatusKoneksiRealtime,
@@ -174,7 +174,18 @@ export function MasterGantt({
       ubahKoneksi('terputus');
       return;
     }
-    setKlien(createBrowserClient(supabaseUrl, supabaseKey));
+    let batal = false;
+    muatKlienRealtime(supabaseUrl, supabaseKey).then(
+      (baru) => {
+        if (!batal) setKlien(baru);
+      },
+      () => {
+        if (!batal) ubahKoneksi('terputus');
+      },
+    );
+    return () => {
+      batal = true;
+    };
   }, [supabaseKey, supabaseUrl, ubahKoneksi]);
 
   useEffect(() => {

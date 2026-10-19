@@ -36,7 +36,12 @@ function groupConsecutiveLabels(columns: TimelineVM['columns']): HeaderGroup[] {
   }, []);
 }
 
-function TimelineHeader({ timeline, width, className }: TimelineHeaderProps): React.ReactElement {
+// Memo: props tetap selama scroll vertikal, padahal header memuat satu sel per kolom.
+const TimelineHeader = React.memo(function TimelineHeader({
+  timeline,
+  width,
+  className,
+}: TimelineHeaderProps): React.ReactElement {
   const labelGroups = groupConsecutiveLabels(timeline.columns);
 
   return (
@@ -83,7 +88,7 @@ function TimelineHeader({ timeline, width, className }: TimelineHeaderProps): Re
       </div>
     </div>
   );
-}
+});
 
 export { TimelineHeader };
 export type { TimelineHeaderProps };

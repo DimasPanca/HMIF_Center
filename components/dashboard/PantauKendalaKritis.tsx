@@ -11,12 +11,12 @@
  * Refresh di-debounce supaya ledakan perubahan tidak memicu banyak render.
  */
 
-import { createBrowserClient } from '@supabase/ssr';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { kanalKendalaKritis } from '@/lib/realtime/channels';
+import { muatKlienRealtime } from '@/lib/realtime/klien-browser';
 
 export function PantauKendalaKritis({
   periodeId,
@@ -31,10 +31,11 @@ export function PantauKendalaKritis({
 
   useEffect(() => {
     if (!supabaseUrl || !supabaseKey) return;
-    const klien = createBrowserClient(supabaseUrl, supabaseKey);
+    let klien: SupabaseClient | null = null;
     let dibuang = false;
     let channel: RealtimeChannel | null = null;
     let tunda: ReturnType<typeof setTimeout> | null = null;
+    let berhentiDengar: (() => void) | null = null;
 
     const segarkan = () => {
       if (tunda) clearTimeout(tunda);
@@ -42,10 +43,18 @@ export function PantauKendalaKritis({
     };
 
     const pasang = async () => {
-      const { data } = await klien.auth.getSession();
+      // Klien dimuat malas (T-114): tidak ikut bundle awal beranda.
+      const k = await muatKlienRealtime(supabaseUrl, supabaseKey);
       if (dibuang) return;
-      void klien.realtime.setAuth(data.session?.access_token ?? null);
-      channel = klien
+      klien = k;
+      const { data: langganan } = k.auth.onAuthStateChange((_e, sesi) => {
+        void k.realtime.setAuth(sesi?.access_token ?? null);
+      });
+      berhentiDengar = () => langganan.subscription.unsubscribe();
+      const { data } = await k.auth.getSession();
+      if (dibuang) return;
+      void k.realtime.setAuth(data.session?.access_token ?? null);
+      channel = k
         .channel(kanalKendalaKritis(periodeId))
         // INSERT/UPDATE yang (kini) Kritis: filter pada baris baru.
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kendala', filter: 'prioritas=eq.KRITIS' }, segarkan)
@@ -58,16 +67,14 @@ export function PantauKendalaKritis({
         .subscribe();
     };
 
-    const { data: langganan } = klien.auth.onAuthStateChange((_e, sesi) => {
-      void klien.realtime.setAuth(sesi?.access_token ?? null);
-    });
-    void pasang();
+    // Gagal memuat klien = tanpa pembaruan langsung; kartu tetap dari server.
+    pasang().catch(() => {});
 
     return () => {
       dibuang = true;
       if (tunda) clearTimeout(tunda);
-      langganan.subscription.unsubscribe();
-      if (channel) void klien.removeChannel(channel);
+      berhentiDengar?.();
+      if (channel && klien) void klien.removeChannel(channel);
     };
   }, [periodeId, supabaseUrl, supabaseKey, router]);
 

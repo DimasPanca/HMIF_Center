@@ -215,6 +215,137 @@ function hariHRect(
   return clippedEnd > clippedX ? { x: clippedX, width: clippedEnd - clippedX } : undefined;
 }
 
+/**
+ * Aksi baris yang identitasnya tetap sepanjang umur chart. Baris di bawah
+ * di-memo: saat jendela virtual bergeser (scroll vertikal), hanya baris yang
+ * masuk/keluar yang dirender — bukan seluruh baris terlihat (T-114, scroll
+ * 60 fps pada CPU 4×).
+ */
+type AksiBaris = {
+  hoverMulai: (item: GanttDisplayItem, event: React.PointerEvent<SVGGElement>) => void;
+  hoverGerak: (event: React.PointerEvent<SVGGElement>) => void;
+  hoverSelesai: () => void;
+  aktifkanGrup: (item: GanttDisplayItem) => void;
+  aktifkanTask: (task: GanttTaskVM, item: GanttDisplayItem) => void;
+  lipat: (group: GanttGroupVM) => void;
+};
+
+const BarisGrup = React.memo(function BarisGrup({
+  row,
+  collapsed,
+  activeId,
+  aksi,
+}: {
+  row: GroupLayout;
+  collapsed: boolean;
+  activeId: string | undefined;
+  aksi: AksiBaris;
+}) {
+  const summary = row.group.bars[0];
+  const item = groupDisplayItem(row.group, collapsed);
+  if (!summary || !row.rect || !item) return null;
+
+  return (
+    <GroupBar
+      group={row.group}
+      bar={summary}
+      rect={row.rect}
+      active={activeId === item.id}
+      onHoverStart={(event) => aksi.hoverMulai(item, event)}
+      onHoverMove={aksi.hoverGerak}
+      onHoverEnd={aksi.hoverSelesai}
+      onActivate={() => aksi.aktifkanGrup(item)}
+    />
+  );
+});
+
+const BarisTask = React.memo(function BarisTask({
+  row,
+  active,
+  highlighted,
+  aksi,
+  drag,
+}: {
+  row: TaskLayout;
+  active: boolean;
+  highlighted: boolean;
+  aksi: AksiBaris;
+  drag: DragTaskBar | undefined;
+}) {
+  const item = taskDisplayItem(row.task);
+
+  return (
+    <TaskBar
+      task={row.task}
+      rect={row.rect}
+      hariHRect={row.hariHRect}
+      active={active}
+      highlighted={highlighted}
+      onHoverStart={(event) => aksi.hoverMulai(item, event)}
+      onHoverMove={aksi.hoverGerak}
+      onHoverEnd={aksi.hoverSelesai}
+      onActivate={() => aksi.aktifkanTask(row.task, item)}
+      drag={drag}
+    />
+  );
+});
+
+const LabelBaris = React.memo(function LabelBaris({
+  row,
+  collapsed,
+  aksi,
+}: {
+  row: LayoutRow;
+  collapsed: boolean;
+  aksi: AksiBaris;
+}) {
+  if (row.kind === 'group') {
+    const { group, y, height, index } = row;
+
+    return (
+      <button
+        type="button"
+        data-slot="gantt-group-toggle"
+        data-testid={`gantt-group-toggle-${group.id}`}
+        data-gantt-row-index={index}
+        aria-expanded={!collapsed}
+        aria-label={`${collapsed ? 'Bentangkan' : 'Lipat'} grup ${group.label}`}
+        className="hmif-gantt-group-toggle absolute left-0 flex w-full items-center gap-2 overflow-hidden border-b border-subtle bg-panel px-2 text-left text-[13px] font-semibold text-primary outline-none hover:bg-subtle focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)] motion-reduce:transition-none"
+        style={{ top: y, height }}
+        onClick={() => aksi.lipat(group)}
+      >
+        <span aria-hidden="true" className="inline-block w-3 shrink-0 text-center">
+          {collapsed ? '▸' : '▾'}
+        </span>
+        <span
+          aria-hidden="true"
+          className="size-2 shrink-0 rounded-full"
+          style={{ backgroundColor: group.color }}
+        />
+        <span className="truncate">{group.label}</span>
+        {collapsed && group.tasks.length > 0 ? (
+          <span className="ml-auto shrink-0 text-[11px] font-normal text-tertiary tabular-nums">
+            {group.tasks.length}
+          </span>
+        ) : null}
+      </button>
+    );
+  }
+
+  const { task, y, height, index } = row;
+  return (
+    <div
+      data-slot="gantt-task-label"
+      data-gantt-row-index={index}
+      className="absolute left-0 flex w-full items-center overflow-hidden border-b border-subtle bg-panel pr-2 pl-8 text-[12px] text-secondary"
+      style={{ top: y, height }}
+      title={task.label}
+    >
+      <span className="truncate">{task.label}</span>
+    </div>
+  );
+});
+
 function useElementWidth(ref: React.RefObject<HTMLElement | null>): number {
   const [width, setWidth] = React.useState(0);
 
@@ -425,6 +556,51 @@ function GanttChart({
     [collapsedGroups, onGroupToggle],
   );
 
+  // Aksi baris lewat ref: identitas `aksi` tetap walau callback di atas (atau
+  // milik induk) berganti, supaya memo baris tidak pernah dibatalkannya.
+  const aksiTerbaru = React.useRef({
+    activateItem,
+    hideTooltip,
+    moveTooltipAnchor,
+    onTaskActivate,
+    onTaskSelect,
+    scheduleTooltip,
+    toggleGroup,
+  });
+  useBrowserLayoutEffect(() => {
+    aksiTerbaru.current = {
+      activateItem,
+      hideTooltip,
+      moveTooltipAnchor,
+      onTaskActivate,
+      onTaskSelect,
+      scheduleTooltip,
+      toggleGroup,
+    };
+  });
+  const aksi = React.useMemo<AksiBaris>(
+    () => ({
+      hoverMulai: (item, event) => aksiTerbaru.current.scheduleTooltip(item, event),
+      hoverGerak: (event) => aksiTerbaru.current.moveTooltipAnchor(event),
+      hoverSelesai: () => aksiTerbaru.current.hideTooltip(),
+      aktifkanGrup: (item) => aksiTerbaru.current.activateItem(item),
+      aktifkanTask: (task, item) => {
+        const a = aksiTerbaru.current;
+        if (a.onTaskActivate) {
+          a.hideTooltip();
+          a.onTaskActivate(task);
+          return;
+        }
+        a.activateItem(item);
+        a.onTaskSelect?.(task);
+      },
+      lipat: (group) => aksiTerbaru.current.toggleGroup(group),
+    }),
+    [],
+  );
+  const pxPerDay = model.timeline.pxPerDay;
+  const dragBar = React.useMemo(() => (drag ? { ...drag, pxPerDay } : undefined), [drag, pxPerDay]);
+
   const handleHorizontalScroll = React.useCallback((event: React.UIEvent<HTMLDivElement>) => {
     const scrollLeft = event.currentTarget.scrollLeft;
     const root = rootRef.current;
@@ -484,56 +660,14 @@ function GanttChart({
             className="hmif-gantt-body sticky left-0 z-20 overflow-hidden border-r border-default bg-panel"
             style={{ height: layout.height }}
           >
-            {virtualRows.rows.map((row) => {
-              if (row.kind === 'group') {
-                const { key, group, y, height, index } = row;
-                const collapsed = collapsedGroups.has(group.id);
-
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    data-slot="gantt-group-toggle"
-                    data-testid={`gantt-group-toggle-${group.id}`}
-                    data-gantt-row-index={index}
-                    aria-expanded={!collapsed}
-                    aria-label={`${collapsed ? 'Bentangkan' : 'Lipat'} grup ${group.label}`}
-                    className="hmif-gantt-group-toggle absolute left-0 flex w-full items-center gap-2 overflow-hidden border-b border-subtle bg-panel px-2 text-left text-[13px] font-semibold text-primary outline-none hover:bg-subtle focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)] motion-reduce:transition-none"
-                    style={{ top: y, height }}
-                    onClick={() => toggleGroup(group)}
-                  >
-                    <span aria-hidden="true" className="inline-block w-3 shrink-0 text-center">
-                      {collapsed ? '▸' : '▾'}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: group.color }}
-                    />
-                    <span className="truncate">{group.label}</span>
-                    {collapsed && group.tasks.length > 0 ? (
-                      <span className="ml-auto shrink-0 text-[11px] font-normal text-tertiary tabular-nums">
-                        {group.tasks.length}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              }
-
-              const { key, task, y, height, index } = row;
-              return (
-                <div
-                  key={key}
-                  data-slot="gantt-task-label"
-                  data-gantt-row-index={index}
-                  className="absolute left-0 flex w-full items-center overflow-hidden border-b border-subtle bg-panel pr-2 pl-8 text-[12px] text-secondary"
-                  style={{ top: y, height }}
-                  title={task.label}
-                >
-                  <span className="truncate">{task.label}</span>
-                </div>
-              );
-            })}
+            {virtualRows.rows.map((row) => (
+              <LabelBaris
+                key={row.key}
+                row={row}
+                collapsed={row.kind === 'group' && collapsedGroups.has(row.group.id)}
+                aksi={aksi}
+              />
+            ))}
 
             {model.groups.length === 0 ? (
               <p className="px-3 py-4 text-[12px] leading-4 text-secondary">
@@ -589,54 +723,26 @@ function GanttChart({
                 </g>
               ) : null}
 
-              {virtualRows.rows.map((row) => {
-                if (row.kind === 'group') {
-                  const { key, group, rect } = row;
-                  const summary = group.bars[0];
-                  const item = groupDisplayItem(group, collapsedGroups.has(group.id));
-                  if (!summary || !rect || !item) return null;
-
-                  return (
-                    <GroupBar
-                      key={key}
-                      group={group}
-                      bar={summary}
-                      rect={rect}
-                      active={selectedItem?.id === item.id}
-                      onHoverStart={(event) => scheduleTooltip(item, event)}
-                      onHoverMove={moveTooltipAnchor}
-                      onHoverEnd={hideTooltip}
-                      onActivate={() => activateItem(item)}
-                    />
-                  );
-                }
-
-                const { key, task, rect } = row;
-                const item = taskDisplayItem(task);
-                return (
-                  <TaskBar
-                    key={key}
-                    task={task}
-                    rect={rect}
-                    hariHRect={row.hariHRect}
-                    active={selectedItem?.id === task.id}
-                    highlighted={highlightedTaskIds?.has(task.id)}
-                    onHoverStart={(event) => scheduleTooltip(item, event)}
-                    onHoverMove={moveTooltipAnchor}
-                    onHoverEnd={hideTooltip}
-                    onActivate={() => {
-                      if (onTaskActivate) {
-                        hideTooltip();
-                        onTaskActivate(task);
-                        return;
-                      }
-                      activateItem(item);
-                      onTaskSelect?.(task);
-                    }}
-                    drag={drag ? { ...drag, pxPerDay: model.timeline.pxPerDay } : undefined}
+              {virtualRows.rows.map((row) =>
+                row.kind === 'group' ? (
+                  <BarisGrup
+                    key={row.key}
+                    row={row}
+                    collapsed={collapsedGroups.has(row.group.id)}
+                    activeId={selectedItem?.id}
+                    aksi={aksi}
                   />
-                );
-              })}
+                ) : (
+                  <BarisTask
+                    key={row.key}
+                    row={row}
+                    active={selectedItem?.id === row.task.id}
+                    highlighted={highlightedTaskIds?.has(row.task.id) ?? false}
+                    aksi={aksi}
+                    drag={dragBar}
+                  />
+                ),
+              )}
 
               {todayX === null ? null : (
                 <TodayLine
