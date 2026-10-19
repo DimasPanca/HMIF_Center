@@ -211,8 +211,10 @@ test('draft orang lain tidak dapat dibuka atau ditimpa', async ({ page }) => {
   expect(res.status(), await res.text()).toBe(201);
   const id = ((await res.json()) as { data: { id: string } }).data.id;
 
+  // ADR-036: hanya Sekum & Admin yang menyusun surat — pembanding yang juga
+  // berhak membuat draft adalah Admin (Wakil kini ditolak lebih awal, 403).
   await page.context().clearCookies();
-  await masuk(page, AKUN.wakil);
+  await masuk(page, AKUN.admin);
   expect((await page.request.get(`/api/surat/${id}`)).status()).toBe(404);
   expect((await page.request.patch(`/api/surat/${id}`, { data: { jenis: 'PIAGAM', perihal: 'dibajak' } })).status()).toBe(404);
   const halaman = await page.goto(`/surat/baru?id=${id}`);

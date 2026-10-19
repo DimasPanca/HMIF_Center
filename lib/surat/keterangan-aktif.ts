@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
 }
 
 /** Batas pengajuan yang masih menunggu — mencegah antrean Ketua dibanjiri satu orang. */
-export const MAKS_MENUNGGU = 3;
+export const MAKS_MENUNGGU = 10;
 
 export interface IdentitasPemohon {
   nama: string;
@@ -100,14 +100,24 @@ export async function buatDraftSkAktif(tx: TxKlien, konteks: Konteks, body: unkn
       pesan: 'Nama Anda belum tercatat di Data Pengurus periode ini. Hubungi Sekretaris Umum untuk menambahkannya.',
     };
   }
-  const menunggu = await tx.surat.count({
+  const menunggu = await tx.surat.findMany({
     where: { periode_id: konteks.periodeId, dibuat_oleh: konteks.sesi.userId, kode_surat: '02', status: 'MENUNGGU_APPROVAL' },
+    select: { data_dinamis: true },
   });
-  if (menunggu >= MAKS_MENUNGGU) {
+  const sama = (v: unknown) => String(v ?? '').trim().toLowerCase() === p.data.keperluan.toLowerCase();
+  // Tombol yang tertekan dua kali tidak boleh menghasilkan dua surat bernomor.
+  if (menunggu.some((m) => sama((m.data_dinamis as Record<string, unknown> | null)?.keperluan))) {
     return {
       ok: false,
       kode: 'STATUS_TIDAK_SESUAI',
-      pesan: `Anda masih punya ${menunggu} pengajuan yang menunggu persetujuan. Tunggu salah satunya diproses dulu.`,
+      pesan: 'Pengajuan dengan keperluan yang sama masih menunggu persetujuan. Tunggu diproses atau tulis keperluan lain.',
+    };
+  }
+  if (menunggu.length >= MAKS_MENUNGGU) {
+    return {
+      ok: false,
+      kode: 'STATUS_TIDAK_SESUAI',
+      pesan: `Anda masih punya ${menunggu.length} pengajuan yang menunggu persetujuan. Tunggu sebagian diproses dulu.`,
     };
   }
   const tanggal = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());

@@ -145,7 +145,7 @@ export function AjukanSkAktif({ identitas, pengajuan }: { identitas: Identitas; 
           <ul className="space-y-3">
             {pengajuan.map((s) => (
               <li key={s.id}>
-                <Card className="space-y-2 p-4">
+                <Card className="space-y-2 p-4" data-testid={`sk-aktif-${s.id}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <StatusPill status={s.status} />
                     <span className="text-[12px] text-tertiary">{tanggal(s.tanggal_surat)}</span>

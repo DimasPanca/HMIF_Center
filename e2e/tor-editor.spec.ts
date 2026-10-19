@@ -343,12 +343,12 @@ test('rundown yang sama muncul di TOR dan terisi di Surat Undangan acara ini', a
   await expect(r.getByTestId('tor-baris-rundown').first().locator('[data-kolom="acara"]')).toHaveValue('Sambutan Ketua Himpunan');
   await koor.context().close();
 
-  const kadept = await sesi(browser, AKUN.kadept);
-  await kadept.goto(`/surat/baru?acara=${acaraId}&jenis=UNDANGAN_SAMBUTAN`, { waitUntil: 'load' });
-  await expect(kadept.locator('#surat-dinamis-rundown-0-acara')).toHaveValue('Sambutan Ketua Himpunan', { timeout: 60_000 });
-  await expect(kadept.locator('#surat-dinamis-rundown-0-waktu')).toHaveValue('08:00 - 08:30');
-  await expect(kadept.locator('#surat-dinamis-rundown-0-hari_tanggal')).toHaveValue(/06 Desember 2028/);
-  await expect(kadept.locator('#surat-dinamis-rundown-1-acara')).toHaveValue('Sambutan Kaprodi');
-  await expect(kadept.locator('#surat-dinamis-rundown-1-hari_tanggal')).toHaveValue('');
-  await kadept.context().close();
+  const sekum = await sesi(browser, AKUN.sekum); // ADR-036: surat disusun Sekum
+  await sekum.goto(`/surat/baru?acara=${acaraId}&jenis=UNDANGAN_SAMBUTAN`, { waitUntil: 'load' });
+  await expect(sekum.locator('#surat-dinamis-rundown-0-acara')).toHaveValue('Sambutan Ketua Himpunan', { timeout: 60_000 });
+  await expect(sekum.locator('#surat-dinamis-rundown-0-waktu')).toHaveValue('08:00 - 08:30');
+  await expect(sekum.locator('#surat-dinamis-rundown-0-hari_tanggal')).toHaveValue(/06 Desember 2028/);
+  await expect(sekum.locator('#surat-dinamis-rundown-1-acara')).toHaveValue('Sambutan Kaprodi');
+  await expect(sekum.locator('#surat-dinamis-rundown-1-hari_tanggal')).toHaveValue('');
+  await sekum.context().close();
 });

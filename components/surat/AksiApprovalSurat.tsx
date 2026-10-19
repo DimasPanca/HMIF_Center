@@ -37,18 +37,24 @@ async function kirim(url: string, body: unknown): Promise<Respons> {
 
 export interface AksiApprovalSuratProps {
   suratId: string;
-  /** DISETUJUI = sudah bernomor, gagal terbit: hanya tombol terbitkan ulang. */
-  status: 'MENUNGGU_APPROVAL' | 'DISETUJUI';
+  /**
+   * DISETUJUI = sudah bernomor, gagal terbit: hanya tombol terbitkan ulang.
+   * TERBIT = baru saja diterbitkan dari antrian ini; hasilnya tetap tampil
+   * setelah halaman disegarkan (surat sudah keluar dari antrian).
+   */
+  status: 'MENUNGGU_APPROVAL' | 'DISETUJUI' | 'TERBIT';
+  /** Nomor final; dipakai untuk status TERBIT. */
+  nomor?: string | null;
 }
 
-function Aksi({ suratId, status }: AksiApprovalSuratProps) {
+function Aksi({ suratId, status, nomor }: AksiApprovalSuratProps) {
   const router = useRouter();
   const [mode, setMode] = React.useState<'awal' | 'tolak'>('awal');
   const [alasan, setAlasan] = React.useState('');
   const [proses, setProses] = React.useState(false);
   const [galat, setGalat] = React.useState<string | null>(null);
   const [hasil, setHasil] = React.useState<{ nomor: string; status: string; peringatan: string | null; pdf: boolean } | null>(
-    null,
+    status === 'TERBIT' && nomor ? { nomor, status, peringatan: null, pdf: false } : null,
   );
 
   async function setujui(terbitkanUlang = false) {
