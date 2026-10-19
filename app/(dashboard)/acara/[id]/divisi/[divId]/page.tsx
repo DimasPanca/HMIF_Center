@@ -151,16 +151,13 @@ export default async function RuangDivisiPage({ params }: PageProps) {
           </Card>
         </div>
 
-        <nav
-          aria-label="Bagian ruang kerja divisi"
-          className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"
-        >
-          <ul className="flex min-w-max gap-1">
+        <nav aria-label="Bagian ruang kerja divisi">
+          <ul className="grid grid-cols-3 gap-1.5 sm:flex sm:gap-1">
             {BAGIAN.map((b) => (
-              <li key={b.id}>
+              <li key={b.id} className="min-w-0">
                 <a
                   href={`#${b.id}`}
-                  className="inline-flex h-8 items-center rounded-sm px-3 text-[13px] font-medium text-secondary hover:bg-subtle hover:text-primary"
+                  className="flex h-10 items-center justify-center rounded-md border border-default px-2 text-[13.5px] font-medium text-secondary hover:bg-subtle hover:text-primary sm:inline-flex sm:h-8 sm:border-0 sm:px-3 sm:text-[13px]"
                 >
                   {b.label}
                 </a>

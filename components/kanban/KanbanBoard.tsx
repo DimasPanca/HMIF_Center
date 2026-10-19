@@ -23,6 +23,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { ToastProvider, useToast } from '@/components/ui/toast';
+import { PanelFilterHp } from '@/components/ui/panel-filter-hp';
+import { useTampilanHp } from '@/components/ui/use-layar-hp';
+import { cn } from '@/lib/utils';
 
 interface ResponsKanban {
   ok: boolean;
@@ -125,6 +128,9 @@ function Board({ departemenId, bolehUbah, daftarProker, pengurus }: BoardProps) 
     },
     [kartu],
   );
+  // ADR-037: di HP bawaannya satu kolom per tab (tanpa gulir ke samping).
+  const [tampilan, setTampilan, layarHp] = useTampilanHp('hmif-kanban-tampilan', 'tab', 'papan');
+  const [kolomHp, setKolomHp] = useState<KolomKanban>('TODO');
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: koordinatKeyboard }),
@@ -174,14 +180,68 @@ function Board({ departemenId, bolehUbah, daftarProker, pengurus }: BoardProps) 
         <div><p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">Departemen</p><h1 className="text-2xl font-semibold text-primary">Kanban pekerjaan</h1></div>
         {bolehUbah ? <Button onClick={() => setDialogTerbuka(true)}><Plus aria-hidden="true" />Tambah kartu</Button> : <p className="text-[12px] text-secondary">Akses baca saja</p>}
       </div>
+      <PanelFilterHp jumlahAktif={[filterAssignee, filterProker, filterPrioritas, filterDeadline].filter(Boolean).length}>
       <div className="grid gap-2 rounded-md border border-default bg-panel p-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-1"><Label htmlFor="kanban-filter-assignee">Penanggung jawab</Label><Select id="kanban-filter-assignee" value={filterAssignee} placeholder={null} onChange={(event) => setFilterAssignee(event.target.value)}><option value="">Semua pengurus</option>{assignee.map(([id, nama]) => <option key={id} value={id}>{nama}</option>)}</Select></div>
         <div className="space-y-1"><Label htmlFor="kanban-filter-proker">Proker</Label><Select id="kanban-filter-proker" value={filterProker} placeholder={null} onChange={(event) => setFilterProker(event.target.value)}><option value="">Semua proker</option>{proker.map(([id, nama]) => <option key={id} value={id}>{nama}</option>)}</Select></div>
         <div className="space-y-1"><Label htmlFor="kanban-filter-prioritas">Prioritas</Label><Select id="kanban-filter-prioritas" value={filterPrioritas} placeholder={null} onChange={(event) => setFilterPrioritas(event.target.value)}><option value="">Semua prioritas</option>{['RENDAH', 'SEDANG', 'TINGGI', 'KRITIS'].map((nilai) => <option key={nilai} value={nilai}>{nilai}</option>)}</Select></div>
         <div className="space-y-1"><Label htmlFor="kanban-filter-deadline">Deadline</Label><Input id="kanban-filter-deadline" type="date" value={filterDeadline} onChange={(event) => setFilterDeadline(event.target.value)} /></div>
       </div>
+      </PanelFilterHp>
       {pesan ? <div role="alert" className="rounded-sm border border-[var(--danger)] bg-[var(--danger-subtle)] p-3 text-[13px] text-danger">{pesan}<Button type="button" variant="ghost" onClick={() => { setPesan(null); void muat().catch(() => setPesan('Kanban belum dapat dimuat.')); }}><RotateCcw aria-hidden="true" />Coba lagi</Button></div> : null}
       {memuat ? <p role="status" className="text-[13px] text-secondary">Memuat kartu…</p> : null}
+      {layarHp ? (
+        <div role="group" aria-label="Tampilan Kanban" className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
+          {(['tab', 'papan'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={tampilan === v}
+              data-testid={`kanban-tampilan-${v}`}
+              onClick={() => setTampilan(v)}
+              className={cn('min-h-9 rounded-sm text-[13.5px] font-medium', tampilan === v ? 'bg-panel text-primary shadow-sm' : 'text-secondary')}
+            >
+              {v === 'tab' ? 'Per status' : 'Papan'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {tampilan === 'tab' ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={selesaiDrag}>
+          <div role="tablist" aria-label="Status kartu" className="grid grid-cols-4 gap-1.5">
+            {KOLOM_KANBAN.map(({ kode, label }) => {
+              const n = tersaring.filter((item) => item.kolom === kode).length;
+              return (
+                <button
+                  key={kode}
+                  type="button"
+                  role="tab"
+                  aria-selected={kolomHp === kode}
+                  data-testid={`kanban-tab-${kode}`}
+                  onClick={() => setKolomHp(kode)}
+                  className={cn(
+                    'flex min-h-12 flex-col items-center justify-center rounded-md border px-1 text-[12.5px] leading-tight font-medium',
+                    kolomHp === kode ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-text)]' : 'border-default bg-panel text-secondary',
+                  )}
+                >
+                  <span className="text-center">{label}</span>
+                  <span className="mt-0.5 tabular-nums">{n}</span>
+                </button>
+              );
+            })}
+          </div>
+          <KanbanKolom
+            key={kolomHp}
+            kode={kolomHp}
+            label={KOLOM_KANBAN.find((k) => k.kode === kolomHp)!.label}
+            kartu={tersaring.filter((item) => item.kolom === kolomHp)}
+            bolehUbah={bolehUbah}
+            onOpenCard={setKartuTerpilih}
+            penuh
+            onPindah={bolehUbah ? (id, kolom) => void geser(id, kolom) : undefined}
+          />
+        </DndContext>
+      ) : (
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={selesaiDrag}>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {KOLOM_KANBAN.map(({ kode, label }) => (
@@ -196,6 +256,7 @@ function Board({ departemenId, bolehUbah, daftarProker, pengurus }: BoardProps) 
           ))}
         </div>
       </DndContext>
+      )}
       {dialogTerbuka ? <CardDialog departemenId={departemenId} daftarProker={daftarProker} pengurus={pengurus} onClose={() => setDialogTerbuka(false)} onSaved={() => { setDialogTerbuka(false); void muat(); }} /> : null}
       {kartuTerpilih ? (
         <ChecklistPanel

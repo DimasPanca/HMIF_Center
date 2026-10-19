@@ -51,7 +51,8 @@ async function sesi(browser: Browser, akun: AkunUji): Promise<Page> {
 
 async function bukaRab(page: Page): Promise<void> {
   await page.goto(`/acara/${acaraId}?tab=rab`, { waitUntil: 'load' });
-  await expect(page.getByTestId('pemasukan-panel')).toBeVisible({ timeout: 60_000 });
+  // Tunggu hydration: di HP ketukan pada HTML SSR bisa mendahului React dan hilang.
+  await expect(page.getByTestId('pemasukan-panel')).toHaveAttribute('data-siap', '1', { timeout: 60_000 });
 }
 
 const rp = (n: number) => `Rp${n.toLocaleString('id-ID')}`;

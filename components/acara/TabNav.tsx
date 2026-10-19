@@ -28,20 +28,25 @@ export function tabDari(v: string | undefined): TabAcara {
 
 export function TabNav({ acaraId, aktif }: { acaraId: string; aktif: TabAcara }) {
   return (
-    <nav aria-label="Bagian ruang kerja acara" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <ul className="flex min-w-max gap-1 border-b border-default">
+    // HP: delapan tab tampil sekaligus sebagai kisi 4×2 — tidak ada yang tersembunyi
+    // di luar layar dan tidak perlu digeser (ADR-037). Layar lebar: tab bergaris bawah.
+    <nav aria-label="Bagian ruang kerja acara">
+      <ul className="grid grid-cols-4 gap-1.5 sm:flex sm:gap-1 sm:border-b sm:border-default">
         {TAB_ACARA.map((t) => (
-          <li key={t.slug}>
+          <li key={t.slug} className="min-w-0">
             <Link
               href={`/acara/${acaraId}?tab=${t.slug}`}
               aria-current={aktif === t.slug ? 'page' : undefined}
               data-testid={`acara-tab-${t.slug}`}
               className={cn(
-                '-mb-px inline-flex h-10 items-center border-b-2 px-3 text-[14px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]',
-                aktif === t.slug ? 'border-[var(--primary)] text-primary' : 'border-transparent text-secondary hover:text-primary',
+                'flex h-10 items-center justify-center rounded-md border px-1 text-[13.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]',
+                'sm:-mb-px sm:inline-flex sm:rounded-none sm:border-0 sm:border-b-2 sm:px-3 sm:text-[14px]',
+                aktif === t.slug
+                  ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-text)] sm:bg-transparent sm:text-primary'
+                  : 'border-default text-secondary hover:text-primary sm:border-transparent',
               )}
             >
-              {t.label}
+              <span className="truncate">{t.label}</span>
             </Link>
           </li>
         ))}

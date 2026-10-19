@@ -49,8 +49,36 @@ Susunan menu per peran (disetujui pemilik):
   (keduanya pimpinan dan approver), enam peran lain berbeda — menggantikan
   "8 susunan berbeda" T-051.
 
+## Keputusan — tampilan HP (lebar < 768 px)
+
+Prinsip: **tidak ada yang digeser ke samping, dan huruf tidak dikecilkan.**
+Konten yang lebar disusun ulang ke bawah, bukan diperkecil.
+
+| Pola | Penerapan |
+|---|---|
+| Tabel → kartu | `Table` (`components/ui/table.tsx`) memasang `data-kartu-hp`; di HP setiap baris menjadi kartu, sel menjadi pasangan *label : nilai*. Label diambil otomatis dari judul kolom (`LabelKolomOtomatis`), jadi semua tabel berbasis `Table` ikut tanpa diubah satu per satu. `kartuDiHp={false}` untuk tabel yang memang harus tetap tabel. |
+| RAB | Baris RAB (`RabRow`) menjadi kartu berlabel (`.rab-kartu-hp`); Peserta dan RAB Aktual memakai pola tabel → kartu yang sama. |
+| Tab | Tab halaman acara dan divisi menjadi grid tombol (4 / 3 kolom) yang terbungkus, bukan satu baris yang bergulir. |
+| Gantt | Di HP tampil **Daftar** (`GanttDaftarHp`): grup → kartu tugas berisi tanggal, status, progres, dan bilah mini posisi tugas dalam rentang timeline. Tombol **Grafik** tetap tersedia untuk yang ingin melihat bagan aslinya. |
+| Kanban | Di HP satu kolom per layar dengan tab status (jumlah kartu di tiap tab); kartu dipindah lewat pilihan status, bukan seret. Tombol **Papan** untuk tampilan asli. |
+| Filter | Panel filter dilipat di balik tombol **Filter** (menampilkan jumlah filter aktif). |
+| Grid | Anak grid di HP `min-width: 0` sehingga konten panjang membungkus, bukan melebarkan halaman. |
+
+Pilihan Daftar/Grafik, Tab/Papan, dan filter terbuka disimpan per perangkat
+(`localStorage`: `hmif-gantt-tampilan`, `hmif-kanban-tampilan`, `hmif-filter-hp`).
+Desktop tidak berubah.
+
+Gate e2e `mobile-tanpa-geser` (project `mobile`, Pixel 7) memeriksa halaman
+utama tidak lebih lebar dari layar, Gantt membuka Daftar, dan hanya satu butir
+sidebar yang menyala. Project `mobile` lain memakai tampilan Grafik/Papan
+(`storageState` di `playwright.config.ts`) supaya gate lama Gantt/Kanban tetap
+menguji komponen yang sama.
+
 ## Konsekuensi
 
 - USER_FLOW §1.1/§1.2 (beku) tidak diubah; tabel di atas yang berlaku.
 - Admin tidak lagi melihat menu modul lain di sidebar; tetap dapat membuka
   halamannya lewat pencarian (⌘K) atau tautan.
+- Komponen tabel baru cukup memakai `Table`; tabel HTML mentah yang lebar harus
+  diberi `data-kartu-hp` + `<LabelKolomOtomatis />` atau dibungkus `overflow-x-auto`
+  hanya di `md:` ke atas.

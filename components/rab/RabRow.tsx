@@ -81,15 +81,15 @@ export function RabRow({
       data-item-id={item.id}
       className={cn('border-t border-default align-top transition-colors duration-400', baru && 'bg-[var(--primary-subtle)]')}
     >
-      <td data-testid="rab-no" className="w-10 px-2 py-1.5 text-[13px] text-secondary tabular-nums">
+      <td data-label="No" data-testid="rab-no" className="w-10 px-2 py-1.5 text-[13px] text-secondary tabular-nums">
         {item.no_urut}
       </td>
       {bolehTulis ? (
         <>
-          <td className="min-w-40 py-1">
+          <td data-label="Jenis barang" className="min-w-40 py-1">
             <input {...sel('jenis')} type="text" value={item.jenis_barang} onChange={(e) => onUbah({ jenis_barang: e.target.value })} data-testid="rab-jenis" className={SEL} maxLength={200} />
           </td>
-          <td className="w-40 py-1">
+          <td data-label="Jumlah" className="w-40 py-1">
             <JumlahInput
               teks={item.jumlah_teks}
               numerik={item.jumlah_numerik}
@@ -99,10 +99,10 @@ export function RabRow({
               kelasSel={SEL}
             />
           </td>
-          <td className="w-36 py-1">
+          <td data-label="Harga satuan" className="w-36 py-1">
             <CurrencyInput {...sel('harga')} value={item.harga_satuan} onNilai={(n) => onUbah({ harga_satuan: n })} data-testid="rab-harga" className={SEL} />
           </td>
-          <td className={cn('w-40 py-1', !item.total_manual && 'bg-[var(--bg-inset)]')}>
+          <td data-label="Total" className={cn('w-40 py-1', !item.total_manual && 'bg-[var(--bg-inset)]')}>
             <div className="flex items-center gap-0.5">
               {item.total_manual ? (
                 <CurrencyInput
@@ -131,10 +131,10 @@ export function RabRow({
               </button>
             </div>
           </td>
-          <td className="min-w-32 py-1">
+          <td data-label="Keterangan" className="min-w-32 py-1">
             <input {...sel('ket')} type="text" value={item.keterangan ?? ''} onChange={(e) => onUbah({ keterangan: e.target.value })} data-testid="rab-ket" className={SEL} maxLength={500} />
           </td>
-          <td className="w-9 py-1">
+          <td data-label="" className="w-9 py-1">
             <button
               type="button"
               onClick={onHapus}
@@ -148,12 +148,12 @@ export function RabRow({
         </>
       ) : (
         <>
-          <td className="px-1.5 py-1.5 text-[13px]" data-testid="rab-jenis">{item.jenis_barang}</td>
-          <td className="px-1.5 py-1.5 text-[13px]" data-testid="rab-jumlah">{item.jumlah_teks}</td>
-          <td className="px-1.5 py-1.5 text-right text-[13px] tabular-nums" data-testid="rab-harga">{formatRupiah(item.harga_satuan)}</td>
-          <td className="bg-[var(--bg-inset)] py-1.5 text-[13px]">{totalTampil}</td>
-          <td className="px-1.5 py-1.5 text-[13px] text-secondary" data-testid="rab-ket">{item.keterangan ?? ''}</td>
-          <td />
+          <td data-label="Jenis barang" className="px-1.5 py-1.5 text-[13px]" data-testid="rab-jenis">{item.jenis_barang}</td>
+          <td data-label="Jumlah" className="px-1.5 py-1.5 text-[13px]" data-testid="rab-jumlah">{item.jumlah_teks}</td>
+          <td data-label="Harga satuan" className="px-1.5 py-1.5 text-right text-[13px] tabular-nums" data-testid="rab-harga">{formatRupiah(item.harga_satuan)}</td>
+          <td data-label="Total" className="bg-[var(--bg-inset)] py-1.5 text-[13px]">{totalTampil}</td>
+          <td data-label="Keterangan" className="px-1.5 py-1.5 text-[13px] text-secondary" data-testid="rab-ket">{item.keterangan ?? ''}</td>
+          <td data-label="" />
         </>
       )}
     </tr>

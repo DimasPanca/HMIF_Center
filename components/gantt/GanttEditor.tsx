@@ -27,6 +27,7 @@ import { GanttExport } from '@/components/gantt/GanttExport';
 import { ScaleSwitcher } from '@/components/gantt/ScaleSwitcher';
 import { GrupForm, TaskForm, type GrupIsian, type TaskIsian } from '@/components/gantt/TaskForm';
 import { Button } from '@/components/ui/button';
+import { useTampilanHp } from '@/components/ui/use-layar-hp';
 import { LABEL_LEVEL, SKALA_KE_GEOMETRI, dariHari, hasilGeser, keHari, type Level, type ModeGeser, type Skala } from '@/lib/gantt/geser';
 import type { Dependensi } from '@/lib/gantt/skema';
 import type { DataChart, TaskData } from '@/lib/gantt/service';
@@ -74,6 +75,9 @@ export function GanttEditor({
   const rootRef = React.useRef<HTMLDivElement>(null);
   const { hak } = data;
   const level: Level = data.chart.level;
+  // Mode Daftar di HP (ADR-037): skala & ekspor PNG grafik tidak relevan.
+  const [tampilanGantt, , layarHp] = useTampilanHp('hmif-gantt-tampilan', 'daftar', 'grafik');
+  const modeDaftarHp = layarHp && tampilanGantt === 'daftar';
   const today = hariIni ?? HARI_INI();
 
   const muatUlang = React.useCallback(async () => {
@@ -222,7 +226,7 @@ export function GanttEditor({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-sm bg-subtle px-2 py-1 text-xs font-medium text-secondary">Level {LABEL_LEVEL[level]}</span>
-          <ScaleSwitcher nilai={skala} onChange={setSkala} />
+          {modeDaftarHp ? null : <ScaleSwitcher nilai={skala} onChange={setSkala} />}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {hak.tambah ? (
@@ -244,7 +248,9 @@ export function GanttEditor({
               Tambah task
             </Button>
           ) : null}
-          <GanttExport model={model} judul={data.chart.judul} svgRef={() => rootRef.current?.querySelector<SVGSVGElement>('[data-testid="gantt-svg"]') ?? null} />
+          {modeDaftarHp ? null : (
+            <GanttExport model={model} judul={data.chart.judul} svgRef={() => rootRef.current?.querySelector<SVGSVGElement>('[data-testid="gantt-svg"]') ?? null} />
+          )}
         </div>
       </div>
 

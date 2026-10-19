@@ -77,6 +77,9 @@ function Panel({ awal }: { awal: DataPemasukan }) {
   const r = ringkasPeserta(data.peserta);
   const galat = (pesan: string) => toast.error({ description: pesan, suggestion: 'Periksa isian lalu coba lagi.' });
   const url = `/api/kepanitiaan/${data.kepanitiaan_id}/pemasukan`;
+  // Penanda hydration selesai (pola RabGrid): sebelum ini, ketukan pada HTML SSR belum didengar React.
+  const [siap, setSiap] = React.useState(false);
+  React.useEffect(() => setSiap(true), []);
 
   async function panggil(method: string, body?: unknown, query = '') {
     try {
@@ -92,7 +95,7 @@ function Panel({ awal }: { awal: DataPemasukan }) {
   }
 
   return (
-    <Card className="grid gap-4 p-4" data-testid="pemasukan-panel">
+    <Card className="grid gap-4 p-4" data-testid="pemasukan-panel" data-siap={siap ? '1' : '0'}>
       <div>
         <h2 className="text-[15px] font-semibold">Pemasukan</h2>
         <p className="text-[12px] text-secondary">Total pemasukan menjadi saldo awal sheet PENGELUARAN pada unduhan Excel.</p>

@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { Connectors, type GanttConnectorItem } from '@/components/gantt/Connectors';
+import { GanttDaftarHp } from '@/components/gantt/GanttDaftarHp';
 import { GanttPanel } from '@/components/gantt/GanttPanel';
 import { GanttTooltip, type GanttDisplayItem } from '@/components/gantt/GanttTooltip';
 import { GridLines } from '@/components/gantt/GridLines';
@@ -19,6 +20,7 @@ import {
   type GanttBarRect,
 } from '@/lib/gantt/geometry';
 import type { GanttGroupVM, GanttTaskVM, GanttViewModel } from '@/lib/gantt/types';
+import { useTampilanHp } from '@/components/ui/use-layar-hp';
 import { useVirtualRows } from '@/lib/gantt/use-virtual-rows';
 import { cn } from '@/lib/utils';
 
@@ -373,7 +375,7 @@ function useElementWidth(ref: React.RefObject<HTMLElement | null>): number {
   return width;
 }
 
-function GanttChart({
+function GanttChartGrafik({
   model,
   className,
   ariaLabel = 'Timeline program kerja HMIF',
@@ -780,6 +782,37 @@ function GanttChart({
       />
       <GanttPanel item={selectedItem} open={panelOpen} onClose={closePanel} />
     </section>
+  );
+}
+
+/**
+ * Di HP (ADR-037) bawaannya daftar tugas vertikal tanpa gulir ke samping;
+ * pengguna dapat beralih ke grafik dan pilihannya diingat. Layar lebar: grafik.
+ */
+function GanttChart(props: GanttChartProps) {
+  const [tampilan, setTampilan, layarHp] = useTampilanHp('hmif-gantt-tampilan', 'daftar', 'grafik');
+  if (!layarHp) return <GanttChartGrafik {...props} />;
+  return (
+    <div className="space-y-2">
+      <div role="group" aria-label="Tampilan timeline" className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
+        {(['daftar', 'grafik'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={tampilan === v}
+            data-testid={`gantt-tampilan-${v}`}
+            onClick={() => setTampilan(v)}
+            className={cn(
+              'min-h-9 rounded-sm text-[13.5px] font-medium',
+              tampilan === v ? 'bg-panel text-primary shadow-sm' : 'text-secondary',
+            )}
+          >
+            {v === 'daftar' ? 'Daftar' : 'Grafik'}
+          </button>
+        ))}
+      </div>
+      {tampilan === 'daftar' ? <GanttDaftarHp model={props.model} onTaskActivate={props.onTaskActivate} /> : <GanttChartGrafik {...props} />}
+    </div>
   );
 }
 

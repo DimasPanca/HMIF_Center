@@ -23,6 +23,7 @@ import * as React from 'react';
 import { CurrencyInput } from '@/components/rab/CurrencyInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LabelKolomOtomatis } from '@/components/ui/table-label';
 import type { DataPemasukan, IzinPemasukan, LaporanImportPeserta, PratinjauImportPeserta } from '@/lib/rab/pemasukan';
 import type { BarisPeserta } from '@/lib/rab/pemasukan-skema';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
@@ -227,8 +228,9 @@ export function PesertaTable({
         <h3 className="text-[14px] font-semibold">Data peserta</h3>
         {izin.tulis ? <ImporPeserta url={url} onSelesai={() => void muatUlang()} /> : null}
       </div>
-      <div className="overflow-x-auto rounded-sm border border-default">
-        <table className="w-full min-w-[640px] border-collapse text-[13px]">
+      <div data-kartu-hp="" className="rounded-sm border border-default md:overflow-x-auto">
+        <LabelKolomOtomatis />
+        <table className="w-full border-collapse text-[13px] md:min-w-[640px]">
           <thead className="bg-subtle text-left text-[11px] font-semibold tracking-wide text-tertiary uppercase">
             <tr>
               <th className="w-10 px-2 py-1.5">No</th>

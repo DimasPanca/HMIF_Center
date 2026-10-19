@@ -12,19 +12,25 @@ export function KanbanKolom({
   kartu,
   bolehUbah,
   onOpenCard,
+  penuh = false,
+  onPindah,
 }: {
   kode: KolomKanban;
   label: string;
   kartu: KartuKanban[];
   bolehUbah: boolean;
   onOpenCard: (kartu: KartuKanban) => void;
+  /** Tampilan tab HP (ADR-037): satu kolom selebar layar. */
+  penuh?: boolean;
+  /** Tampilan tab HP: kartu dipindah lewat pilihan status, bukan seret. */
+  onPindah?: (id: string, kolom: KolomKanban) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `kolom-${kode}` });
   return (
     <section
       ref={setNodeRef}
       data-testid={`kanban-column-${kode}`}
-      className={`min-h-64 min-w-[280px] flex-1 rounded-sm border p-2 ${isOver ? 'border-[var(--border-focus)] bg-[var(--primary-subtle)]' : 'border-default bg-subtle'}`}
+      className={`min-h-64 ${penuh ? 'w-full min-w-0' : 'min-w-[280px] flex-1'} rounded-sm border p-2 ${isOver ? 'border-[var(--border-focus)] bg-[var(--primary-subtle)]' : 'border-default bg-subtle'}`}
       aria-label={`Kolom ${label}`}
     >
       <h2 className="flex items-center justify-between px-1 py-2 text-[13px] font-semibold text-primary">
@@ -36,7 +42,13 @@ export function KanbanKolom({
       <SortableContext items={kartu.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2">
           {kartu.map((item) => (
-          <KanbanCard key={item.id} kartu={item} bolehUbah={bolehUbah} onOpen={() => onOpenCard(item)} />
+          <KanbanCard
+            key={item.id}
+            kartu={item}
+            bolehUbah={bolehUbah}
+            onOpen={() => onOpenCard(item)}
+            onPindah={onPindah ? (kolom) => onPindah(item.id, kolom) : undefined}
+          />
           ))}
           {kartu.length === 0 ? (
             <p className="px-2 py-4 text-center text-[12px] text-secondary">Belum ada kartu</p>
