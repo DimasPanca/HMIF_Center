@@ -17,15 +17,22 @@ realisasi anggaran, dan menyusun serta menyetujui LPJ.
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel Bendahara |
-| Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | penuh | Buat Surat, Arsip Surat |
-| Keuangan | penuh | RAB, **Verifikasi Nota**, LPJ |
-| Kesekretariatan | baca | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | baca | Kanban, Kendala |
+| Keuangan | penuh | **Verifikasi Nota**, Semua Nota |
+| Acara Besar | penuh | Daftar acara; RAB, Nota, LPJ di tab tiap acara |
+| Surat Keterangan Aktif | penuh | Ajukan SK Aktif atas nama sendiri |
+
+RAB, LPJ, TOR, Proposal, Divisi, dan Nota sebuah acara ada di **tab halaman acara** — buka **Acara Besar**, pilih acaranya.
+
+**Surat.** Surat dibuat Sekretaris Umum. Anda dapat mengajukan **Surat
+Keterangan Aktif** atas nama sendiri lewat menu **Surat Keterangan Aktif**: isi
+keperluannya, nama/NIM/jabatan terisi dari Data Pengurus, dan surat yang sudah
+terbit dapat diunduh di halaman yang sama (ADR-036).
 
 ## 3. Memverifikasi nota
 
@@ -51,7 +58,8 @@ realisasi anggaran, dan menyusun serta menyetujui LPJ.
 
 ![RAB acara](img/acara-rab.png)
 
-1. Buka **Keuangan → RAB** lalu pilih acara (atau tab **RAB** di halaman acara).
+1. Buka **Acara Besar**, pilih acara, lalu tab **RAB**. Di ponsel setiap baris RAB
+   tampil sebagai kartu berlabel — tidak perlu menggeser ke samping.
 2. Panitia menyusun RAB per divisi: jenis barang, jumlah, harga satuan; total
    per item, divisi, dan acara dihitung seketika. Jumlah berupa teks seperti
    "2 Hari 1 Malam" meminta angka perhitungan terpisah.
@@ -73,7 +81,7 @@ Setelah nota pertama diverifikasi, RAB berstatus **Realisasi** dan tab
 
 ![Tab LPJ acara](img/acara-lpj.png)
 
-1. Buka **Keuangan → LPJ** lalu pilih acara, klik **Buka LPJ**.
+1. Buka **Acara Besar**, pilih acara, tab **LPJ**, klik **Buka LPJ**.
 2. **Prasyarat** harus terpenuhi: minimal satu nota terverifikasi, RAB sudah
    Realisasi, dan minimal satu foto dokumentasi.
 3. Lengkapi bagian manual (pendahuluan, pelaksanaan kegiatan, narasi per

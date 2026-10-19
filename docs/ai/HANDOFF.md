@@ -65,6 +65,40 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Sidebar per peran, surat hanya Sekum, HP tanpa geser (2026-10-19, permintaan pemilik)
+
+Pemilik mencoba data demo di HP dan meminta: tampilan HP muat tanpa geser ke samping (huruf
+tidak dikecilkan), hanya Sekretaris yang membuat surat, sidebar sesuai kebutuhan tiap peran
+tanpa menu dobel, dan perbaikan penanda aktif ganda. Keputusannya (dijawab pemilik lewat
+pertanyaan pilihan) tercatat di dua ADR:
+
+- **ADR-036** — formulir surat (`surat.create`) hanya Sekum + Admin. Peran lain (kecuali BPH)
+  hanya `surat.ajukan_aktif`: `/surat/keterangan-aktif` → `POST /api/surat/keterangan-aktif
+  {keperluan}`; identitas diambil server dari Data Pengurus periode aktif (yang belum tercatat
+  ditolak 422), surat langsung MENUNGGU_APPROVAL. Pengajuan dengan keperluan sama selagi menunggu
+  → 409; maksimal 10 menunggu. Pemohon mengunduh SK Aktif-nya sendiri; surat orang lain 404.
+  RLS: migrasi `051_surat_hanya_sekum.sql` (+ `supabase/tests/051_surat_sk_aktif.sql`).
+- **ADR-037** — susunan sidebar per peran di `lib/navigasi/menu.ts` (`susunMenu`, `hrefAktif`
+  pencocokan terpanjang → satu butir menyala). RAB/LPJ/TOR/Proposal hanya di tab acara. Halaman
+  baru `/keuangan/nota/semua` (Bendum). Tampilan HP: tabel → kartu otomatis (`Table` +
+  `LabelKolomOtomatis`), RAB kartu berlabel, tab acara/divisi jadi grid, Gantt **Daftar**
+  (`GanttDaftarHp`) dengan tombol Grafik, Kanban per-tab status + pilihan status, filter dilipat
+  (`PanelFilterHp`). Desktop tidak berubah.
+- Halaman approval surat kini tetap menampilkan hasil (nomor + unduh) setelah surat TERBIT —
+  sebelumnya `router.refresh()` membuang panel karena surat keluar dari antrian.
+- Gate: `e2e/sidebar-role.spec.ts` (tabel visibilitas baru), `e2e/mobile-tanpa-geser.spec.ts`
+  (project `mobile`), `e2e/surat-approval.spec.ts` menguji alur SK Aktif mandiri. Project
+  `mobile` lain memakai preset `storageState` (Gantt Grafik, Kanban Papan, filter terbuka) agar
+  gate lama tetap menguji komponen yang sama.
+- **DB pemilik**: tarik branch, `npm run db:migrate` (051), lalu `npm run seed:demo:hapus` +
+  `npm run seed:demo` — seeder kini mengajukan SK Aktif lewat endpoint baru.
+- Panduan `docs/panduan/*.md` bagian "Menu Anda" mengikuti susunan baru.
+- Verifikasi 2026-10-19: `npm run verify` (1064 unit), `npm run db:test` 36/36 setelah
+  `db:reset` dari kosong, audit 390 px 39/39 halaman tanpa geser, e2e spec terkait lulus.
+  Catatan e2e lokal (dev server): dengan 2 worker beberapa gate (command-palette,
+  wizard-proker, approval-proker) sesekali timeout saat kompilasi dingin — lulus saat
+  diulang `--workers=1`. Gate `sidebar-tautan` "menu TOR" butuh ≥ 1 acara di DB.
+
 ### Seeder data demo lengkap (2026-10-19, permintaan pemilik)
 
 Permintaan: "isi dengan data dummy, saya ingin melihat website full operasional".

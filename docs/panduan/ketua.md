@@ -28,19 +28,25 @@ terbaru**.
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel Ketua |
 | Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen, **Antrian Approval** |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | penuh | Buat Surat, **Antrian Approval**, Arsip Surat |
-| Keuangan | baca | RAB, LPJ |
-| Kesekretariatan | baca | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | baca | Kanban, Kendala |
-| Administrasi | baca | Audit Log |
+| Acara Besar | penuh | Daftar acara; RAB, LPJ, TOR, Proposal di tab tiap acara |
+| Persuratan | penuh | **Antrian Approval**, Arsip Surat, Surat Keterangan Aktif |
+| Departemen | penuh | Kanban, Kendala |
+| Notulensi | penuh | Notulensi rapat |
 
 Angka bulat di samping **Antrian Approval** = jumlah yang menunggu keputusan
 Anda.
+
+**Surat.** Surat dibuat Sekretaris Umum. Anda dapat mengajukan **Surat
+Keterangan Aktif** atas nama sendiri lewat menu **Surat Keterangan Aktif**: isi
+keperluannya, nama/NIM/jabatan terisi dari Data Pengurus, dan surat yang sudah
+terbit dapat diunduh di halaman yang sama (ADR-036).
 
 ## 3. Menyetujui program kerja
 
@@ -96,7 +102,7 @@ terbit tidak pernah dipakai ulang, termasuk bila suratnya kemudian dibatalkan.
 
 ## 6. LPJ akhir acara
 
-1. Buka **Acara Besar → Daftar Acara**, pilih acara, tab **LPJ**.
+1. Buka **Acara Besar**, pilih acara, tab **LPJ**.
 2. Setelah Bendahara menyetujui, tombol **Setujui & finalkan** tersedia untuk
    Anda. Periksa dokumen LPJ (unduh bila perlu), lalu setujui.
 3. Bila ada yang harus diperbaiki, pilih **Kembalikan** dan tulis catatan untuk
@@ -107,7 +113,7 @@ terbit tidak pernah dipakai ulang, termasuk bila suratnya kemudian dibatalkan.
 - **Kendala kritis** di Beranda diperbarui otomatis saat ada kendala berprioritas
   Kritis dari departemen mana pun. Klik untuk melihat detail dan
   penanganannya.
-- **Departemen → Kanban/Kendala** dan **Keuangan → RAB/LPJ** dapat Anda buka
-  dalam mode baca.
-- **Administrasi → Audit Log** mencatat setiap perubahan data — siapa, kapan,
-  dan apa.
+- **Departemen → Kanban/Kendala**, serta tab **RAB/LPJ** di halaman acara,
+  dapat Anda pantau.
+- **Audit Log** (lewat pencarian **Ctrl/⌘ K**) mencatat setiap perubahan
+  data — siapa, kapan, dan apa.

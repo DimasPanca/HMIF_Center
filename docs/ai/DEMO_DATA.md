@@ -88,12 +88,17 @@ Dies Natalis sudah lewat, SYNCHRONIZE dua pekan lagi, LKMM-PD enam pekan lagi.
 storage-nya. Akun demo hanya **dinonaktifkan**, bukan dihapus: `audit_log` append-only
 (INV-06) merujuk pelakunya. Menjalankan seeder lagi mengaktifkannya kembali.
 
-## Hubungan dengan `npm run db:test`
+## Hubungan dengan `npm run db:test` dan `npm run test:e2e`
 
 Test SQL (`supabase/tests/*`) berjalan di dalam transaksi yang selalu di-ROLLBACK, tetapi sebagian
 mengasumsikan DB **tanpa data demo** (mis. `010_kanban` dan `016_views` menghitung baris antrian dan
 kendala). Saat data demo terisi, dua berkas itu gagal — itu bukan bug. Urutan yang benar:
 `npm run seed:demo:hapus` → `npm run db:test` (35/35 lulus) → `npm run seed:demo` bila ingin demo lagi.
+
+Hal yang sama berlaku untuk **e2e**: akun Ketua demo (`user_role.created_at = 2000-01-01`) menjadi
+penandatangan surat periode aktif, sehingga gate `surat-approval`/`surat-massal` menolak berjalan
+("penandatangan surat harus akun Ketua uji"), dan antrian/daftar berisi data demo menggeser hitungan
+gate lain. Jalankan `npm run seed:demo:hapus` sebelum `npm run test:e2e`.
 
 NIM akun demo memakai awalan `7737…` (bukan `3337…`) supaya tidak bertabrakan dengan NIM tetap di
 fixture test (`app_user_nim_unique`). Akun demo yang sudah dinonaktifkan tetap menempati NIM-nya,

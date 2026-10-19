@@ -23,20 +23,26 @@ Beranda menampilkan Master Gantt seluruh proker dan panel Anda: **tugas saya**,
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel Anggota |
-| Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Keuangan | penuh | RAB, **Upload Nota** (untuk divisi Anda), LPJ |
-| Kesekretariatan | baca | Notulensi, Data Pengurus |
-| Departemen | penuh | Kanban, Kendala (departemen Anda) |
+| Departemen Saya | penuh | Tugas Saya (Kanban), Kendala |
+| Acara Saya | penuh | Acara yang Anda ikuti; **Upload Nota** bila Anda panitia |
+| Surat Keterangan Aktif | penuh | Ajukan SK Aktif atas nama sendiri |
+
+**Surat.** Surat dibuat Sekretaris Umum. Anda dapat mengajukan **Surat
+Keterangan Aktif** atas nama sendiri lewat menu **Surat Keterangan Aktif**: isi
+keperluannya, nama/NIM/jabatan terisi dari Data Pengurus, dan surat yang sudah
+terbit dapat diunduh di halaman yang sama (ADR-036).
 
 ## 3. Mengunggah nota belanja dari ponsel
 
 ![Form upload nota](img/nota-upload-ponsel.png)
 
-1. Buka **Keuangan → Upload Nota**, ketuk **Upload nota**.
+1. Buka **Acara Saya → Upload Nota**, ketuk **Upload nota**.
 2. **Divisi** — terisi otomatis bila Anda hanya di satu divisi; bila lebih,
    pilih divisi yang berbelanja.
 3. **Item RAB** — pilih item yang dibelanjakan (boleh lebih dari satu). Kamera
@@ -58,7 +64,7 @@ Beranda menampilkan Master Gantt seluruh proker dan panel Anda: **tugas saya**,
 
 ![Nota saya](img/nota-saya-ponsel.png)
 
-1. **Keuangan → Upload Nota** menampilkan **Nota saya** beserta statusnya.
+1. **Acara Saya → Upload Nota** menampilkan **Nota saya** beserta statusnya.
 2. *Perlu Perbaikan* — Bendahara meminta koreksi data (mis. nominal atau item
    salah). Ketuk **Perbaiki**, ubah datanya (foto tidak perlu diambil ulang),
    lalu **Kirim perbaikan**.
@@ -69,8 +75,7 @@ Beranda menampilkan Master Gantt seluruh proker dan panel Anda: **tugas saya**,
 
 ![Ruang kerja divisi](img/divisi-ruang.png)
 
-1. Buka **Acara Besar → Ruang Kerja Divisi** dan pilih acara (atau buka acara
-   lalu tab **Divisi**).
+1. Buka **Acara Saya**, pilih acara, lalu tab **Divisi**.
 2. Di halaman divisi Anda tersedia:
    - **Job Desk** — tugas tiap anggota (koordinator dapat **Ubah job desk**).
    - **Gantt Divisi** — timeline internal divisi.
@@ -84,15 +89,18 @@ Beranda menampilkan Master Gantt seluruh proker dan panel Anda: **tugas saya**,
 
 ![Kanban di ponsel](img/kanban-ponsel.png)
 
-1. Buka **Departemen → Kanban** dan pilih departemen Anda.
-2. Saring **Penanggung jawab** ke nama Anda untuk melihat tugas sendiri.
-3. Geser kartu (lewat pegangan ⋮⋮) ke kolom berikutnya saat pekerjaan maju:
-   **To Do → In Progress → Review → Done**.
+1. Buka **Departemen Saya → Tugas Saya**.
+2. Saring **Penanggung jawab** ke nama Anda untuk melihat tugas sendiri (di
+   ponsel, ketuk **Filter** dulu).
+3. Di ponsel, papan tampil satu kolom per layar dengan tab **To Do / In
+   Progress / Review / Done**; pindahkan kartu lewat pilihan **Status** di
+   kartu. Di laptop, seret kartu lewat pegangan ⋮⋮ ke kolom berikutnya. Tombol
+   **Papan** di ponsel menampilkan papan lengkap.
 4. Buka kartu untuk mencentang **Checklist**. Tanda merah/kuning menunjukkan
    deadline yang dekat atau lewat.
 
 ## 7. Melaporkan kendala
 
-1. Buka **Departemen → Kendala**, klik **Lapor kendala**.
+1. Buka **Departemen Saya → Kendala**, klik **Lapor kendala**.
 2. Isi judul, deskripsi, dan prioritas. Kendala **Kritis** langsung terlihat
    oleh Ketua dan BPH di Beranda mereka.

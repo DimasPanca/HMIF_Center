@@ -18,15 +18,20 @@ notulensi rapat, data pengurus, dan peminjaman ruangan.
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel Sekum |
-| Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | penuh | Buat Surat, **Antrian Approval**, Arsip Surat |
-| Keuangan | baca | RAB, LPJ |
+| Persuratan | penuh | **Buat Surat**, Surat Aktif Massal, **Antrian Approval**, Arsip Surat |
 | Kesekretariatan | penuh | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | baca | Kanban, Kendala |
+| Program Kerja | baca | Daftar Proker, Kalender Ketersediaan |
+| Acara Besar | baca | Daftar acara; TOR, Proposal, RAB di tab tiap acara |
+
+Hanya Anda (dan Admin) yang membuat surat dari formulir — semua jenis.
+Pengurus lain mengajukan **Surat Keterangan Aktif** atas nama sendiri; pengajuan
+itu masuk ke **Antrian Approval** Anda seperti surat lain (ADR-036).
 
 ## 3. Membuat surat
 
@@ -128,7 +133,7 @@ Sumbernya adalah **Data Pengurus** (bagian 8), jadi perbarui data itu dulu.
 
 ![Ruang kerja acara](img/acara-ruang.png)
 
-1. Buka **Acara Besar → Daftar Acara**, pilih acara. Ketua pelaksana, masa
+1. Buka **Acara Besar**, pilih acara. Ketua pelaksana, masa
    persiapan, Hari-H, dan kode kegiatan tampil di kepala halaman.
 2. Tab **Ringkasan, Gantt, Divisi, RAB, TOR, Proposal, Nota, LPJ** memuat
    seluruh pekerjaan acara. Tab **Gantt** membuka timeline acara:
@@ -144,7 +149,7 @@ Sumbernya adalah **Data Pengurus** (bagian 8), jadi perbarui data itu dulu.
 
 Bila Anda ketua pelaksana atau sekretaris sebuah acara:
 
-1. Buka **Acara Besar → TOR** (atau **Proposal**) dan pilih acaranya.
+1. Buka **Acara Besar**, pilih acaranya, lalu tab **TOR** (atau **Proposal**).
 2. Isi setiap bagian; anggaran terisi otomatis dari RAB acara.
 3. Klik **Buat dokumen TOR** / **Buat dokumen proposal** untuk menghasilkan DOCX
    sesuai template HMIF.

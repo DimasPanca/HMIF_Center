@@ -33,16 +33,13 @@ Di bagian atas setiap halaman:
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel Admin |
-| Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | penuh | Buat Surat, Arsip Surat |
-| Keuangan | penuh | RAB, Upload Nota, Verifikasi Nota, LPJ |
-| Kesekretariatan | penuh | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | penuh | Kanban, Kendala |
-| Administrasi | penuh | Pengguna & Role, Periode Kepengurusan, Backup & Restore, Audit Log |
+| Administrasi | penuh | Pengguna & Peran, Periode Kepengurusan, Backup & Restore, Audit Log |
 
 ## 3. Mengundang pengurus baru
 
