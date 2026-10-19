@@ -208,8 +208,10 @@ export function WizardShell({
 
   return (
     <div data-testid="wizard-root" className="space-y-5">
-      <nav aria-label="Langkah tambah proker" className="overflow-x-auto pb-1">
-        <ol className="grid min-w-[46rem] grid-cols-6 gap-2">
+      {/* HP (ADR-037): enam bulatan bernomor selebar layar + judul langkah aktif,
+          bukan deretan kartu yang harus digeser ke samping. */}
+      <nav aria-label="Langkah tambah proker" className="pb-1 md:overflow-x-auto">
+        <ol className="grid grid-cols-6 gap-1.5 md:min-w-[46rem] md:gap-2">
           {LANGKAH.map((langkah) => {
             const aktif = langkah.nomor === langkahAktif;
             const berlaku = nomorBerlaku.has(langkah.nomor);
@@ -221,7 +223,8 @@ export function WizardShell({
                   disabled={!berlaku || langkah.nomor >= langkahAktif}
                   onClick={() => setLangkahAktif(langkah.nomor)}
                   aria-current={aktif ? 'step' : undefined}
-                  className={`flex min-h-[58px] w-full items-center gap-2 rounded-sm border px-3 text-left text-[12px] leading-4 transition-[border-color,background-color,color] duration-fast motion-reduce:transition-none ${
+                  aria-label={`Langkah ${langkah.nomor}: ${langkah.judul}`}
+                  className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border px-1 text-left text-[12px] leading-4 transition-[border-color,background-color,color] duration-fast motion-reduce:transition-none md:min-h-[58px] md:justify-start md:px-3 ${
                     aktif
                       ? 'border-[var(--primary)] bg-[var(--primary-subtle)] text-primary'
                       : berlaku
@@ -235,12 +238,15 @@ export function WizardShell({
                   >
                     {selesai ? <Check className="size-3.5" /> : langkah.nomor}
                   </span>
-                  <span>{langkah.judul}</span>
+                  <span className="hidden md:inline">{langkah.judul}</span>
                 </button>
               </li>
             );
           })}
         </ol>
+        <p className="mt-2 text-[14px] font-medium text-primary md:hidden" aria-hidden="true">
+          Langkah {langkahAktif} dari {LANGKAH.length} · {LANGKAH.find((l) => l.nomor === langkahAktif)?.judul}
+        </p>
       </nav>
 
       {pesanMuat ? (

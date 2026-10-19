@@ -85,6 +85,15 @@ const PERINTAH: readonly PerintahDasar[] = [
     izin: ['surat.create'],
   },
   {
+    id: 'sk-aktif',
+    bagian: 'Aksi cepat',
+    label: 'Ajukan Surat Keterangan Aktif',
+    kataKunci: 'surat keterangan aktif organisasi beasiswa magang ajukan',
+    href: '/surat/keterangan-aktif',
+    icon: FileText,
+    izin: ['surat.ajukan_aktif'],
+  },
+  {
     id: 'beranda',
     bagian: 'Navigasi',
     label: 'Beranda',

@@ -6,7 +6,8 @@
  * fiturnya milik SATU acara. Kini menu itu membuka daftar acara sebagai
  * pemilih (`/acara?buka=…`). Gate ini mengunjungi SETIAP tautan sidebar yang
  * terlihat oleh Admin dan Ketua dan menolak 404, supaya menu baru tanpa
- * halaman tidak lolos lagi.
+ * halaman tidak lolos lagi. (ADR-037: menu pemilih acara itu kemudian dihapus
+ * dari sidebar karena dobel dengan tab acara; rute `?buka=` tetap berfungsi.)
  */
 
 import { expect, test, type Page } from '@playwright/test';
@@ -34,7 +35,8 @@ for (const akun of [AKUN.admin, AKUN.aktif]) {
     const tautan = await page
       .locator('nav[aria-label="Menu aplikasi"] a[href^="/"]')
       .evaluateAll((a) => [...new Set(a.map((x) => x.getAttribute('href')!))]);
-    expect(tautan.length).toBeGreaterThan(8);
+    // ADR-037: Admin kini hanya melihat Beranda + Administrasi (5 tautan).
+    expect(tautan.length).toBeGreaterThan(3);
 
     const mati: string[] = [];
     for (const href of tautan) {

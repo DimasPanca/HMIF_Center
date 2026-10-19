@@ -91,7 +91,9 @@ const MATRIKS: Record<string, Baris> = {
   kanban:              { ADMIN:'CRUD', KETUA:'R',    WAKIL:'R',    SEKUM:'R',    BENDUM:'R',   KADEPT:'CRUD*',ANGGOTA:'CRU*',BPH:'R' },
   kendala:             { ADMIN:'CRUD', KETUA:'CRU',  WAKIL:'CRU',  SEKUM:'R',    BENDUM:'R',   KADEPT:'CRUD*',ANGGOTA:'CRU*',BPH:'R' },
 
-  surat:               { ADMIN:'C',    KETUA:'C',    WAKIL:'C',    SEKUM:'C',    BENDUM:'C',   KADEPT:'C*',   ANGGOTA:'',    BPH:'' },
+  // ADR-036: hanya Sekum (dan Admin) menyusun surat; pengurus lain mengajukan SK Aktif dirinya.
+  surat:               { ADMIN:'C',    KETUA:'',     WAKIL:'',     SEKUM:'C',    BENDUM:'',    KADEPT:'',     ANGGOTA:'',    BPH:'' },
+  surat_aktif:         { ADMIN:'',     KETUA:'C',    WAKIL:'C',    SEKUM:'C',    BENDUM:'C',   KADEPT:'C',    ANGGOTA:'C',   BPH:'' },
   surat_approve:       { ADMIN:'',     KETUA:'A',    WAKIL:'A',    SEKUM:'A',    BENDUM:'',    KADEPT:'',     ANGGOTA:'',    BPH:'' },
   surat_arsip:         { ADMIN:'RUD',  KETUA:'R',    WAKIL:'R',    SEKUM:'RUD',  BENDUM:'R',   KADEPT:'R*',   ANGGOTA:'',    BPH:'R' },
 
@@ -162,6 +164,7 @@ const AKSI = {
   'kendala.delete':           ['kendala', 'D'],
 
   'surat.create':             ['surat', 'C'],
+  'surat.ajukan_aktif':       ['surat_aktif', 'C'],
   'surat.approve':            ['surat_approve', 'A'],
   'surat.read':               ['surat_arsip', 'R'],
   'surat.update':             ['surat_arsip', 'U'],

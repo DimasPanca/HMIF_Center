@@ -24,16 +24,16 @@ Tekan `Ctrl`/`⌘` + `K` untuk mencari dan melompat ke halaman mana pun.
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel BPH |
-| Program Kerja | baca | Daftar Proker, Kalender Ketersediaan, Gantt Departemen |
-| Acara Besar | baca | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | baca | Arsip Surat |
-| Keuangan | baca | RAB, LPJ |
-| Kesekretariatan | baca | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | baca | Kanban, Kendala |
-| Administrasi | baca | Audit Log |
+| Program Kerja | lihat saja | Daftar Proker, Gantt Departemen |
+| Acara Besar | lihat saja | Daftar acara; RAB, TOR, Proposal, LPJ di tab tiap acara |
+| Arsip Surat | lihat saja | Arsip surat periode berjalan |
+| Audit Log | lihat saja | Jejak semua perubahan data |
 
 ## 3. Memantau program kerja
 
@@ -48,7 +48,7 @@ Tekan `Ctrl`/`⌘` + `K` untuk mencari dan melompat ke halaman mana pun.
 
 ![Daftar acara](img/acara-daftar.png)
 
-1. **Acara Besar → Daftar Acara** → pilih acara: ringkasan, Gantt, divisi, RAB,
+1. **Acara Besar** → pilih acara: ringkasan, Gantt, divisi, RAB,
    TOR, proposal, nota, dan LPJ dalam tab.
 2. Tab **RAB** menunjukkan rencana vs. realisasi (RAB aktual dari nota yang
    diverifikasi Bendahara).
@@ -56,15 +56,16 @@ Tekan `Ctrl`/`⌘` + `K` untuk mencari dan melompat ke halaman mana pun.
 
 ## 5. Memantau persuratan dan kesekretariatan
 
-1. **Persuratan → Arsip Surat**: cari surat berdasarkan perihal/tujuan/isi,
-   saring per status atau kegiatan, unduh surat terbit.
-2. **Kesekretariatan → Notulensi**: baca notulensi rapat dan action item-nya.
+1. **Arsip Surat**: cari surat berdasarkan perihal/tujuan/isi, saring per
+   status atau kegiatan, unduh surat terbit.
+2. **Notulensi** (lewat pencarian **Ctrl/⌘ K**): baca notulensi rapat dan
+   action item-nya.
 
 ## 6. Audit log
 
 ![Audit log](img/bph-audit.png)
 
-1. Buka **Administrasi → Audit Log**.
+1. Buka **Audit Log**.
 2. Saring per pengguna, aksi/tabel, atau rentang tanggal untuk menelusuri siapa
    mengubah apa dan kapan. Audit log tidak dapat diubah atau dihapus.
 

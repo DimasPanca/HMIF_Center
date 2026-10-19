@@ -104,18 +104,20 @@ const SUBMENU = ['proker-approval', 'surat-approval'] as const;
  * lib/auth/permissions.ts, dengan alasan yang sama.
  */
 const VISIBILITAS: Record<string, Record<string, Mode>> = {
+  // Susunan per peran ADR-037 (menggantikan tabel USER_FLOW §1.2): tiap peran
+  // hanya melihat menu yang ia kerjakan; menu yang dobel dengan tab acara dihapus.
   //                  beranda  proker   acara    surat    keuangan sekretariat departemen admin
-  ADMIN:   { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:'penuh', sekretariat:'penuh', departemen:'penuh', admin:'penuh' },
-  KETUA:   { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:'baca',  sekretariat:'baca',  departemen:'baca',  admin:'baca'  },
-  WAKIL:   { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:'baca',  sekretariat:'baca',  departemen:'baca',  admin:null    },
-  SEKUM:   { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:'baca',  sekretariat:'penuh', departemen:'baca',  admin:null    },
-  BENDUM:  { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:'penuh', sekretariat:'baca',  departemen:'baca',  admin:null    },
-  KADEPT:  { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:'baca',  sekretariat:'baca',  departemen:'penuh', admin:null    },
-  ANGGOTA: { beranda:'penuh', proker:'penuh', acara:'penuh', surat:null,    keuangan:'penuh', sekretariat:'baca',  departemen:'penuh', admin:null    },
-  BPH:     { beranda:'penuh', proker:'baca',  acara:'baca',  surat:'baca',  keuangan:'baca',  sekretariat:'baca',  departemen:'baca',  admin:'baca'  },
+  ADMIN:   { beranda:'penuh', proker:null,    acara:null,    surat:null,    keuangan:null,    sekretariat:null,    departemen:null,    admin:'penuh' },
+  KETUA:   { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:null,    sekretariat:'penuh', departemen:'penuh', admin:null    },
+  WAKIL:   { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:null,    sekretariat:'penuh', departemen:'penuh', admin:null    },
+  SEKUM:   { beranda:'penuh', proker:'baca',  acara:'baca',  surat:'penuh', keuangan:null,    sekretariat:'penuh', departemen:null,    admin:null    },
+  BENDUM:  { beranda:'penuh', proker:null,    acara:'penuh', surat:'penuh', keuangan:'penuh', sekretariat:null,    departemen:null,    admin:null    },
+  KADEPT:  { beranda:'penuh', proker:'penuh', acara:'penuh', surat:'penuh', keuangan:null,    sekretariat:'penuh', departemen:'penuh', admin:null    },
+  ANGGOTA: { beranda:'penuh', proker:null,    acara:'penuh', surat:'penuh', keuangan:null,    sekretariat:null,    departemen:'penuh', admin:null    },
+  BPH:     { beranda:'penuh', proker:'baca',  acara:'baca',  surat:'baca',  keuangan:null,    sekretariat:null,    departemen:null,    admin:'baca'  },
 };
 
-/** Baris ↳ pada tabel §1.2 — hanya Ketua dan Wakil melihat antrian proker. */
+/** Antrian approval: proker hanya Ketua & Wakil; surat Ketua, Wakil, Sekum. */
 const VISIBILITAS_SUB: Record<string, Record<string, Mode>> = {
   ADMIN:   { 'proker-approval': null,    'surat-approval': null },
   KETUA:   { 'proker-approval': 'penuh', 'surat-approval': 'penuh' },
@@ -184,9 +186,9 @@ async function bacaMenu(page: Page, daftar: readonly string[], awalan: string): 
 // Selesai bila 1 — delapan role, delapan susunan berbeda
 // ---------------------------------------------------------------------------
 
-test.describe('Selesai bila 1 — delapan susunan menu berbeda', () => {
+test.describe('Selesai bila 1 — susunan menu per peran (ADR-037)', () => {
   for (const role of ROLE) {
-    test(`${role} melihat menu sesuai tabel USER_FLOW 1.2`, async ({ page }) => {
+    test(`${role} melihat menu sesuai susunan ADR-037`, async ({ page }) => {
       await buka(page, role);
 
       expect(await bacaMenu(page, MENU, 'sidebar-menu')).toEqual(VISIBILITAS[role]);
@@ -194,7 +196,7 @@ test.describe('Selesai bila 1 — delapan susunan menu berbeda', () => {
     });
   }
 
-  test('kedelapan susunan benar-benar berbeda satu sama lain', async ({ page }) => {
+  test('hanya Ketua dan Wakil yang berbagi susunan; enam lainnya berbeda', async ({ page }) => {
     const tanda = new Map<string, string[]>();
 
     for (const role of ROLE) {
@@ -209,8 +211,10 @@ test.describe('Selesai bila 1 — delapan susunan menu berbeda', () => {
     // salah disalin ATAU sidebar mengabaikan sebagian role. Keduanya membuat
     // seseorang melihat menu yang bukan haknya, dan tidak ada assertion lain
     // di berkas ini yang akan menangkapnya.
+    // ADR-037: Ketua dan Wakil sengaja memakai susunan yang sama (keduanya
+    // pimpinan & approver). Selain pasangan itu, tidak boleh ada yang kembar.
     const kembar = [...tanda.values()].filter((r) => r.length > 1);
-    expect(kembar, `role dengan susunan menu identik: ${JSON.stringify(kembar)}`).toEqual([]);
+    expect(kembar, `role dengan susunan menu identik: ${JSON.stringify(kembar)}`).toEqual([['KETUA', 'WAKIL']]);
   });
 });
 
@@ -219,17 +223,27 @@ test.describe('Selesai bila 1 — delapan susunan menu berbeda', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Selesai bila 2 — menu tanpa hak tidak dirender', () => {
-  test('ANGGOTA tidak melihat Persuratan sama sekali', async ({ page }) => {
+  test('ANGGOTA hanya melihat Surat Keterangan Aktif di persuratan (ADR-036)', async ({ page }) => {
     await buka(page, 'ANGGOTA');
 
-    // Bukan disabled, bukan disembunyikan lewat CSS: tidak ada di DOM.
-    // Menu disabled memberi tahu penggunanya bahwa fitur itu ADA dan ia tidak
-    // berhak — informasi yang tidak perlu ia miliki (INV-30).
-    await expect(page.getByTestId('sidebar-menu-surat')).toHaveCount(0);
+    // Satu tautan langsung ke pengajuan SK Aktif — bukan grup Persuratan
+    // lengkap. "Buat Surat" dan "Arsip" tidak ada di DOM sama sekali (INV-30).
+    await expect(page.getByTestId('sidebar-menu-surat')).toHaveAttribute('href', '/surat/keterangan-aktif');
+    await expect(page.getByTestId('sidebar-root').getByRole('link', { name: /buat surat|arsip surat/i })).toHaveCount(0);
   });
 
-  test('lima role tidak melihat Administrasi sama sekali', async ({ page }) => {
-    for (const role of ['WAKIL', 'SEKUM', 'BENDUM', 'KADEPT', 'ANGGOTA']) {
+  test('menu yang sudah menjadi tab acara tidak diulang di sidebar', async ({ page }) => {
+    for (const role of ROLE) {
+      await buka(page, role);
+      await expect(
+        page.getByTestId('sidebar-root').locator('a[href*="buka="]'),
+        `${role} masih punya tautan pemilih acara (RAB/LPJ/TOR/Proposal/Divisi)`,
+      ).toHaveCount(0);
+    }
+  });
+
+  test('enam role tidak melihat Administrasi sama sekali', async ({ page }) => {
+    for (const role of ['KETUA', 'WAKIL', 'SEKUM', 'BENDUM', 'KADEPT', 'ANGGOTA']) {
       await buka(page, role);
       await expect(page.getByTestId('sidebar-menu-admin'), `${role} melihat Administrasi`).toHaveCount(0);
     }
@@ -307,9 +321,8 @@ test.describe('Sidebar sungguhan', () => {
     // WAJIB login lebih dahulu. Tanpa sesi, `/` mengalihkan ke `/login` dan test
     // hanya akan SKIP — celah yang selama ini menutupi bug ini: harness bisa
     // lulus sempurna sementara beranda sungguhan tak pernah teruji terhadap
-    // spoof. Dipakai akun non-ADMIN e2e-aktif (KETUA), yang susunannya berbeda
-    // dari ADMIN tepat pada Administrasi — 'baca' bagi KETUA, 'penuh' bagi ADMIN.
-    // Bila query dihormati, mode itu akan naik ke 'penuh'; harusnya tetap 'baca'.
+    // spoof. Dipakai akun non-ADMIN e2e-aktif (KETUA), yang tidak punya
+    // Administrasi sama sekali (ADR-037) — bila query dihormati, menu itu muncul.
     const r = await page.goto('/login', { waitUntil: 'load' });
     test.skip(!r || r.status() === 404, 'Halaman /login belum ada.');
 
@@ -340,8 +353,8 @@ test.describe('Sidebar sungguhan', () => {
     const peran = AKUN.aktif.role!;
     const susunan = await bacaMenu(page, MENU, 'sidebar-menu');
     expect(susunan).toEqual(VISIBILITAS[peran]);
-    // Bukti paling tajam terhadap spoof: Administrasi tetap 'baca' (hak KETUA),
-    // tidak naik ke 'penuh' (hak ADMIN yang diminta lewat query).
-    expect(susunan.admin).toBe('baca');
+    // Bukti paling tajam terhadap spoof: Administrasi tetap TIDAK ADA (susunan
+    // KETUA, ADR-037), tidak muncul 'penuh' seperti milik ADMIN yang diminta query.
+    expect(susunan.admin).toBeNull();
   });
 });

@@ -258,7 +258,11 @@ function sheetPemasukan(ws: ExcelJS.Worksheet, d: DataEksporRab) {
 
   ws.mergeCells(m.mergeHiasan);
 
-  const ps = m.peserta;
+  // Blok peserta berjangkar di baris tetap template (judul baris 9). Sumber dana yang
+  // banyak (≥5 baris, mis. 4 sponsor + "Total Pembayaran") mendorong TOTAL-nya ke baris
+  // itu dan menabrak sel gabung judul — maka blok peserta ikut turun, sisakan satu baris kosong.
+  const geser = r >= m.peserta.barisJudul ? r - m.peserta.barisJudul + 2 : 0;
+  const ps = { ...m.peserta, barisJudul: m.peserta.barisJudul + geser, barisHeader: m.peserta.barisHeader + geser, barisAwal: m.peserta.barisAwal + geser };
   gabung(ws, `C${ps.barisJudul}:E${ps.barisJudul}`, `RINCIAN PEMASUKAN DAN DATA PESERTA ${d.namaAcara.toUpperCase()}`, (c) => {
     c.font = { ...GAYA.judul.font };
     c.border = {};

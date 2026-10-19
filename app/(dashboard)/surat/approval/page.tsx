@@ -71,8 +71,17 @@ export default async function ApprovalSuratPage({ searchParams }: PageProps) {
   ]);
   const batchMenunggu = batch.filter((b) => b.menunggu > 0);
   const semua = [...antrian.menunggu, ...antrian.gagalTerbit];
-  const terpilihId = id && semua.some((s) => s.id === id) ? id : antrian.menunggu[0]?.id;
-  const terpilih = terpilihId ? await muatSurat(konteks, terpilihId, konfig) : null;
+  // Surat yang baru diterbitkan keluar dari antrian; bila dibuka lewat `?id=`
+  // (tautan antrian), hasilnya — nomor dan unduhan — tetap tampil setelah
+  // halaman disegarkan alih-alih lenyap.
+  const dipilih = id && /^[0-9a-f-]{36}$/i.test(id) ? await muatSurat(konteks, id, konfig) : null;
+  const terpilih =
+    dipilih && (dipilih.status === 'TERBIT' || semua.some((s) => s.id === dipilih.id))
+      ? dipilih
+      : antrian.menunggu[0]
+        ? await muatSurat(konteks, antrian.menunggu[0].id, konfig)
+        : null;
+  const terpilihId = terpilih?.id;
 
   return (
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
@@ -136,7 +145,7 @@ export default async function ApprovalSuratPage({ searchParams }: PageProps) {
           </section>
 
           <section aria-label="Surat terpilih" className="min-w-0">
-            {terpilih && (terpilih.status === 'MENUNGGU_APPROVAL' || terpilih.status === 'DISETUJUI') ? (
+            {terpilih && (terpilih.status === 'MENUNGGU_APPROVAL' || terpilih.status === 'DISETUJUI' || terpilih.status === 'TERBIT') ? (
               <Card>
                 <CardHeader>
                   <CardTitle>{terpilih.nilai.perihal || namaJenis(terpilih.kode_surat)}</CardTitle>
@@ -145,7 +154,7 @@ export default async function ApprovalSuratPage({ searchParams }: PageProps) {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <AksiApprovalSurat key={terpilih.id} suratId={terpilih.id} status={terpilih.status} />
+                  <AksiApprovalSurat key={terpilih.id} suratId={terpilih.id} status={terpilih.status} nomor={terpilih.nomor_lengkap} />
                   <SuratPreview nilai={terpilih.nilai} konfig={konfig} ketua={ketua} />
                 </CardContent>
               </Card>

@@ -4,7 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, CheckSquare2 } from 'lucide-react';
 
-import type { KartuKanban } from '@/components/kanban/types';
+import { KOLOM_KANBAN, type KartuKanban, type KolomKanban } from '@/components/kanban/types';
 import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
 import { useKonteksDeadline } from '@/components/shared/KonteksDeadline';
 import { Avatar } from '@/components/ui/avatar';
@@ -20,10 +20,13 @@ export function KanbanCard({
   kartu,
   bolehUbah,
   onOpen,
+  onPindah,
 }: {
   kartu: KartuKanban;
   bolehUbah: boolean;
   onOpen: () => void;
+  /** Ada = tampilan tab HP: status diganti lewat pilihan, tanpa seret (ADR-037). */
+  onPindah?: (kolom: KolomKanban) => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
     useSortable({ id: kartu.id, disabled: !bolehUbah });
@@ -47,8 +50,8 @@ export function KanbanCard({
       }}
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="min-w-0 break-words text-[13px] font-semibold text-primary">{kartu.judul}</h3>
-        {bolehUbah ? (
+        <h3 className={`min-w-0 break-words font-semibold text-primary ${onPindah ? 'text-[15px]' : 'text-[13px]'}`}>{kartu.judul}</h3>
+        {bolehUbah && !onPindah ? (
           <button
             ref={setActivatorNodeRef}
             type="button"
@@ -86,6 +89,24 @@ export function KanbanCard({
       <p className="mt-2 text-[10px] font-semibold tracking-wide text-secondary uppercase">
         Prioritas {kartu.prioritas.toLowerCase()}
       </p>
+      {onPindah && bolehUbah ? (
+        <label className="mt-3 flex items-center gap-2 text-[13px] text-secondary" onClick={(event) => event.stopPropagation()}>
+          <span className="shrink-0">Status</span>
+          <select
+            data-testid={`kanban-pindah-${kartu.id}`}
+            value={kartu.kolom}
+            onChange={(event) => onPindah(event.target.value as KolomKanban)}
+            onKeyDown={(event) => event.stopPropagation()}
+            className="min-h-10 w-full min-w-0 rounded-md border border-default bg-panel px-2 text-[14px] text-primary"
+          >
+            {KOLOM_KANBAN.map((k) => (
+              <option key={k.kode} value={k.kode}>
+                {k.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
     </article>
   );
 }

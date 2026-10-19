@@ -8,7 +8,7 @@
  *   - ruang kerja divisi: breadcrumb Acara → Divisi + enam bagian PRD F-8.2,
  *     dan divisi lain dalam acara yang sama tetap dapat dibaca;
  *   - header menampilkan kode_kegiatan dan "Buat Surat untuk acara ini"
- *     mengisi kode & nama kegiatan di form surat;
+ *     (Sekum, ADR-036) mengisi kode & nama kegiatan di form surat;
  *   - angka RAB disembunyikan ("Terbatas") bagi yang tidak berhak.
  *
  * Fixture ditanam lewat SQL (proker + kepanitiaan + divisi + RAB + Kanban)
@@ -204,15 +204,23 @@ test('ruang kerja divisi: breadcrumb, enam bagian, dan divisi lain tetap terbaca
 });
 
 test('kode kegiatan di header dan "Buat Surat untuk acara ini" mengisi form surat', async ({ browser }) => {
+  // ADR-036: hanya Sekum (dan Admin) yang menyusun surat; Kadept melihat kode
+  // kegiatan tetapi tidak mendapat tombol Buat Surat.
   const kadept = await sesi(browser, AKUN.kadept);
   await kadept.goto(`/acara/${acaraId}`, { waitUntil: 'load' });
   await expect(kadept.getByTestId('acara-kode-kegiatan')).toHaveText(kode, { timeout: 60_000 });
-  await kadept.getByTestId('acara-buat-surat').click();
-  await kadept.waitForURL(/\/surat\/baru\?acara=/, { timeout: 60_000 });
-  await expect(kadept.locator('#surat-field-kode_kegiatan')).toHaveValue(kode, { timeout: 60_000 });
-  await expect(kadept.locator('#surat-dinamis-nama_kegiatan')).toHaveValue(namaAcara);
-  await expect(kadept.locator('#surat-dinamis-tema_kegiatan')).toHaveValue('Synergy of Informatics');
+  await expect(kadept.getByTestId('acara-buat-surat')).toHaveCount(0);
   await kadept.context().close();
+
+  const sekum = await sesi(browser, AKUN.sekum);
+  await sekum.goto(`/acara/${acaraId}`, { waitUntil: 'load' });
+  await expect(sekum.getByTestId('acara-kode-kegiatan')).toHaveText(kode, { timeout: 60_000 });
+  await sekum.getByTestId('acara-buat-surat').click();
+  await sekum.waitForURL(/\/surat\/baru\?acara=/, { timeout: 60_000 });
+  await expect(sekum.locator('#surat-field-kode_kegiatan')).toHaveValue(kode, { timeout: 60_000 });
+  await expect(sekum.locator('#surat-dinamis-nama_kegiatan')).toHaveValue(namaAcara);
+  await expect(sekum.locator('#surat-dinamis-tema_kegiatan')).toHaveValue('Synergy of Informatics');
+  await sekum.context().close();
 });
 
 test('BPH membaca seluruh angka; acara periode/ID lain menjawab 404', async ({ browser }) => {

@@ -10,6 +10,8 @@ import { aturStatusRealtime } from '@/components/shared/realtime-status';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { PanelFilterHp } from '@/components/ui/panel-filter-hp';
+import { useTampilanHp } from '@/components/ui/use-layar-hp';
 import { transformGanttRows, type MasterGanttRow } from '@/lib/gantt/transform';
 import type { GanttScale } from '@/lib/gantt/geometry';
 import { muatKlienRealtime } from '@/lib/realtime/klien-browser';
@@ -95,6 +97,9 @@ export function MasterGantt({
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aktifRef = useRef(true);
   const [skala, setSkala] = useState<GanttScale>('week');
+  // Di HP mode Daftar (ADR-037) skala & lipat tidak berarti — disembunyikan.
+  const [tampilanGantt, , layarHp] = useTampilanHp('hmif-gantt-tampilan', 'daftar', 'grafik');
+  const modeDaftarHp = layarHp && tampilanGantt === 'daftar';
   const [departemenId, setDepartemenId] = useState(SEMUA);
   const [kategori, setKategori] = useState(SEMUA);
   const [status, setStatus] = useState(SEMUA);
@@ -287,6 +292,7 @@ export function MasterGantt({
           </div>
         </div>
 
+        {modeDaftarHp ? null : (
         <div className="flex flex-wrap items-end gap-2">
           <div className="w-32 space-y-1">
             <Label htmlFor="master-gantt-skala">Skala</Label>
@@ -314,6 +320,7 @@ export function MasterGantt({
             {semuaTerlipat ? 'Bentangkan semua' : 'Lipat semua'}
           </Button>
         </div>
+        )}
       </div>
 
       <KoneksiBanner terputus={koneksi === 'terputus'} />
@@ -323,6 +330,7 @@ export function MasterGantt({
         </p>
       ) : null}
 
+      <PanelFilterHp jumlahAktif={[departemenId, kategori, status].filter((v) => v !== SEMUA).length}>
       <div
         data-testid="master-gantt-filter"
         className="grid gap-2 rounded-md border border-default bg-panel p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end"
@@ -385,6 +393,7 @@ export function MasterGantt({
           Reset filter
         </Button>
       </div>
+      </PanelFilterHp>
 
       {memuat ? (
         <div

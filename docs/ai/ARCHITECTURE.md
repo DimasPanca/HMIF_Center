@@ -65,6 +65,8 @@ prisma/
   seed.ts           seed dasar (departemen, role, contoh proker)
 
 scripts/            tooling CLI (tsx)
+  seed-demo.ts      data demo lengkap (lihat docs/ai/DEMO_DATA.md); modul di scripts/demo/*
+  tur-demo.ts       tangkapan layar 32 halaman kunci setelah seed-demo
   db.ts             migrate / reset / status
   db-test.ts        runner test SQL
   db-ping.ts        cek koneksi

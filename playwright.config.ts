@@ -70,7 +70,27 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      use: { ...devices['Pixel 7'], extraHTTPHeaders: { 'x-forwarded-for': `${IP_JALAN}.2` } },
+      use: {
+        ...devices['Pixel 7'],
+        extraHTTPHeaders: { 'x-forwarded-for': `${IP_JALAN}.2` },
+        // ADR-037: di HP bawaannya Gantt = daftar, Kanban = per status, filter dilipat.
+        // Gate lama di proyek ini menguji grafik/papan/filter, jadi preferensinya
+        // diset ke tampilan lebar. Tampilan HP bawaan diuji e2e/mobile-tanpa-geser
+        // (yang mengosongkan preferensi ini).
+        storageState: {
+          cookies: [],
+          origins: [
+            {
+              origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+              localStorage: [
+                { name: 'hmif-gantt-tampilan', value: 'grafik' },
+                { name: 'hmif-kanban-tampilan', value: 'papan' },
+                { name: 'hmif-filter-hp', value: 'terbuka' },
+              ],
+            },
+          ],
+        },
+      },
     },
   ],
   /*

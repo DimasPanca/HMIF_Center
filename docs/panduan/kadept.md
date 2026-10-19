@@ -21,15 +21,22 @@ departemen.
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel Kadept |
-| Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | penuh | Buat Surat, Arsip Surat |
-| Keuangan | baca | RAB, Upload Nota, LPJ |
-| Kesekretariatan | baca | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | penuh | Kanban, Kendala (departemen Anda) |
+| Departemen Saya | penuh | Kanban, Kendala, Gantt Departemen (departemen Anda) |
+| Program Kerja | penuh | Daftar Proker, Buat Proker, Kalender Ketersediaan |
+| Acara Besar | penuh | Daftar acara; RAB, TOR, Proposal, Divisi di tab tiap acara |
+| Kesekretariatan | penuh | Notulensi, Peminjaman Ruangan |
+| Surat Keterangan Aktif | penuh | Ajukan SK Aktif atas nama sendiri |
+
+**Surat.** Surat dibuat Sekretaris Umum. Anda dapat mengajukan **Surat
+Keterangan Aktif** atas nama sendiri lewat menu **Surat Keterangan Aktif**: isi
+keperluannya, nama/NIM/jabatan terisi dari Data Pengurus, dan surat yang sudah
+terbit dapat diunduh di halaman yang sama (ADR-036).
 
 ## 3. Mengajukan program kerja (wizard 6 langkah)
 
@@ -88,8 +95,10 @@ catatannya: buka proker, perbaiki, ajukan lagi.
 
 ![Gantt departemen](img/gantt-departemen.png)
 
-1. Buka **Program Kerja → Gantt Departemen**, pilih departemen Anda. Pada
-   periode baru, klik **Buat Gantt departemen** sekali.
+1. Buka **Departemen Saya → Gantt Departemen**. Pada periode baru, klik
+   **Buat Gantt departemen** sekali. Di ponsel, Gantt tampil sebagai **Daftar**
+   (kartu per tugas berisi tanggal, status, dan progres); ketuk **Grafik**
+   untuk bagan lengkap.
 2. Tambah grup dan task (contoh chart yang sudah terisi di bawah); seret bar untuk menggeser tanggal, seret tepi bar
    untuk mengubah durasi (atau fokuskan bar lalu tekan panah kiri/kanan;
    `Shift` + panah mengubah durasi).
@@ -103,12 +112,13 @@ catatannya: buka proker, perbaiki, ajukan lagi.
 
 ![Kanban departemen](img/kanban.png)
 
-1. Buka **Departemen → Kanban** dan pilih departemen Anda.
+1. Buka **Departemen Saya → Kanban**.
 2. **Tambah kartu**: judul, penanggung jawab, prioritas, deadline, proker
    terkait (opsional), lalu **Simpan kartu**.
 3. Seret kartu lewat pegangan ⋮⋮ antar-kolom **To Do → In Progress → Review →
-   Done** (berfungsi juga dengan sentuhan di ponsel). Dengan keyboard: fokus
-   pegangan, tekan `Spasi`, pindah dengan panah, `Spasi` lagi untuk meletakkan.
+   Done**. Dengan keyboard: fokus pegangan, tekan `Spasi`, pindah dengan
+   panah, `Spasi` lagi untuk meletakkan. Di ponsel, papan tampil satu kolom
+   per layar dengan tab status, dan kartu dipindah lewat pilihan **Status**.
 4. Buka kartu untuk **Checklist** langkah-langkah kecil; progres checklist
    tampil di kartu.
 5. Saring per penanggung jawab, proker, prioritas, atau deadline. Kartu yang
@@ -118,7 +128,7 @@ catatannya: buka proker, perbaiki, ajukan lagi.
 
 ![Kendala departemen](img/kendala.png)
 
-1. Buka **Departemen → Kendala**, klik **Lapor kendala**.
+1. Buka **Departemen Saya → Kendala**, klik **Lapor kendala**.
 2. Isi judul, deskripsi, **prioritas** (Rendah/Sedang/Tinggi/Kritis),
    penanggung jawab, dan proker terkait (opsional).
 3. Perbarui status saat ditangani. Menutup kendala sebagai **Selesai** wajib

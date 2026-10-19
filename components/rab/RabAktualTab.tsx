@@ -7,6 +7,7 @@
 
 import { BatalkanVerifikasi } from '@/components/rab/BatalkanVerifikasi';
 import { Card } from '@/components/ui/card';
+import { LabelKolomOtomatis } from '@/components/ui/table-label';
 import type { PenandaSelisih } from '@/lib/rab/realisasi';
 import type { DataRabAktual } from '@/lib/rab/service';
 import { cn } from '@/lib/utils';
@@ -47,8 +48,9 @@ export function RabAktualTab({
             {data.luar_rab ? ` · di luar RAB ${formatRupiah(data.luar_rab)}` : ''}
           </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-[13px]">
+        <div data-kartu-hp="" className="md:overflow-x-auto">
+          <LabelKolomOtomatis />
+          <table className="w-full text-[13px] md:min-w-[36rem]">
             <thead>
               <tr className="border-b border-default text-left text-secondary">
                 <th className="py-1 font-medium">Item</th>
@@ -122,8 +124,9 @@ export function RabAktualTab({
           </p>
         </div>
         {data.buku.baris.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-[13px]" data-testid="rab-pengeluaran">
+          <div data-kartu-hp="" className="md:overflow-x-auto">
+            <LabelKolomOtomatis />
+            <table className="w-full text-[13px] md:min-w-[36rem]" data-testid="rab-pengeluaran">
               <thead>
                 <tr className="border-b border-default text-left text-secondary">
                   <th className="py-1 font-medium">No</th>

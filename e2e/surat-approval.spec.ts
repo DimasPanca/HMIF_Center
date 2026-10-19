@@ -2,7 +2,7 @@
  * Gate T-060 — alur approval surat.
  *
  * Menguji (kontrak T-060):
- *   - Kadept mengajukan surat → muncul di antrian Ketua, Wakil, DAN Sekum;
+ *   - Kadept mengajukan SK Aktif dirinya → muncul di antrian Ketua, Wakil, DAN Sekum;
  *   - BPH tidak punya antrian dan tidak dapat menyetujui (INV-04);
  *   - setelah satu approver menyetujui, surat hilang dari antrian yang sedang
  *     terbuka di layar approver lain TANPA reload, dan approver lain yang
@@ -12,10 +12,11 @@
  *     dengan peringatan — nomor tetap sah;
  *   - (T-061) setelah tanda tangan diunggah, "Terbitkan ulang" → TERBIT, baris
  *     dokumen tercatat, dan DOCX dapat diunduh pembuat & pembaca arsip dengan
- *     nama berkas = nomor surat; ANGGOTA ditolak;
- *   - penolakan tanpa alasan ditolak server; dengan alasan → DITOLAK, pembuat
- *     melihat alasannya, menyuntingnya mengembalikan ke DRAFT;
+ *     nama berkas = nomor surat; surat orang lain tidak ada bagi ANGGOTA;
+ *   - penolakan tanpa alasan ditolak server; dengan alasan → DITOLAK, pemohon
+ *     melihat alasannya di halaman pengajuannya dan dapat mengajukan ulang;
  *   - transisi ilegal ditolak 409; pengajuan draft tak lengkap ditolak 422;
+ *     formulir surat hanya untuk Sekum (ADR-036);
  *   - pembatalan TERBIT wajib beralasan, nomor tidak dikembalikan (INV-16).
  */
 import fs from 'node:fs';
@@ -71,6 +72,12 @@ let idKetua = '';
 
 let kunci: KunciTtd | null = null;
 
+/**
+ * NIM baris Data Pengurus Kadept uji — satu per project, karena project desktop
+ * dan mobile berjalan paralel dan afterAll masing-masing menghapus barisnya.
+ */
+let nimKadept = '';
+
 test.beforeAll(async () => {
   test.setTimeout(600_000);
   // Gate surat-massal juga mengubah tanda tangan Ketua — jangan berjalan bersamaan.
@@ -83,6 +90,15 @@ test.beforeAll(async () => {
     ORDER BY ur.created_at LIMIT 1`;
   expect(k?.email, 'penandatangan surat harus akun Ketua uji').toBe(AKUN.aktif.email);
   idKetua = k!.id;
+  // ADR-036: Kadept uji mengajukan SK Aktif atas nama dirinya — identitasnya
+  // diambil dari Data Pengurus, jadi ia harus tercatat di periode aktif.
+  nimKadept = test.info().project.name === PROJECT_TTD ? '9902899036' : '9902899037';
+  await sql`
+    INSERT INTO pengurus (periode_id, user_id, nama_lengkap, nim, jabatan, is_aktif)
+    SELECT p.id, u.id, u.nama_lengkap, ${nimKadept}, 'Kepala Departemen Kaderisasi', true
+    FROM app_user u, periode p WHERE u.email = ${AKUN.kadept.email} AND p.status = 'AKTIF'
+    ON CONFLICT (periode_id, nim) DO NOTHING`;
+
   // Jalur "generate gagal" butuh Ketua TANPA tanda tangan. Akun uji saja —
   // berkasnya di storage ditimpa unggahan test berikutnya.
   if (test.info().project.name === PROJECT_TTD) await sql`DELETE FROM signature WHERE user_id = ${idKetua}::uuid`;
@@ -103,6 +119,7 @@ test.afterAll(async () => {
   await kunci?.lepas();
   if (sql) {
     if (dibuat.length) await sql`DELETE FROM surat WHERE id = ANY(${dibuat}::uuid[])`.catch(() => {});
+    if (nimKadept) await sql`DELETE FROM pengurus WHERE nim = ${nimKadept}`.catch(() => {});
     await hapusBerkasDokumen(dibuat);
     await sql.end();
   }
@@ -125,42 +142,39 @@ async function sesi(browser: Browser, akun: AkunUji): Promise<Page> {
 
 const penanda = () => `E2E060-${test.info().project.name}-${Date.now()}`;
 
-/** Surat Keterangan Aktif lengkap, dibuat dan diajukan lewat API sebagai Kadept. */
+/**
+ * Surat Keterangan Aktif atas nama Kadept uji, diajukan lewat API pengajuan
+ * mandiri (ADR-036): identitas dari Data Pengurus, langsung berstatus menunggu.
+ */
 async function ajukanLewatApi(page: Page, nama: string): Promise<string> {
-  const buat = await page.request.post('/api/surat', {
-    data: {
-      jenis: 'KETERANGAN_AKTIF',
-      tanggal_surat: '2026-10-15',
-      data_dinamis: { nama_pemohon: nama, nim_pemohon: '3337220032', jabatan_pemohon: 'Staff Departemen', keperluan: 'Kelengkapan Beasiswa' },
-    },
+  const aju = await page.request.post('/api/surat/keterangan-aktif', {
+    data: { keperluan: `Kelengkapan Beasiswa ${nama}` },
   });
-  expect(buat.status(), await buat.text()).toBe(201);
-  const id = ((await buat.json()) as { data: { id: string } }).data.id;
+  const teks = await aju.text();
+  expect(aju.status(), teks).toBe(201);
+  const id = (JSON.parse(teks) as { data: { id: string } }).data.id;
   dibuat.push(id);
-  const aju = await page.request.post(`/api/surat/${id}/submit`);
-  expect(aju.status(), await aju.text()).toBe(200);
   return id;
 }
 
 let idSetuju = '';
 
-test('Kadept mengajukan lewat form → muncul di antrian Ketua, Wakil, dan Sekum; tidak bagi BPH', async ({ browser }) => {
+test('Kadept mengajukan SK Aktif dirinya → muncul di antrian Ketua, Wakil, dan Sekum; tidak bagi BPH (ADR-036)', async ({ browser }) => {
+  // ADR-036: pengurus selain Sekum hanya mengajukan Surat Keterangan Aktif atas
+  // nama dirinya; identitasnya diambil server dari Data Pengurus (beforeAll).
   const kadept = await sesi(browser, AKUN.kadept);
-  await kadept.goto('/surat/baru?jenis=KETERANGAN_AKTIF', { waitUntil: 'load' });
-  await expect(kadept.getByTestId('surat-form')).toBeVisible({ timeout: 60_000 });
-  const nama = penanda();
-  await kadept.getByTestId('surat-dinamis-nama_pemohon').fill(nama);
-  await kadept.getByTestId('surat-dinamis-nim_pemohon').fill('3337220032');
-  await kadept.getByTestId('surat-dinamis-jabatan_pemohon').fill('Staff Departemen Kaderisasi');
-  await kadept.getByTestId('surat-dinamis-keperluan').fill('Kelengkapan Persyaratan Administrasi Beasiswa');
-  await kadept.getByTestId('surat-ajukan').click();
-  // Catat id untuk dibersihkan SEBELUM asersi apa pun — kalau tidak, draft
-  // tertinggal di DB setiap kali test gagal, dan test SQL yang menghitung
-  // seluruh tabel ikut gagal.
-  await expect.poll(() => new URL(kadept.url()).searchParams.get('id'), { timeout: 20_000 }).toMatch(/^[0-9a-f-]{36}$/);
-  idSetuju = new URL(kadept.url()).searchParams.get('id')!;
+  await kadept.goto('/surat/keterangan-aktif', { waitUntil: 'load' });
+  await kadept.getByLabel('Keperluan surat').fill(`Kelengkapan Persyaratan Administrasi Beasiswa ${penanda()}`);
+  const [res] = await Promise.all([
+    kadept.waitForResponse((r) => r.url().endsWith('/api/surat/keterangan-aktif') && r.request().method() === 'POST', { timeout: 60_000 }),
+    kadept.getByRole('button', { name: 'Ajukan surat' }).click(),
+  ]);
+  const teks = await res.text();
+  expect(res.status(), teks).toBe(201);
+  // Catat id untuk dibersihkan SEBELUM asersi lain (lihat afterAll).
+  idSetuju = (JSON.parse(teks) as { data: { id: string } }).data.id;
   dibuat.push(idSetuju);
-  await expect(kadept.getByTestId('surat-diajukan')).toBeVisible({ timeout: 20_000 });
+  await expect(kadept.getByText('Pengajuan terkirim.', { exact: false })).toBeVisible({ timeout: 20_000 });
 
   for (const akun of [AKUN.aktif, AKUN.wakil, AKUN.sekum]) {
     const p = await sesi(browser, akun);
@@ -270,18 +284,20 @@ test('Ketua mengunggah tanda tangan → terbitkan ulang → TERBIT; DOCX dapat d
     await expect(ketua.getByTestId('surat-unduh-pdf')).toHaveCount(0);
   }
 
-  // Pembaca arsip (BPH) boleh; ANGGOTA tidak punya surat.read.
+  // Pembaca arsip (BPH) boleh; ANGGOTA tidak punya surat.read dan hanya boleh
+  // mengunduh SK Aktif miliknya sendiri — surat orang lain tidak ada baginya (ADR-036).
   const bph = await sesi(browser, AKUN.bacaSaja);
   expect((await bph.request.get(`/api/surat/${idSetuju}/download`)).status()).toBe(200);
   const anggota = await sesi(browser, AKUN.anggota);
-  expect((await anggota.request.get(`/api/surat/${idSetuju}/download`)).status()).toBe(403);
+  expect((await anggota.request.get(`/api/surat/${idSetuju}/download`)).status()).toBe(404);
 
   for (const p of [ketua, kadept, bph, anggota]) await p.context().close();
 });
 
-test('penolakan wajib beralasan; pembuat melihat alasan dan menyunting → DRAFT', async ({ browser }) => {
+test('penolakan wajib beralasan; pemohon melihat alasannya lalu dapat mengajukan ulang (ADR-036)', async ({ browser }) => {
   const kadept = await sesi(browser, AKUN.kadept);
-  const id = await ajukanLewatApi(kadept, penanda());
+  const nama = penanda();
+  const id = await ajukanLewatApi(kadept, nama);
 
   const sekum = await sesi(browser, AKUN.sekum);
   for (const alasan of [undefined, '', '  ', 'ok']) {
@@ -296,15 +312,20 @@ test('penolakan wajib beralasan; pembuat melihat alasan dan menyunting → DRAFT
   await sekum.getByTestId('surat-reject-kirim').click();
   await expect(sekum.getByTestId(`surat-antrian-item-${id}`)).toHaveCount(0, { timeout: 20_000 });
 
-  await kadept.goto(`/surat/baru?id=${id}`, { waitUntil: 'load' });
-  await expect(kadept.getByTestId('surat-alasan-tolak')).toContainText('NIM pemohon tidak sesuai data pengurus', { timeout: 60_000 });
-  const keperluan = kadept.getByTestId('surat-dinamis-keperluan');
-  await keperluan.fill('Kelengkapan Persyaratan Administrasi Beasiswa');
-  await keperluan.blur();
-  await expect(kadept.getByTestId('surat-tersimpan')).toBeVisible({ timeout: 15_000 });
+  // Pemohon melihat alasannya di halaman pengajuannya sendiri.
+  await kadept.goto('/surat/keterangan-aktif', { waitUntil: 'load' });
+  await expect(kadept.getByTestId(`sk-aktif-${id}`)).toContainText('Alasan ditolak: NIM pemohon tidak sesuai data pengurus', {
+    timeout: 60_000,
+  });
+  // Formulir surat hanya untuk Sekum: pemohon tidak menyunting draft (ADR-036).
+  expect((await kadept.goto(`/surat/baru?id=${id}`))?.status()).toBe(404);
   const [row] = await sql<{ status: string; alasan_penolakan: string | null }[]>`SELECT status::text, alasan_penolakan FROM surat WHERE id = ${id}::uuid`;
-  expect(row?.status).toBe('DRAFT');
+  expect(row?.status).toBe('DITOLAK');
   expect(row?.alasan_penolakan).toBe('NIM pemohon tidak sesuai data pengurus');
+
+  // Yang ditolak tidak lagi menunggu: keperluan yang sama boleh diajukan lagi.
+  const ulang = await ajukanLewatApi(kadept, nama);
+  expect(ulang).not.toBe(id);
 
   await kadept.context().close();
   await sekum.context().close();
@@ -314,19 +335,47 @@ test('transisi ilegal ditolak 409; draft tak lengkap tidak dapat diajukan', asyn
   const kadept = await sesi(browser, AKUN.kadept);
   const sekum = await sesi(browser, AKUN.sekum);
 
-  const kosong = await kadept.request.post('/api/surat', { data: { jenis: 'KETERANGAN_AKTIF' } });
+  // ADR-036: formulir surat (semua jenis) hanya untuk Sekum.
+  expect((await kadept.request.post('/api/surat', { data: { jenis: 'KETERANGAN_AKTIF' } })).status()).toBe(403);
+
+  const kosong = await sekum.request.post('/api/surat', { data: { jenis: 'KETERANGAN_AKTIF' } });
   const idKosong = ((await kosong.json()) as { data: { id: string } }).data.id;
   dibuat.push(idKosong);
-  const tidakLengkap = await kadept.request.post(`/api/surat/${idKosong}/submit`);
+  const tidakLengkap = await sekum.request.post(`/api/surat/${idKosong}/submit`);
   expect(tidakLengkap.status()).toBe(422);
   expect(((await tidakLengkap.json()) as { error: { code: string } }).error.code).toBe('VALIDASI_GAGAL');
   expect((await sekum.request.post(`/api/surat/${idKosong}/approve`, { data: {} })).status()).toBe(409);
 
-  const id = await ajukanLewatApi(kadept, penanda());
-  expect((await kadept.request.post(`/api/surat/${id}/submit`)).status()).toBe(409);
-  expect((await sekum.request.post(`/api/surat/${id}/cancel`, { data: { alasan: 'Uji pembatalan ilegal' } })).status()).toBe(409);
+  // Draft lengkap milik Sekum: diajukan sekali, kedua kalinya 409.
+  const lengkap = await sekum.request.post('/api/surat', {
+    data: {
+      jenis: 'KETERANGAN_AKTIF',
+      tanggal_surat: new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10),
+      format_output: 'DOCX',
+      data_dinamis: {
+        nama_pemohon: `E2E060 Pemohon ${test.info().project.name}`,
+        nim_pemohon: '3337220032',
+        jabatan_pemohon: 'Staf Departemen',
+        keperluan: 'Kelengkapan Persyaratan Administrasi Beasiswa',
+      },
+    },
+  });
+  const idLengkap = ((await lengkap.json()) as { data: { id: string } }).data.id;
+  dibuat.push(idLengkap);
+  const aju = await sekum.request.post(`/api/surat/${idLengkap}/submit`);
+  expect(aju.status(), await aju.text()).toBe(200);
+  expect((await sekum.request.post(`/api/surat/${idLengkap}/submit`)).status()).toBe(409);
+  expect((await sekum.request.post(`/api/surat/${idLengkap}/cancel`, { data: { alasan: 'Uji pembatalan ilegal' } })).status()).toBe(409);
   // Surat yang sudah diajukan tidak dapat disunting lewat auto-save.
-  expect((await kadept.request.patch(`/api/surat/${id}`, { data: { jenis: 'KETERANGAN_AKTIF' } })).status()).toBe(409);
+  expect((await sekum.request.patch(`/api/surat/${idLengkap}`, { data: { jenis: 'KETERANGAN_AKTIF' } })).status()).toBe(409);
+
+  // Pengajuan mandiri: keperluan yang sama selagi masih menunggu ditolak 409,
+  // dan pemohon tidak dapat menyunting lewat formulir surat (403).
+  const nama = penanda();
+  const id = await ajukanLewatApi(kadept, nama);
+  const dobel = await kadept.request.post('/api/surat/keterangan-aktif', { data: { keperluan: `Kelengkapan Beasiswa ${nama}` } });
+  expect(dobel.status()).toBe(409);
+  expect((await kadept.request.patch(`/api/surat/${id}`, { data: { jenis: 'KETERANGAN_AKTIF' } })).status()).toBe(403);
 
   await kadept.context().close();
   await sekum.context().close();

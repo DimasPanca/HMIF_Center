@@ -23,15 +23,22 @@ Tekan `Ctrl`/`⌘` + `K` untuk mencari dan melompat ke halaman mana pun.
 
 ## 2. Menu Anda
 
+Sidebar hanya memuat yang Anda perlukan (ADR-037). Menu lain tetap dapat
+dibuka lewat pencarian (**Ctrl/⌘ K**).
+
 | Menu | Akses | Isi |
 |---|---|---|
 | Beranda | penuh | Master Gantt + panel |
 | Program Kerja | penuh | Daftar Proker, Kalender Ketersediaan, Gantt Departemen, **Antrian Approval** |
-| Acara Besar | penuh | Daftar Acara, Ruang Kerja Divisi, TOR, Proposal |
-| Persuratan | penuh | Buat Surat, **Antrian Approval**, Arsip Surat |
-| Keuangan | baca | RAB, LPJ |
-| Kesekretariatan | baca | Notulensi, Data Pengurus, Peminjaman Ruangan |
-| Departemen | baca | Kanban, Kendala |
+| Acara Besar | penuh | Daftar acara; RAB, LPJ, TOR, Proposal di tab tiap acara |
+| Persuratan | penuh | **Antrian Approval**, Arsip Surat, Surat Keterangan Aktif |
+| Departemen | penuh | Kanban, Kendala |
+| Notulensi | penuh | Notulensi rapat |
+
+**Surat.** Surat dibuat Sekretaris Umum. Anda dapat mengajukan **Surat
+Keterangan Aktif** atas nama sendiri lewat menu **Surat Keterangan Aktif**: isi
+keperluannya, nama/NIM/jabatan terisi dari Data Pengurus, dan surat yang sudah
+terbit dapat diunduh di halaman yang sama (ADR-036).
 
 ## 3. Menyetujui program kerja
 

@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
+import { LabelKolomOtomatis } from '@/components/ui/table-label';
 import { cn } from '@/lib/utils';
 
 type SortDirection = 'ascending' | 'descending' | 'none';
@@ -8,6 +9,12 @@ type SortDirection = 'ascending' | 'descending' | 'none';
 type TableProps = Omit<React.ComponentProps<'table'>, 'children'> & {
   children: React.ReactNode;
   containerClassName?: string;
+  /**
+   * Di layar HP (< md) setiap baris menjadi kartu "label: nilai" sehingga
+   * tidak ada gulir ke samping (ADR-037). Matikan hanya untuk tabel yang
+   * memang harus tetap berbentuk grid.
+   */
+  kartuDiHp?: boolean;
   emptyState: React.ReactNode;
   loading?: boolean;
   loadingColumnCount?: number;
@@ -89,6 +96,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(function Table(
     className,
     containerClassName,
     emptyState,
+    kartuDiHp = true,
     loading = false,
     loadingColumnCount = 1,
     loadingRowCount = 5,
@@ -123,7 +131,8 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(function Table(
   }
 
   return (
-    <div data-slot="table-root" className="w-full">
+    <div data-slot="table-root" data-kartu-hp={kartuDiHp ? '' : undefined} className="w-full">
+      {kartuDiHp ? <LabelKolomOtomatis /> : null}
       <div
         data-slot="table-container"
         className={cn('relative w-full overflow-x-auto', containerClassName)}
@@ -277,6 +286,7 @@ const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(functio
     <td
       ref={ref}
       data-slot="table-cell"
+      data-action={action ? '' : undefined}
       className={cn(
         'h-9 px-3 align-middle',
         numeric && 'text-right tabular-nums',

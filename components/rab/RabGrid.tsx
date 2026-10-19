@@ -264,8 +264,8 @@ function Grid({ awal, fokusDivisi }: { awal: DataRab; fokusDivisi?: string }) {
                     onHapus={() => void aksi({ aksi: 'HAPUS_SECTION', section_id: s.id })}
                   />
                   {terbukaSection ? (
-                    <div className="overflow-x-auto px-2 pb-2">
-                      <table className="w-full min-w-[720px] border-collapse">
+                    <div className="rab-kartu-hp px-2 pb-2 md:overflow-x-auto">
+                      <table className="w-full border-collapse md:min-w-[720px]">
                         <thead>
                           <tr className="text-left text-[11px] font-semibold tracking-wide text-tertiary uppercase">
                             <th className="px-2 py-1">No</th>
