@@ -65,6 +65,29 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Seeder data demo lengkap (2026-10-19, permintaan pemilik)
+
+Permintaan: "isi dengan data dummy, saya ingin melihat website full operasional".
+`npm run seed:demo` (server `npm run dev` harus berjalan) mengisi **semua menu**: 30 akun
+berperan, 15 proker di seluruh status, empat acara besar, RAB/nota/surat/TOR/proposal/LPJ
+final, notulensi, Kanban, kendala, ruangan, backup. Rincian, akun, dan pemecahan masalah di
+`docs/ai/DEMO_DATA.md`. Kode: `scripts/seed-demo.ts` + `scripts/demo/*` (data biasa via SQL
+beratribusi audit; alur bermesin status & pembuat DOCX via **API sungguhan** sebagai pengguna
+demo). `npm run seed:demo:hapus` membersihkan (akun hanya dinonaktifkan — audit append-only).
+`npm run tur:demo` memotret 32 halaman kunci untuk pemeriksaan visual.
+
+- **Bug produk ditemukan oleh data demo & diperbaiki:** ekspor Excel RAB (juga dipakai backup)
+  gagal `Cannot merge already merged cells` bila sheet PEMASUKAN memuat **≥ 5 baris sumber
+  dana** (mis. 4 sponsor + "Total Pembayaran"): TOTAL-nya menabrak sel gabung judul peserta di
+  baris 9. `lib/rab/excel-export.ts` kini menurunkan blok peserta satu baris kosong di bawah
+  TOTAL; uji regresi di `lib/rab/__tests__/excel-export.test.ts`. Tanpa perbaikan ini backup
+  gagal pada acara dengan banyak sponsor.
+- DB lokal Docker: dijalankan di sesi ini (data bernilai: seluruh fase terverifikasi dari kosong,
+  ± 2,5 menit). **DB Supabase milik pemilik (`hmif-center-dev`) belum disemai** — sesi cloud
+  tidak memiliki kredensialnya; pemilik menjalankan `npm run seed:demo` di mesinnya.
+- Akun demo berkata sandi publik (`DemoHMIF2026`): jangan dipakai pada DB yang dapat diakses
+  pihak luar. Seeder menolak `NODE_ENV=production`.
+
 ### T-116 · Dokumentasi pengguna & UAT — BLOCKED menunggu UAT nyata (2026-10-19)
 
 `docs/panduan/{admin,ketua,wakil,sekum,bendum,kadept,anggota,bph}.md` +
