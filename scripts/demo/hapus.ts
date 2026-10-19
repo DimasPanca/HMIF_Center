@@ -68,7 +68,7 @@ export async function hapusDemo(sql: Sql): Promise<void> {
   await hapus('image', sql`DELETE FROM image WHERE uploader_id = ANY(${demo}::uuid[])`);
   await hapus('ruangan', sql`DELETE FROM ruangan WHERE catatan LIKE ${'%⁣⁣'}`);
   await hapus('backup', sql`DELETE FROM backup WHERE dibuat_oleh = ANY(${demo}::uuid[])`);
-  await hapus('pengurus', sql`DELETE FROM pengurus WHERE user_id = ANY(${demo}::uuid[]) OR nim BETWEEN '3337230100' AND '3337230111'`);
+  await hapus('pengurus', sql`DELETE FROM pengurus WHERE user_id = ANY(${demo}::uuid[]) OR nim BETWEEN '7737230100' AND '7737230111'`);
   await hapus('signature', sql`DELETE FROM signature WHERE user_id = ANY(${demo}::uuid[])`);
   await hapus('proker_draft', sql`DELETE FROM proker_draft WHERE user_id = ANY(${demo}::uuid[])`);
 

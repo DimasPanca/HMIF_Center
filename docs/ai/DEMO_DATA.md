@@ -80,13 +80,24 @@ Dies Natalis sudah lewat, SYNCHRONIZE dua pekan lagi, LKMM-PD enam pekan lagi.
   verifikasi nota, penomoran + DOCX surat, TOR, proposal, LPJ, notulensi, backup.
   Karena itu data juga sekaligus menguji alur-alur tersebut ujung ke ujung.
 - Penanda data demo: pembuatnya adalah akun `*@demo.hmif.test`; ruangan ditandai karakter
-  U+2063 di akhir `catatan`; Data Pengurus tanpa akun memakai NIM `3337230100`–`3337230111`.
+  U+2063 di akhir `catatan`; Data Pengurus tanpa akun memakai NIM `7737230100`–`7737230111`.
 
 ## Pembersihan
 
 `--hapus` menghapus baris buatan akun demo (turunannya ikut lewat FK `CASCADE`) dan berkas
 storage-nya. Akun demo hanya **dinonaktifkan**, bukan dihapus: `audit_log` append-only
 (INV-06) merujuk pelakunya. Menjalankan seeder lagi mengaktifkannya kembali.
+
+## Hubungan dengan `npm run db:test`
+
+Test SQL (`supabase/tests/*`) berjalan di dalam transaksi yang selalu di-ROLLBACK, tetapi sebagian
+mengasumsikan DB **tanpa data demo** (mis. `010_kanban` dan `016_views` menghitung baris antrian dan
+kendala). Saat data demo terisi, dua berkas itu gagal — itu bukan bug. Urutan yang benar:
+`npm run seed:demo:hapus` → `npm run db:test` (35/35 lulus) → `npm run seed:demo` bila ingin demo lagi.
+
+NIM akun demo memakai awalan `7737…` (bukan `3337…`) supaya tidak bertabrakan dengan NIM tetap di
+fixture test (`app_user_nim_unique`). Akun demo yang sudah dinonaktifkan tetap menempati NIM-nya,
+karena baris `app_user` tidak boleh dihapus (audit append-only).
 
 ## Pemecahan masalah
 

@@ -440,7 +440,7 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
 
   // ---- Batch Surat Keterangan Aktif massal -------------------------------------
   const pengurus = await sql<{ id: string }[]>`
-    SELECT id::text FROM pengurus WHERE user_id IS NULL AND nim BETWEEN '3337230100' AND '3337230111' ORDER BY nim LIMIT 8`;
+    SELECT id::text FROM pengurus WHERE user_id IS NULL AND nim BETWEEN '7737230100' AND '7737230111' ORDER BY nim LIMIT 8`;
   const sk = sesi.get('sekum')!;
   const batch = await sk.wajib('POST', '/api/surat/batch', { aksi: 'buat', pengurus: pengurus.map((p) => p.id), keperluan: 'Persyaratan Beasiswa Prestasi Akademik', tanggal_surat: dari(-2) }, 'buat batch');
   const idBatch: string = batch.data?.batchId ?? batch.data?.batch_id;

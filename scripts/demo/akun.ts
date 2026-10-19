@@ -96,7 +96,7 @@ export async function isiDataPengurus(sql: Sql, latar: Latar, akun: Map<string, 
               ${o.dept ? latar.dept.get(o.dept)! : null}::uuid, ${o.angkatan}, true)
       ON CONFLICT (periode_id, nim) DO UPDATE SET user_id = EXCLUDED.user_id, nama_lengkap = EXCLUDED.nama_lengkap, jabatan = EXCLUDED.jabatan`;
   }
-  let nim = 3337230100;
+  let nim = 7737230100;
   for (const p of PENGURUS_TANPA_AKUN) {
     await sql`
       INSERT INTO pengurus (periode_id, nama_lengkap, nim, jabatan, departemen_id, angkatan, is_aktif)

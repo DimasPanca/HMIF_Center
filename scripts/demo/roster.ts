@@ -26,16 +26,16 @@ const NAMA_DEPT: Record<KodeDept, string> = {
   RND: 'Riset dan Development',
 };
 
-let nim = 3337220100;
+let nim = 7737220100;
 const berikutnya = (): string => String(nim++);
 
 const pimpinan: OrangDemo[] = [
-  { kunci: 'admin', nama: 'Admin Sistem HMIF', nim: '3337200001', angkatan: 2020, role: 'ADMIN', jabatan: 'Administrator Sistem' },
-  { kunci: 'ketua', nama: 'Muhammad Rizky Pratama', nim: '3337220001', angkatan: 2022, role: 'KETUA', jabatan: 'Ketua Himpunan' },
-  { kunci: 'wakil', nama: 'Aulia Rahmawati', nim: '3337220002', angkatan: 2022, role: 'WAKIL', jabatan: 'Wakil Ketua Himpunan' },
-  { kunci: 'sekum', nama: 'Nabila Putri Salsabila', nim: '3337220003', angkatan: 2022, role: 'SEKUM', jabatan: 'Sekretaris Umum' },
-  { kunci: 'bendum', nama: 'Farhan Maulana Yusuf', nim: '3337220004', angkatan: 2022, role: 'BENDUM', jabatan: 'Bendahara Umum' },
-  { kunci: 'bph', nama: 'Siti Nurhaliza Rahmadani', nim: '3337210005', angkatan: 2021, role: 'BPH', jabatan: 'Badan Pengurus Harian' },
+  { kunci: 'admin', nama: 'Admin Sistem HMIF', nim: '7737200001', angkatan: 2020, role: 'ADMIN', jabatan: 'Administrator Sistem' },
+  { kunci: 'ketua', nama: 'Muhammad Rizky Pratama', nim: '7737220001', angkatan: 2022, role: 'KETUA', jabatan: 'Ketua Himpunan' },
+  { kunci: 'wakil', nama: 'Aulia Rahmawati', nim: '7737220002', angkatan: 2022, role: 'WAKIL', jabatan: 'Wakil Ketua Himpunan' },
+  { kunci: 'sekum', nama: 'Nabila Putri Salsabila', nim: '7737220003', angkatan: 2022, role: 'SEKUM', jabatan: 'Sekretaris Umum' },
+  { kunci: 'bendum', nama: 'Farhan Maulana Yusuf', nim: '7737220004', angkatan: 2022, role: 'BENDUM', jabatan: 'Bendahara Umum' },
+  { kunci: 'bph', nama: 'Siti Nurhaliza Rahmadani', nim: '7737210005', angkatan: 2021, role: 'BPH', jabatan: 'Badan Pengurus Harian' },
 ];
 
 const kadept: Array<[KodeDept, string]> = [
