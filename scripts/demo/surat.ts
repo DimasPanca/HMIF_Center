@@ -1,5 +1,6 @@
 /**
  * Surat demo: tanda tangan Ketua, 11 jenis surat dengan semua status
+ * (SK Aktif diajukan pemohonnya sendiri lewat /api/surat/keterangan-aktif, ADR-036)
  * (Draf, Menunggu approval, Terbit bernomor + DOCX, Ditolak, Dibatalkan) dan
  * satu batch Surat Keterangan Aktif massal — seluruhnya lewat API sungguhan.
  * Nomor surat dialokasikan sistem berurutan saat disetujui.
@@ -238,7 +239,7 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
     },
     {
       kunci: 'aktif-1',
-      pembuat: 'kadept.kad',
+      pembuat: 'kad1',
       penyetuju: 'sekum',
       nasib: 'TERBIT',
       body: {
@@ -251,7 +252,7 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
     },
     {
       kunci: 'aktif-2',
-      pembuat: 'kadept.rnd',
+      pembuat: 'rnd1',
       penyetuju: 'ketua',
       nasib: 'TERBIT',
       body: {
@@ -334,7 +335,7 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
     },
     {
       kunci: 'izin-lkmm',
-      pembuat: 'kadept.kad',
+      pembuat: 'sekum',
       nasib: 'MENUNGGU',
       body: {
         jenis: 'PENGAJUAN',
@@ -351,7 +352,7 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
     },
     {
       kunci: 'aktif-3',
-      pembuat: 'kadept.mikat',
+      pembuat: 'mikat1',
       nasib: 'MENUNGGU',
       body: {
         jenis: 'KETERANGAN_AKTIF',
@@ -381,7 +382,7 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
     },
     {
       kunci: 'draf-barang',
-      pembuat: 'kadept.kad',
+      pembuat: 'sekum',
       nasib: 'DRAFT',
       body: {
         jenis: 'PEMINJAMAN_BARANG',
@@ -404,14 +405,23 @@ export async function isiSurat(sql: Sql, sesi: Map<string, Sesi>, akun: Map<stri
 
   for (const s of daftar) {
     const pembuat = sesi.get(s.pembuat)!;
-    const buat = await pembuat.wajib('POST', '/api/surat', s.body, `buat surat ${s.kunci}`);
-    const id: string = buat.data.id;
-    idSurat.set(s.kunci, id);
-    if (s.nasib === 'DRAFT') {
-      hitung.DRAFT++;
-      continue;
+    let id: string;
+    if (s.body.jenis === 'KETERANGAN_AKTIF') {
+      // ADR-036: SK Aktif diajukan pemohonnya sendiri; identitas diisi server, langsung diajukan.
+      const keperluan = String((s.body.data_dinamis as Record<string, unknown>).keperluan);
+      const aju = await pembuat.wajib('POST', '/api/surat/keterangan-aktif', { keperluan }, `ajukan SK Aktif ${s.kunci}`);
+      id = aju.data.id;
+      idSurat.set(s.kunci, id);
+    } else {
+      const buat = await pembuat.wajib('POST', '/api/surat', s.body, `buat surat ${s.kunci}`);
+      id = buat.data.id;
+      idSurat.set(s.kunci, id);
+      if (s.nasib === 'DRAFT') {
+        hitung.DRAFT++;
+        continue;
+      }
+      await pembuat.wajib('POST', `/api/surat/${id}/submit`, {}, `ajukan surat ${s.kunci}`);
     }
-    await pembuat.wajib('POST', `/api/surat/${id}/submit`, {}, `ajukan surat ${s.kunci}`);
     if (s.nasib === 'MENUNGGU') {
       hitung.MENUNGGU++;
       continue;

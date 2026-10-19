@@ -1,7 +1,7 @@
 /**
  * Test lapisan permission.
  *
- * Blok pertama adalah matriks 8 role × 12 aksi kunci yang ditulis TANGAN dari
+ * Blok pertama adalah matriks 8 role × 13 aksi kunci yang ditulis TANGAN dari
  * PRD §5.1 — bukan diturunkan dari kode. Itu yang membuatnya berguna: bila
  * seseorang mengubah satu sel di `MATRIKS`, tabel di bawah tidak ikut berubah,
  * dan perbedaannya menjadi kegagalan test alih-alih hak yang diam-diam
@@ -28,7 +28,7 @@ import {
 const KOLOM: RoleCode[] = ['ADMIN', 'KETUA', 'WAKIL', 'SEKUM', 'BENDUM', 'KADEPT', 'ANGGOTA', 'BPH'];
 
 /**
- * Dua belas aksi kunci, disalin dari PRD §5.1.
+ * Tiga belas aksi kunci, disalin dari PRD §5.1 (baris surat menurut ADR-036).
  * `1` = berhak, `0` = tidak. Kolom mengikuti KOLOM di atas.
  */
 const MATRIKS_HARAPAN: [Permission, string][] = [
@@ -37,7 +37,9 @@ const MATRIKS_HARAPAN: [Permission, string][] = [
   ['proker.approve',           '0' + '1' + '1' + '0' + '0' + '0' + '0' + '0'],
   ['proker.delete',            '1' + '1' + '1' + '0' + '0' + '0' + '0' + '0'],
   ['proker.edit_terkunci',     '1' + '1' + '1' + '0' + '0' + '1' + '0' + '0'],
-  ['surat.create',             '1' + '1' + '1' + '1' + '1' + '1' + '0' + '0'],
+  // ADR-036 menggantikan baris PRD ini: surat disusun Sekum; lainnya hanya SK Aktif diri sendiri.
+  ['surat.create',             '1' + '0' + '0' + '1' + '0' + '0' + '0' + '0'],
+  ['surat.ajukan_aktif',       '0' + '1' + '1' + '1' + '1' + '1' + '1' + '0'],
   ['surat.approve',            '0' + '1' + '1' + '1' + '0' + '0' + '0' + '0'],
   ['rab.lock',                 '1' + '1' + '1' + '0' + '1' + '0' + '0' + '0'],
   ['nota.verify',              '1' + '0' + '0' + '0' + '1' + '0' + '0' + '0'],
@@ -47,7 +49,7 @@ const MATRIKS_HARAPAN: [Permission, string][] = [
   ['master_gantt.read',        '1' + '1' + '1' + '1' + '1' + '1' + '1' + '1'],
 ];
 
-describe('matriks 8 role x 12 aksi kunci — PRD §5.1', () => {
+describe('matriks 8 role x 13 aksi kunci — PRD §5.1 + ADR-036', () => {
   for (const [permission, baris] of MATRIKS_HARAPAN) {
     for (const [i, role] of KOLOM.entries()) {
       const harap = baris[i] === '1';
@@ -191,7 +193,7 @@ describe('kelengkapan terhadap PRD §5.1', () => {
     expect(PERMISSIONS['proker.create']).toEqual(['ADMIN', 'KETUA', 'WAKIL', 'KADEPT']);
     expect(PERMISSIONS['proker.approve']).toEqual(['KETUA', 'WAKIL']);
     expect(PERMISSIONS['proker.delete']).toEqual(['ADMIN', 'KETUA', 'WAKIL']);
-    expect(PERMISSIONS['surat.create']).toEqual(['ADMIN', 'KETUA', 'WAKIL', 'SEKUM', 'BENDUM', 'KADEPT']);
+    expect(PERMISSIONS['surat.create']).toEqual(['ADMIN', 'SEKUM']); // ADR-036
     expect(PERMISSIONS['surat.approve']).toEqual(['KETUA', 'WAKIL', 'SEKUM']);
     expect(PERMISSIONS['rab.lock']).toEqual(['ADMIN', 'KETUA', 'WAKIL', 'BENDUM']);
     expect(PERMISSIONS['nota.verify']).toEqual(['ADMIN', 'BENDUM']);
