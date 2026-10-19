@@ -146,6 +146,22 @@ describe('eksporRabXlsx — struktur template (RAB_CELL_MAP)', () => {
     expect(merges(ws).has('B14:E14')).toBe(true);
   });
 
+  it('PEMASUKAN: ≥5 sumber dana tidak menabrak judul peserta — blok peserta turun satu baris kosong', async () => {
+    const wb = new ExcelJS.Workbook();
+    const banyak: DataEksporRab = {
+      ...DATA,
+      pemasukan: [...DATA.pemasukan, { keterangan: 'Sponsor A', saldo: 1_000_000 }, { keterangan: 'Sponsor B', saldo: 2_000_000 }, { keterangan: 'Sponsor C', saldo: 3_000_000 }],
+    };
+    await wb.xlsx.load((await eksporRabXlsx(banyak)) as unknown as ArrayBuffer);
+    const ws = wb.getWorksheet('PEMASUKAN')!;
+    // 5 sumber dana → baris 4–8, TOTAL baris 9; judul peserta baris 11, header 13, data mulai 14.
+    expect(merges(ws).has('B9:C9')).toBe(true);
+    expect(rumus(ws.getCell('D9'))).toBe('SUM(D4:D8)');
+    expect(merges(ws).has('C11:E11')).toBe(true);
+    expect(rumus(ws.getCell('B14'))).toBe('ROW(B14)-13');
+    expect(rumus(ws.getCell('F16'))).toBe('SUM(F14:F15)');
+  });
+
   it('PENGELUARAN: pemasukan → TOTAL saldo awal → pengeluaran urut tanggal, saldo berjalan =H{n-1}-G{n}', async () => {
     const ws = (await buka()).getWorksheet('PENGELUARAN')!;
     expect(ws.getRow(3).values).toEqual([undefined, undefined, undefined, 'NO', 'Tgl', 'URAIAN', 'DIVISI', 'PENGELUARAN', 'SALDO']);
