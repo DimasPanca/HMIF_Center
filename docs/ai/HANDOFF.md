@@ -1388,10 +1388,11 @@ Empat belas hal yang tidak obvious dari kode:
 Per 2026-10-19 seluruh fitur fase 0–9 sudah berkode. Yang tersisa menunggu
 manusia:
 
-1. **Akses push GitHub untuk sesi Claude Code cloud.** Commit T-114/T-116 dibuat
-   di cabang `claude/sharp-gates-ngoq4i` tetapi push ditolak 403 ("Claude
-   doesn't have GitHub access…"). Pemilik: sambungkan ulang GitHub / instal
-   Claude GitHub App pada repo, lalu push cabang itu.
+1. **Gabungkan cabang `claude/sharp-gates-ngoq4i`** (T-114 + T-116) ke `main`.
+   Catatan sesi cloud: push butuh **Claude GitHub App terinstal** di akun
+   pemilik repo, bukan sekadar akun GitHub terhubung — tanpa itu push ditolak
+   403 (terjadi 2026-10-19, diperbaiki pemilik lewat claude.ai → GitHub
+   Integration → Fix).
 2. **ADR-035** — terima/tolak anggaran JS login "runtime + ≤ 20 KB". Setelah
    diterima: anggaran login di `scripts/bench-all.ts` → 120 KB, T-114 DONE.
 3. **Sesi onboarding + UAT** (T-116) memakai `UAT_SKENARIO.md`; isi
