@@ -39,7 +39,7 @@ import { hapusDemo } from './demo/hapus';
 import { isiNota } from './demo/nota';
 import { Sesi } from './demo/klien';
 import { AKAR, DOMAIN_DEMO, PASSWORD_DEMO, langkah, log, muatEnv, ok, type Sql } from './demo/konfig';
-import { jalankanProker, pulihkanProker } from './demo/proker';
+import { cekBentrokKalender, jalankanProker, pulihkanProker } from './demo/proker';
 import { isiSurat, unggahTandaTangan } from './demo/surat';
 import { ROSTER, emailDemo } from './demo/roster';
 
@@ -94,7 +94,18 @@ async function main(): Promise<number> {
       const [ada] = await sql<{ n: number }[]>`
         SELECT count(*)::int AS n FROM proker p JOIN app_user u ON u.id = p.dibuat_oleh WHERE u.email LIKE ${'%@' + DOMAIN_DEMO}`;
       if (ada!.n > 0) {
-        log(`\n  Data demo sudah ada (${ada!.n} proker). Bersihkan dulu: npx tsx scripts/seed-demo.ts --hapus\n`);
+        log(`\n  Data demo sudah ada (${ada!.n} proker). Bersihkan dulu: npm run seed:demo:hapus\n`);
+        return 1;
+      }
+      const bentrok = await cekBentrokKalender(sql, latar);
+      if (bentrok.length) {
+        log('\n  Kalender periode aktif sudah dikunci proker lain pada tanggal yang dibutuhkan data demo');
+        log('  (dua proker terjadwal tidak boleh beririsan, INV-09). Tidak ada data yang dibuat.\n');
+        for (const b of bentrok) {
+          log(`    • "${b.proker}"${b.departemen ? ` (${b.departemen})` : ''} ${b.mulai} s.d. ${b.selesai} — bentrok dengan "${b.demo}"`);
+        }
+        log('\n  Bila proker itu hanya data uji, batalkan lalu jalankan ulang (langkahnya: docs/ai/DEMO_DATA.md,');
+        log('  bagian "Kalender bentrok"). Atau jalankan seeder pada periode yang kalendernya masih kosong.\n');
         return 1;
       }
     }

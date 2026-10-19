@@ -9,7 +9,7 @@
  */
 
 import { GagalApi, type Sesi } from './klien';
-import { dari, langkah, ok, rentangPanjang, type Sql } from './konfig';
+import { DOMAIN_DEMO, dari, langkah, ok, rentangPanjang, type Sql } from './konfig';
 import { orang, type KodeDept } from './roster';
 import type { InfoAkun, Latar } from './akun';
 
@@ -510,6 +510,41 @@ export async function jalankanProker(
     hasil.set(s.kunci, { prokerId, kepanitiaanId: kp?.id });
     const jadwal = s.jadwal ? ` (${rentangPanjang(dari(s.jadwal.hariH), dari(s.jadwal.hariHSelesai))})` : '';
     ok(`${s.nama}${jadwal} — ${status}${kp ? ' · kepanitiaan terbentuk' : ''}`);
+  }
+  return hasil;
+}
+
+export interface BentrokKalender {
+  demo: string;
+  proker: string;
+  departemen: string | null;
+  mulai: string;
+  selesai: string;
+}
+
+/**
+ * Proker terjadwal yang disetujui mengunci kalender periode secara eksklusif
+ * (INV-09, `proker_lock`). Proker NON-demo yang sudah mengunci tanggal yang
+ * dibutuhkan skenario membuat approval demo gagal di tengah jalan — maka
+ * diperiksa sebelum satu baris pun dibuat.
+ */
+export async function cekBentrokKalender(sql: Sql, latar: Latar): Promise<BentrokKalender[]> {
+  const hasil: BentrokKalender[] = [];
+  for (const s of SKENARIO) {
+    if (s.kategori !== 'TERJADWAL' || !s.jadwal || (s.nasib !== 'SETUJUI' && s.nasib !== 'SETUJUI_LALU_EDIT')) continue;
+    const mulai = dari(s.jadwal.persiapan ?? s.jadwal.hariH);
+    // SETUJUI_LALU_EDIT menggeser hari-H sehari setelah disetujui.
+    const selesai = dari(s.jadwal.hariHSelesai + (s.nasib === 'SETUJUI_LALU_EDIT' ? 1 : 0));
+    const baris = await sql<{ proker: string; departemen: string | null; mulai: string; selesai: string }[]>`
+      SELECT p.nama AS proker, d.nama AS departemen, lower(pl.rentang)::text AS mulai, (upper(pl.rentang) - 1)::text AS selesai
+      FROM proker_lock pl
+      JOIN proker p ON p.id = pl.proker_id
+      JOIN app_user u ON u.id = p.dibuat_oleh
+      LEFT JOIN departemen d ON d.id = p.departemen_id
+      WHERE pl.periode_id = ${latar.periodeId}::uuid
+        AND u.email NOT LIKE ${'%@' + DOMAIN_DEMO}
+        AND pl.rentang && daterange(${mulai}::date, ${selesai}::date + 1, '[)')`;
+    for (const b of baris) hasil.push({ demo: s.nama, ...b });
   }
   return hasil;
 }

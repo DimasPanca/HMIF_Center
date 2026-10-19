@@ -99,13 +99,34 @@ NIM akun demo memakai awalan `7737…` (bukan `3337…`) supaya tidak bertabraka
 fixture test (`app_user_nim_unique`). Akun demo yang sudah dinonaktifkan tetap menempati NIM-nya,
 karena baris `app_user` tidak boleh dihapus (audit append-only).
 
+## Kalender bentrok
+
+Proker terjadwal yang sudah disetujui mengunci kalender periode secara eksklusif (INV-09). Data demo
+membutuhkan rentang kira-kira **H-46 s.d. H+111** dari hari ini (Dies Natalis, SYNCHRONIZE, LKMM-PD,
+Kunjungan Industri). Bila periode aktif sudah punya proker terjadwal lain di rentang itu, seeder berhenti
+sebelum membuat data apa pun dan menyebut proker yang bentrok.
+
+Bila proker itu hanya data uji, batalkan lewat **Supabase → SQL Editor** (ganti nama prokernya):
+
+```sql
+-- 1. Lihat dulu — pastikan hanya baris yang dimaksud
+SELECT id, nama, status FROM proker WHERE nama = 'KT 1';
+
+-- 2. Batalkan dan lepaskan kunci kalendernya (baris proker tetap ada, berstatus Dibatalkan)
+UPDATE proker SET status = 'DIBATALKAN', updated_at = now() WHERE nama = 'KT 1';
+DELETE FROM proker_lock WHERE proker_id IN (SELECT id FROM proker WHERE nama = 'KT 1');
+```
+
+Lalu `npm run seed:demo:hapus` (membersihkan sisa jalan yang gagal) dan `npm run seed:demo`.
+
 ## Pemecahan masalah
 
 | Gejala | Penyebab | Tindakan |
 |---|---|---|
 | `Server tidak menjawab` | `npm run dev` belum jalan | Jalankan server, ulangi |
 | `Tidak ada periode AKTIF` | Belum ada periode | `npm run seed:e2e-auth` |
-| `Data demo sudah ada` | Sudah pernah disemai | `npm run seed:demo:hapus`, lalu ulangi |
+| `Data demo sudah ada` | Sudah pernah disemai atau jalan sebelumnya gagal | `npm run seed:demo:hapus`, lalu ulangi |
+| `Kalender periode aktif sudah dikunci` / `409 Tanggal proker bentrok` | Proker terjadwal lain menempati tanggal demo | Lihat **Kalender bentrok** |
 | Surat gagal dibuat DOCX | Template belum diunggah | `npx tsx scripts/upload-templates.ts` |
 | `429` saat masuk | Rate limit login | Tunggu semenit; seeder memakai IP sintetis per sesi |
 | Backup `BATAS_HARIAN` | Sudah ada backup manual hari ini | Abaikan — fase lain tidak terpengaruh |
