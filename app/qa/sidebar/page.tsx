@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { ROLES, type RoleCode } from '@/lib/auth/permissions';
 
 interface PageProps {
-  searchParams: Promise<{ role?: string | string[] }>;
+  searchParams: Promise<{ role?: string | string[]; kode?: string; panitia?: string }>;
 }
 
 function bacaRoles(nilai: string | string[] | undefined): RoleCode[] {
@@ -16,12 +16,16 @@ function bacaRoles(nilai: string | string[] | undefined): RoleCode[] {
 export default async function SidebarHarness({ searchParams }: PageProps) {
   if (process.env.NODE_ENV === 'production') notFound();
 
-  const roles = bacaRoles((await searchParams).role);
+  const q = await searchParams;
+  const roles = bacaRoles(q.role);
+  // `?kode=EKS` meniru Kadept/Anggota satu departemen; `?panitia=1` meniru anggota panitia acara.
+  const fakta = { kodeDepartemen: q.kode ? [q.kode.toUpperCase()] : [], panitia: q.panitia === '1' };
 
   return (
     <Sidebar
       email="harness@uji.test"
-      jumlahApproval={{ proker: 3, surat: 7 }}
+      fakta={fakta}
+      jumlahApproval={{ proker: 3, surat: 7, nota: 4 }}
       nama="Pengguna Uji"
       periode={[{ id: 'periode-uji', nama: 'Periode Uji', status: 'AKTIF' }]}
       periodeAktifId="periode-uji"

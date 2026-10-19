@@ -6,40 +6,53 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import {
   Archive,
-  Banknote,
+  BadgeCheck,
   Building2,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
   ClipboardCheck,
+  DatabaseBackup,
   FilePlus2,
   FileText,
+  Files,
   FolderArchive,
   Gauge,
+  History,
   KanbanSquare,
   LayoutDashboard,
   ListChecks,
-  MailCheck,
   ReceiptText,
   ScrollText,
   Settings,
+  ShieldAlert,
   ShieldCheck,
+  SquarePlus,
   Target,
+  UserCog,
   Users,
-  WalletCards,
   X,
   type LucideProps,
 } from 'lucide-react';
 
 import { Header } from '@/components/layout/Header';
 import { Avatar } from '@/components/ui/avatar';
-import { can, type Permission, type RoleCode } from '@/lib/auth/permissions';
+import type { RoleCode } from '@/lib/auth/permissions';
+import {
+  grupAktif,
+  hrefAktif,
+  susunMenu,
+  type BadgeMenu,
+  type FaktaMenu,
+  type IkonMenu,
+  type ModeMenu,
+} from '@/lib/navigasi/menu';
 import { cn } from '@/lib/utils';
 
 const KUNCI_COLLAPSE = 'hmif-sidebar-collapsed';
 
-export type ModeMenu = 'penuh' | 'baca';
+export type { ModeMenu };
 
 export interface PilihanPeriode {
   id: string;
@@ -47,39 +60,12 @@ export interface PilihanPeriode {
   status: 'AKTIF' | 'ARSIP' | 'PERSIAPAN';
 }
 
-export interface JumlahApproval {
-  proker: number;
-  surat: number;
-}
-
-interface Submenu {
-  slug?: 'proker-approval' | 'surat-approval';
-  label: string;
-  href: string;
-  icon: ComponentType<LucideProps>;
-  tampil?: (roles: readonly RoleCode[]) => boolean;
-  badge?: keyof JumlahApproval;
-}
-
-interface MenuUtama {
-  slug:
-    'beranda' | 'proker' | 'acara' | 'surat' | 'keuangan' | 'sekretariat' | 'departemen' | 'admin';
-  label: string;
-  href: string;
-  /**
-   * Prefix jalur yang menandai grup ini aktif, bila berbeda dari `href`.
-   * Grup tanpa halaman indeks sendiri menautkan ke halaman yang ada, tetapi
-   * tetap aktif untuk seluruh jalur di bawah prefiksnya.
-   */
-  awalan?: string;
-  icon: ComponentType<LucideProps>;
-  mode: (roles: readonly RoleCode[]) => ModeMenu | null;
-  submenu?: Submenu[];
-}
+export type JumlahApproval = Record<BadgeMenu, number>;
 
 interface SidebarProps {
   children: ReactNode;
   email: string;
+  fakta: FaktaMenu;
   jumlahApproval: JumlahApproval;
   nama: string;
   periode: PilihanPeriode[];
@@ -87,189 +73,50 @@ interface SidebarProps {
   roles: readonly RoleCode[];
 }
 
-function punya(roles: readonly RoleCode[], permission: Permission): boolean {
-  return can(roles, permission);
-}
-
-function akses(
-  roles: readonly RoleCode[],
-  baca: Permission,
-  tulis: readonly Permission[],
-): ModeMenu | null {
-  if (tulis.some((permission) => punya(roles, permission))) return 'penuh';
-  return punya(roles, baca) ? 'baca' : null;
-}
-
 /**
- * Definisi menu hanya memilih permission yang mewakili isi tiap kelompok.
- * Keputusan role tetap berada di `can()`; komponen tidak pernah membandingkan
- * kode role secara langsung (kontrak T-051 dan INV-02).
+ * Ikon per butir. Susunan menu dan hak aksesnya diputuskan
+ * `lib/navigasi/menu.ts` lewat `can()` (kontrak T-051, ADR-037); komponen
+ * ini hanya merender.
  */
-const MENU: MenuUtama[] = [
-  {
-    slug: 'beranda',
-    label: 'Beranda',
-    href: '/',
-    icon: LayoutDashboard,
-    mode: () => 'penuh',
-  },
-  {
-    slug: 'proker',
-    label: 'Program Kerja',
-    href: '/proker',
-    icon: ListChecks,
-    mode: (roles) => akses(roles, 'master_gantt.read', ['surat.create', 'kanban.create']),
-    submenu: [
-      { label: 'Daftar Proker', href: '/proker', icon: ListChecks },
-      { label: 'Kalender Ketersediaan', href: '/proker/kalender', icon: CalendarDays },
-      { label: 'Gantt Departemen', href: '/proker/gantt', icon: Gauge },
-      {
-        slug: 'proker-approval',
-        label: 'Antrian Approval',
-        href: '/proker/approval',
-        icon: ClipboardCheck,
-        tampil: (roles) => punya(roles, 'proker.approve'),
-        badge: 'proker',
-      },
-    ],
-  },
-  {
-    slug: 'acara',
-    label: 'Acara Besar',
-    href: '/acara',
-    icon: Target,
-    mode: (roles) => akses(roles, 'kepanitiaan.read', ['surat.create', 'kanban.create']),
-    submenu: [
-      { label: 'Daftar Acara', href: '/acara', icon: Target },
-      // Ruang divisi, TOR, proposal, RAB, dan LPJ milik SATU acara: tautan ini
-      // membuka daftar acara sebagai pemilih (`?buka=`), lalu langsung ke tab acara itu.
-      { label: 'Ruang Kerja Divisi', href: '/acara?buka=divisi', icon: Users },
-      { label: 'TOR', href: '/acara?buka=tor', icon: ScrollText },
-      { label: 'Proposal', href: '/acara?buka=proposal', icon: FileText },
-    ],
-  },
-  {
-    slug: 'surat',
-    label: 'Persuratan',
-    href: '/surat',
-    icon: FileText,
-    mode: (roles) => akses(roles, 'surat.read', ['surat.create']),
-    submenu: [
-      {
-        label: 'Buat Surat',
-        href: '/surat/baru',
-        icon: FilePlus2,
-        tampil: (roles) => punya(roles, 'surat.create'),
-      },
-      {
-        slug: 'surat-approval',
-        label: 'Antrian Approval',
-        href: '/surat/approval',
-        icon: MailCheck,
-        tampil: (roles) => punya(roles, 'surat.approve'),
-        badge: 'surat',
-      },
-      { label: 'Arsip Surat', href: '/surat', icon: Archive },
-    ],
-  },
-  {
-    slug: 'keuangan',
-    label: 'Keuangan',
-    href: '/acara?buka=rab',
-    awalan: '/keuangan',
-    icon: CircleDollarSign,
-    mode: (roles) => akses(roles, 'rab.read', ['rab.create', 'rab.update']),
-    submenu: [
-      { label: 'RAB', href: '/acara?buka=rab', icon: WalletCards },
-      {
-        label: 'Upload Nota',
-        href: '/keuangan/nota',
-        icon: ReceiptText,
-        tampil: (roles) => punya(roles, 'nota.create'),
-      },
-      {
-        label: 'Verifikasi Nota',
-        href: '/keuangan/nota/verifikasi',
-        icon: ShieldCheck,
-        tampil: (roles) => punya(roles, 'nota.verify'),
-      },
-      { label: 'LPJ', href: '/acara?buka=lpj', icon: Banknote },
-    ],
-  },
-  {
-    slug: 'sekretariat',
-    label: 'Kesekretariatan',
-    href: '/sekretariat/notulensi',
-    awalan: '/sekretariat',
-    icon: FolderArchive,
-    mode: (roles) => akses(roles, 'notulensi.read', ['notulensi.delete']),
-    submenu: [
-      { label: 'Notulensi', href: '/sekretariat/notulensi', icon: ScrollText },
-      { label: 'Data Pengurus', href: '/sekretariat/pengurus', icon: Users },
-      {
-        label: 'Peminjaman Ruangan',
-        href: '/sekretariat/ruangan',
-        icon: Building2,
-        // Anggota tidak punya hak apa pun di modul ini (PRD §5.1); Kadept hanya C*.
-        tampil: (roles) => punya(roles, 'ruangan.read') || punya(roles, 'ruangan.create'),
-      },
-    ],
-  },
-  {
-    slug: 'departemen',
-    label: 'Departemen',
-    href: '/departemen',
-    icon: Building2,
-    mode: (roles) => akses(roles, 'kanban.read', ['kanban.create']),
-    submenu: [
-      { label: 'Kanban', href: '/departemen/kanban', icon: KanbanSquare },
-      { label: 'Kendala', href: '/departemen/kendala', icon: ShieldCheck },
-    ],
-  },
-  {
-    slug: 'admin',
-    label: 'Administrasi',
-    href: '/admin/backup',
-    awalan: '/admin',
-    icon: Settings,
-    mode: (roles) => akses(roles, 'backup.read', ['user.create']),
-    submenu: [
-      {
-        label: 'Pengguna & Role',
-        href: '/admin/pengguna',
-        icon: Users,
-        tampil: (roles) => punya(roles, 'user.create'),
-      },
-      {
-        label: 'Periode Kepengurusan',
-        href: '/admin/periode',
-        icon: CalendarDays,
-        tampil: (roles) => punya(roles, 'periode.create'),
-      },
-      {
-        label: 'Backup & Restore',
-        href: '/admin/backup',
-        icon: Archive,
-        tampil: (roles) => punya(roles, 'backup.manage'),
-      },
-      {
-        label: 'Audit Log',
-        href: '/admin/audit',
-        icon: ScrollText,
-        tampil: (roles) => punya(roles, 'audit.read'),
-      },
-    ],
-  },
-];
+const IKON: Record<IkonMenu, ComponentType<LucideProps>> = {
+  beranda: LayoutDashboard,
+  proker: ListChecks,
+  tambah: SquarePlus,
+  kalender: CalendarDays,
+  gantt: Gauge,
+  approval: ClipboardCheck,
+  acara: Target,
+  surat: FileText,
+  'buat-surat': FilePlus2,
+  massal: Files,
+  arsip: Archive,
+  'sk-aktif': BadgeCheck,
+  keuangan: CircleDollarSign,
+  nota: ReceiptText,
+  verifikasi: ShieldCheck,
+  sekretariat: FolderArchive,
+  notulensi: ScrollText,
+  pengurus: Users,
+  ruangan: Building2,
+  departemen: Building2,
+  kanban: KanbanSquare,
+  kendala: ShieldAlert,
+  admin: Settings,
+  pengguna: UserCog,
+  periode: CalendarDays,
+  backup: DatabaseBackup,
+  audit: History,
+};
 
-function aktif(pathname: string, href: string): boolean {
-  return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function BadgeAngka({ nilai }: { nilai: number }) {
+function BadgeAngka({ nilai, terang = false }: { nilai: number; terang?: boolean }) {
   if (nilai <= 0) return null;
   return (
-    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--primary)] px-1.5 text-[11px] leading-5 font-semibold text-[var(--primary-text)] tabular-nums">
+    <span
+      className={cn(
+        'ml-auto inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-5 font-semibold tabular-nums',
+        terang ? 'bg-[var(--primary-text)] text-[var(--primary)]' : 'bg-[var(--primary)] text-[var(--primary-text)]',
+      )}
+    >
       {nilai > 99 ? '99+' : nilai}
     </span>
   );
@@ -278,6 +125,7 @@ function BadgeAngka({ nilai }: { nilai: number }) {
 export function Sidebar({
   children,
   email,
+  fakta,
   jumlahApproval,
   nama,
   periode,
@@ -299,13 +147,8 @@ export function Sidebar({
 
   useEffect(() => setMobileTerbuka(false), [pathname]);
 
-  const daftar = useMemo(
-    () =>
-      MENU.map((item) => ({ ...item, modeAktif: item.mode(roles) })).filter(
-        (item): item is MenuUtama & { modeAktif: ModeMenu } => item.modeAktif !== null,
-      ),
-    [roles],
-  );
+  const daftar = useMemo(() => susunMenu(roles, fakta), [roles, fakta]);
+  const aktifHref = hrefAktif(pathname, daftar);
 
   function ubahLipatan() {
     setDilipat((nilai) => {
@@ -348,59 +191,71 @@ export function Sidebar({
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Menu aplikasi">
         <ul className="space-y-1">
-          {daftar.map((item) => {
-            const Icon = item.icon;
-            const itemAktif = aktif(pathname, item.awalan ?? item.href);
-            const submenu = item.submenu?.filter((sub) => !sub.tampil || sub.tampil(roles)) ?? [];
+          {daftar.map((grup) => {
+            const Icon = IKON[grup.ikon];
+            const grupNyala = grupAktif(pathname, grup, aktifHref);
+            const tunggal = grup.items.length === 0;
+            // Tautan tunggal menyala penuh bila ialah halaman yang dibuka; grup
+            // bersubmenu hanya diberi aksen tipis — yang menyala penuh butirnya.
+            const nyalaPenuh = tunggal && grupNyala;
 
             return (
-              <li key={item.slug}>
+              <li key={grup.slug}>
                 <Link
-                  href={item.href}
-                  data-testid={`sidebar-menu-${item.slug}`}
-                  data-mode={item.modeAktif}
-                  title={!tampilkanLabel ? item.label : undefined}
+                  href={grup.href}
+                  data-testid={`sidebar-menu-${grup.slug}`}
+                  data-mode={grup.mode}
+                  aria-current={nyalaPenuh ? 'page' : undefined}
+                  title={!tampilkanLabel ? grup.label : undefined}
                   className={cn(
-                    'relative flex h-[34px] items-center gap-2 rounded-sm px-3 text-[13px] font-medium transition-colors duration-fast motion-reduce:transition-none',
-                    itemAktif
-                      ? 'bg-[var(--primary-subtle)] text-[var(--primary)] before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-[var(--primary)]'
-                      : 'text-secondary hover:bg-muted hover:text-primary',
+                    'relative flex min-h-10 items-center gap-2.5 rounded-md px-3 text-[14px] font-medium transition-colors duration-fast md:min-h-[34px] md:text-[13px] motion-reduce:transition-none',
+                    nyalaPenuh
+                      ? 'bg-[var(--primary)] text-[var(--primary-text)]'
+                      : grupNyala
+                        ? 'text-[var(--primary)] before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-[var(--primary)] hover:bg-muted'
+                        : 'text-secondary hover:bg-muted hover:text-primary',
                   )}
                 >
-                  <Icon className="size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                  <Icon className="size-[18px] shrink-0 md:size-4" strokeWidth={1.75} aria-hidden="true" />
                   {tampilkanLabel ? (
                     <>
-                      <span className="truncate">{item.label}</span>
-                      {item.modeAktif === 'baca' ? (
-                        <span className="ml-auto text-[10px] font-medium text-tertiary">Baca</span>
+                      <span className="truncate">{grup.label}</span>
+                      {grup.mode === 'baca' ? (
+                        <span
+                          className={cn(
+                            'ml-auto rounded-full px-1.5 text-[10px] font-medium',
+                            nyalaPenuh ? 'bg-white/20 text-[var(--primary-text)]' : 'bg-muted text-tertiary',
+                          )}
+                        >
+                          Lihat saja
+                        </span>
                       ) : null}
                     </>
                   ) : null}
                 </Link>
 
-                {tampilkanLabel && submenu.length > 0 ? (
-                  <ul className="mt-1 ml-5 space-y-0.5 border-l border-default pl-2">
-                    {submenu.map((sub) => {
-                      const SubIcon = sub.icon;
-                      const mode: ModeMenu = 'penuh';
+                {tampilkanLabel && !tunggal ? (
+                  <ul className="mt-0.5 mb-1 ml-[22px] space-y-0.5 border-l border-default pl-2">
+                    {grup.items.map((sub) => {
+                      const SubIcon = IKON[sub.ikon];
+                      const nyala = sub.href === aktifHref;
                       return (
                         <li key={sub.href}>
                           <Link
                             href={sub.href}
-                            data-testid={sub.slug ? `sidebar-sub-${sub.slug}` : undefined}
-                            data-mode={sub.slug ? mode : undefined}
+                            data-testid={sub.testid ? `sidebar-sub-${sub.testid}` : undefined}
+                            data-mode={sub.testid ? 'penuh' : undefined}
+                            aria-current={nyala ? 'page' : undefined}
                             className={cn(
-                              'flex min-h-[30px] items-center gap-2 rounded-sm px-2 py-1 text-[12px] text-secondary transition-colors duration-fast hover:bg-muted hover:text-primary motion-reduce:transition-none',
-                              aktif(pathname, sub.href) && 'bg-muted text-primary',
+                              'flex min-h-10 items-center gap-2 rounded-md px-2.5 py-1 text-[14px] transition-colors duration-fast md:min-h-[30px] md:text-[12.5px] motion-reduce:transition-none',
+                              nyala
+                                ? 'bg-[var(--primary)] font-medium text-[var(--primary-text)]'
+                                : 'text-secondary hover:bg-muted hover:text-primary',
                             )}
                           >
-                            <SubIcon
-                              className="size-3.5 shrink-0"
-                              strokeWidth={1.5}
-                              aria-hidden="true"
-                            />
+                            <SubIcon className="size-4 shrink-0 md:size-3.5" strokeWidth={1.75} aria-hidden="true" />
                             <span className="truncate">{sub.label}</span>
-                            {sub.badge ? <BadgeAngka nilai={jumlahApproval[sub.badge]} /> : null}
+                            {sub.badge ? <BadgeAngka nilai={jumlahApproval[sub.badge]} terang={nyala} /> : null}
                           </Link>
                         </li>
                       );
