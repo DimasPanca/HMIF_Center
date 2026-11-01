@@ -4,33 +4,51 @@
  * pelaksana, rentang tanggal, dan `kode_kegiatan` — kode yang masuk ke nomor
  * surat — bersama tautan cepat "Buat Surat untuk acara ini".
  *
- * Test id: acara-breadcrumb, acara-header, acara-kode-kegiatan, acara-buat-surat.
+ * ADR-039: hitung mundur ke hari-H dan peran pengguna ("Anda Koordinator Divisi X")
+ * menyatu di kepala, tidak lagi kotak terpisah di bawahnya.
+ *
+ * Test id: acara-breadcrumb, acara-header, acara-hitung-mundur, acara-peran-saya,
+ * acara-kode-kegiatan, acara-buat-surat.
  */
 
-import { ChevronRight, FileSignature } from 'lucide-react';
+import { ChevronRight, FileSignature, UserRound } from 'lucide-react';
 import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { STATUS_VALUES, StatusPill, type DomainStatus } from '@/components/ui/status-pill';
+import { hitungMundur } from '@/lib/acara/jalur';
 import type { RuangAcara } from '@/lib/acara/service';
-import { formatRentangTanggal, formatTanggalPendek } from '@/lib/utils/format-tanggal';
+import { formatRentangTanggal, formatTanggalPendek, tanggalHariIniJakarta } from '@/lib/utils/format-tanggal';
 
 function rentang(mulai: string | null, selesai: string | null): string | null {
   if (!mulai) return null;
   return selesai && selesai >= mulai ? formatRentangTanggal(mulai, selesai) : formatTanggalPendek(mulai);
 }
 
+/** "Anda Ketua Pelaksana" / "Anda Koordinator Divisi Acara" — null bila bukan panitia. */
+export function kalimatPeran(peran: RuangAcara['peran_saya']): string | null {
+  if (peran.ketua_pelaksana) return 'Anda Ketua Pelaksana acara ini dan dapat mengelola seluruh divisi.';
+  if (!peran.divisi.length) return null;
+  const daftar = peran.divisi.map((d) => `${d.peran === 'KOORDINATOR' ? 'Koordinator' : 'Anggota'} Divisi ${d.nama}`).join(', ');
+  return `Anda ${daftar}. Divisi lain dapat dilihat namun tidak dapat diubah.`;
+}
+
 export function AcaraHeader({
   acara,
   divisi,
   bolehSurat,
+  tampilPeran = false,
 }: {
   acara: RuangAcara;
   /** Diisi pada ruang kerja divisi — menjadi ujung breadcrumb. */
   divisi?: { nama: string };
   bolehSurat: boolean;
+  /** Ruang kerja acara: tampilkan baris peran pengguna di kepala. */
+  tampilPeran?: boolean;
 }) {
+  const peran = tampilPeran ? kalimatPeran(acara.peran_saya) : null;
+  const mundur = acara.status === 'DIBATALKAN' ? null : hitungMundur(tanggalHariIniJakarta(), acara.hari_h_mulai, acara.hari_h_selesai);
   const persiapan = rentang(acara.persiapan_mulai, acara.hari_h_mulai);
   const hariH = rentang(acara.hari_h_mulai, acara.hari_h_selesai);
   const status = (STATUS_VALUES as readonly string[]).includes(acara.status) ? (acara.status as DomainStatus) : null;
@@ -81,15 +99,21 @@ export function AcaraHeader({
             <h1 className="text-2xl font-semibold">{divisi ? `Divisi ${divisi.nama}` : acara.nama_acara}</h1>
             <Badge tone="primary">{acara.departemen.nama}</Badge>
             {status ? <StatusPill status={status} /> : null}
+            {mundur && !mundur.startsWith('H+') ? (
+              <Badge tone={mundur === 'Hari-H' ? 'success' : 'neutral'} data-testid="acara-hitung-mundur">
+                {mundur === 'Hari-H' ? 'Hari ini hari-H' : mundur}
+              </Badge>
+            ) : null}
           </div>
-          {divisi ? <p className="mt-0.5 text-[14px] text-secondary">{acara.nama_acara}</p> : null}
+          {divisi ? <p className="mt-0.5 text-[14px] text-secondary">{acara.nama_acara}</p> : acara.tema ? <p className="mt-0.5 text-[14px] text-secondary">{acara.tema}</p> : null}
           <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-secondary">
             <div className="flex gap-1">
               <dt>Ketua Pelaksana:</dt>
               <dd className="text-primary">{acara.ketua_pelaksana ?? 'Belum ditetapkan'}</dd>
             </div>
             {persiapan ? (
-              <div className="flex gap-1">
+              // HP: masa persiapan disembunyikan supaya kepala tidak mendorong tab ke bawah layar.
+              <div className="hidden gap-1 sm:flex">
                 <dt>Persiapan</dt>
                 <dd>{persiapan}</dd>
               </div>
@@ -107,10 +131,16 @@ export function AcaraHeader({
               </dd>
             </div>
           </dl>
+          {peran ? (
+            <p data-testid="acara-peran-saya" className="mt-1.5 flex items-start gap-1.5 text-[13px] text-primary">
+              <UserRound aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-[var(--info)]" />
+              {peran}
+            </p>
+          ) : null}
         </div>
         {bolehSurat ? (
-          <Link href={`/surat/baru?acara=${acara.id}`} className={buttonVariants({ variant: 'secondary' })} data-testid="acara-buat-surat">
-            <FileSignature aria-hidden="true" /> Buat Surat untuk acara ini
+          <Link href={`/surat/baru?acara=${acara.id}`} className={buttonVariants({ variant: 'ghost' })} data-testid="acara-buat-surat">
+            <FileSignature aria-hidden="true" /> Buat surat untuk acara ini
           </Link>
         ) : null}
       </header>

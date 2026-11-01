@@ -17,6 +17,7 @@ import {
 } from '@/components/dashboard/types';
 import { MasterGantt } from '@/components/gantt/MasterGantt';
 import { konteksSaatIni, type Konteks } from '@/lib/auth/guard';
+import { formatTanggalPanjang, tanggalHariIniJakarta } from '@/lib/utils/format-tanggal';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,12 +52,10 @@ export default async function BerandaPage() {
 
   return (
     <main className="min-h-dvh space-y-8 bg-app p-4 text-primary sm:p-6">
-      <MasterGantt
-        key={konteks.periodeId}
-        periodeId={konteks.periodeId}
-        supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? null}
-        supabaseKey={process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? null}
-      />
+      <header>
+        <h1 className="text-2xl font-semibold">Halo, {konteks.sesi.namaLengkap.split(' ')[0]}</h1>
+        <p className="mt-0.5 text-[14px] text-secondary">{formatTanggalPanjang(tanggalHariIniJakarta())} · ringkasan sesuai peran Anda.</p>
+      </header>
 
       {konteks.roles.some((r) => PEMANTAU_KRITIS.has(r)) ? (
         <PantauKendalaKritis
@@ -79,6 +78,14 @@ export default async function BerandaPage() {
           );
         })}
       </div>
+
+      {/* ADR-039: kalender bersama di bawah panel peran — yang perlu ditindak tampil lebih dulu. */}
+      <MasterGantt
+        key={konteks.periodeId}
+        periodeId={konteks.periodeId}
+        supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? null}
+        supabaseKey={process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? null}
+      />
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import { CalendarRange, FileText, Info } from 'lucide-react';
+import { CalendarRange, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -13,6 +13,8 @@ import { RabAktualTab } from '@/components/rab/RabAktualTab';
 import { RabGrid } from '@/components/rab/RabGrid';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { susunJalur, type IdLangkah, type LangkahJalur, type TugasSaya } from '@/lib/acara/jalur';
+import { muatJalur, muatTugasSaya } from '@/lib/acara/jalur-data';
 import { muatAcara, type RuangAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
@@ -22,6 +24,7 @@ import { muatProposal } from '@/lib/proposal/service';
 import { muatPemasukan, type DataPemasukan } from '@/lib/rab/pemasukan';
 import { muatRab, muatRabAktual, type DataRab, type DataRabAktual } from '@/lib/rab/service';
 import { muatTor, ringkasKelengkapan } from '@/lib/tor/service';
+import { tanggalHariIniJakarta } from '@/lib/utils/format-tanggal';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,25 +35,8 @@ interface PageProps {
 
 const POLA_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function PeranSaya({ acara }: { acara: RuangAcara }) {
-  const { ketua_pelaksana, divisi } = acara.peran_saya;
-  if (!ketua_pelaksana && divisi.length === 0) return null;
-  const kalimat = ketua_pelaksana
-    ? 'Anda adalah Ketua Pelaksana acara ini dan dapat mengelola seluruh divisi.'
-    : `Anda adalah ${divisi.map((d) => `${d.peran === 'KOORDINATOR' ? 'Koordinator' : 'Anggota'} Divisi ${d.nama}`).join(', ')}. Divisi lain dapat dilihat namun tidak dapat diubah.`;
-  return (
-    <p
-      data-testid="acara-peran-saya"
-      className="flex items-start gap-2 rounded-sm bg-[var(--info-subtle)] p-3 text-[13px]"
-    >
-      <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--info)]" />
-      {kalimat}
-    </p>
-  );
-}
-
 const ringkasan = (id: string) => ({
-  label: 'Kembali ke Ringkasan',
+  label: 'Kembali ke Ikhtisar',
   href: `/acara/${id}?tab=ringkasan`,
 });
 
@@ -64,6 +50,7 @@ function IsiTab({
   tor,
   proposal,
   formulir,
+  ikhtisar,
 }: {
   acara: RuangAcara;
   tab: TabAcara;
@@ -74,13 +61,19 @@ function IsiTab({
   tor: { terisi: number; total: number; kurang: string[]; boleh_tulis: boolean } | null;
   proposal: { persen: number; tersimpan: boolean; boleh_tulis: boolean } | null;
   formulir: { forms: RingkasForm[]; bolehBuat: boolean } | null;
+  ikhtisar: {
+    jalur: { langkah: LangkahJalur[]; berikutnya: IdLangkah | null };
+    tugas: TugasSaya[] | null;
+    formAktif: RingkasForm[] | null;
+    hariIni: string;
+  } | null;
 }) {
   switch (tab) {
     case 'formulir':
       return formulir ? <DaftarForm forms={formulir.forms} bolehBuat={formulir.bolehBuat} bolehTemplate={false} acaraId={acara.id} /> : null;
 
     case 'ringkasan':
-      return <RingkasanAcara acara={acara} />;
+      return ikhtisar ? <RingkasanAcara acara={acara} {...ikhtisar} /> : null;
 
     case 'gantt':
       return acara.chart.length === 0 ? (
@@ -241,8 +234,8 @@ function IsiTab({
 }
 
 /**
- * Ruang kerja acara besar (T-084, USER_FLOW §6.2): delapan tab + Formulir (ADR-038). Tab yang belum
- * punya fitur menjelaskan dirinya dengan EmptyState, bukan halaman kosong.
+ * Ruang kerja acara besar (T-084, USER_FLOW §6.2): delapan tab + Formulir (ADR-038), dikelompokkan
+ * per fase kerja (ADR-039). Tab yang belum punya fitur menjelaskan dirinya dengan EmptyState.
  */
 export default async function RuangAcaraPage({ params, searchParams }: PageProps) {
   const konteks = await konteksSaatIni();
@@ -268,6 +261,18 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
     tab === 'formulir' && can(konteks.roles, 'form.read')
       ? { forms: await daftarForm(konteks, { kepanitiaanId: acara.id }), bolehBuat: can(konteks.roles, 'form.create') && (await bolehBuat(konteks, acara.id)) }
       : null;
+  const hariIni = tanggalHariIniJakarta();
+  const panitia = acara.peran_saya.ketua_pelaksana || acara.peran_saya.divisi.length > 0;
+  const ikhtisar =
+    tab === 'ringkasan'
+      ? await Promise.all([
+          muatJalur(konteks, acara),
+          panitia ? muatTugasSaya(konteks, acara) : Promise.resolve(null),
+          can(konteks.roles, 'form.read')
+            ? daftarForm(konteks, { kepanitiaanId: acara.id }).then((f) => f.filter((x) => x.status === 'DIBUKA'))
+            : Promise.resolve(null),
+        ]).then(([fakta, tugas, formAktif]) => ({ jalur: susunJalur(fakta, hariIni), tugas, formAktif, hariIni }))
+      : null;
   const propLengkap = tab === 'proposal' ? await muatProposal(konteks, acara.id) : null;
   const proposal = propLengkap
     ? {
@@ -280,8 +285,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
   return (
     <main className="min-h-dvh bg-app px-4 pb-6 text-primary sm:px-6">
       <div className="mx-auto max-w-[92rem] space-y-4">
-        <AcaraHeader acara={acara} bolehSurat={can(konteks.roles, 'surat.create')} />
-        <PeranSaya acara={acara} />
+        <AcaraHeader acara={acara} bolehSurat={can(konteks.roles, 'surat.create')} tampilPeran />
         <TabNav acaraId={acara.id} aktif={tab} />
         <section aria-label={`Tab ${tab}`} data-testid={`acara-panel-${tab}`}>
           <IsiTab
@@ -294,6 +298,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
             tor={tor}
             proposal={proposal}
             formulir={formulir}
+            ikhtisar={ikhtisar}
           />
         </section>
       </div>

@@ -6,6 +6,7 @@ import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { AmbangDeadline } from '@/lib/deadline';
+import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 import { formatTanggalPendek } from '@/lib/utils/format-tanggal';
 
@@ -124,6 +125,10 @@ function DaftarItem({ data, tenggat }: { data: readonly ItemDashboard[]; tenggat
 }
 
 export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardProps) {
+  // ADR-039: kartu yang kosong tidak memakan satu kotak penuh — diringkas menjadi satu
+  // baris "tidak ada yang perlu ditindak" sehingga kartu berisi naik ke atas.
+  const terisi = kartu.filter((k) => !k.tersedia || k.data.length > 0);
+  const kosong = kartu.filter((k) => k.tersedia && k.data.length === 0);
   return (
     <section data-testid={`panel-${panel}`} aria-labelledby={`panel-${panel}-title`}>
       <div className="mb-3">
@@ -135,27 +140,46 @@ export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardP
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-        {kartu.map((item) => (
-          <Card key={item.kunci} data-testid={`dashboard-card-${item.kunci}`}>
-            <CardHeader className="flex min-h-10 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 pb-3">
-              <CardTitle>{item.judul}</CardTitle>
-              {item.kunci === 'approval-antrian' && item.tersedia ? (
-                <Badge data-testid="dashboard-approval-badge" tone="warning">
-                  {item.data.length}
-                </Badge>
-              ) : null}
-            </CardHeader>
-            <CardContent className="pt-3">
-              {item.tersedia ? (
-                <DaftarItem data={item.data} tenggat={tenggat} />
-              ) : (
-                <p className="text-xs leading-4 text-secondary">{item.menunggu}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {terisi.length ? (
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+          {terisi.map((item) => (
+            <Card key={item.kunci} data-testid={`dashboard-card-${item.kunci}`}>
+              <CardHeader className="flex min-h-10 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 pb-3">
+                <CardTitle>{item.judul}</CardTitle>
+                {item.kunci === 'approval-antrian' && item.tersedia ? (
+                  <Badge data-testid="dashboard-approval-badge" tone="warning">
+                    {item.data.length}
+                  </Badge>
+                ) : null}
+              </CardHeader>
+              <CardContent className="pt-3">
+                {item.tersedia ? (
+                  <DaftarItem data={item.data} tenggat={tenggat} />
+                ) : (
+                  <p className="text-xs leading-4 text-secondary">{item.menunggu}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : null}
+
+      {kosong.length ? (
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md border border-dashed border-default px-3 py-2.5 text-[13px] text-secondary',
+            terisi.length > 0 && 'mt-3',
+          )}
+        >
+          <Inbox className="size-4 shrink-0 text-tertiary" aria-hidden="true" />
+          <span>{terisi.length ? 'Tidak ada yang perlu ditindak di' : 'Semua beres — tidak ada yang perlu ditindak di'}</span>
+          {kosong.map((item) => (
+            <span key={item.kunci} data-testid={`dashboard-card-${item.kunci}`} className="rounded-full bg-subtle px-2 py-0.5 text-[12px] text-primary">
+              {item.judul}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -65,6 +65,21 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Rombak tampilan: acara per fase, jalur dokumen, beranda tugas dulu (2026-11-01, permintaan pemilik)
+
+Keputusan di **ADR-039**. Ringkasnya:
+
+- Ruang kerja acara: 9 tab → 4 fase (Ikhtisar / Persiapan: TOR·RAB·Proposal / Pelaksanaan:
+  Divisi·Gantt·Formulir / Laporan: Nota·LPJ) di `components/acara/TabNav.tsx`. `?tab=` lama tetap
+  berlaku; slug fase membuka bagian pertamanya.
+- Ikhtisar: jalur dokumen TOR→LPJ dengan satu langkah "berikutnya" (`lib/acara/jalur.ts` murni +
+  `jalur-data.ts`), tugas saya (kartu kanban milik pengguna di acara itu), form yang sedang dibuka.
+  Kepala acara: hitung mundur, tema, kalimat peran.
+- Daftar acara: "Berjalan dan mendatang" (panitia didahulukan) + "Sudah lewat" terlipat.
+- Beranda: sapaan → panel peran → kalender bersama; kartu kosong diringkas jadi satu baris.
+- Gantt milik acara/divisi: remah roti kembali ke acara.
+- Audit HP 375 px seluruh halaman utama Sekum: tidak ada yang meluber.
+
 ### Formulir HMIF Center — pengganti Google Form (2026-11-01, permintaan pemilik)
 
 Keputusan pemilik (sesi tanya-jawab) tercatat di **ADR-038**; kontrak teknis di
