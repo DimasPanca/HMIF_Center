@@ -203,7 +203,7 @@ function Isi({ form }: { form: DetailForm }) {
   return (
     <div className="mx-auto max-w-[52rem]">
       {/* Kepala lengket: konteks + status simpanan + tindakan utama */}
-      <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-default bg-[var(--bg-base)]/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+      <div className="sticky top-[52px] z-20 -mx-4 mb-4 border-b border-default bg-[var(--bg-base)]/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <Link href={form.acara ? `/acara/${form.acara.id}?tab=formulir` : '/form'} className="flex size-8 items-center justify-center rounded-sm text-secondary hover:bg-subtle" aria-label="Kembali ke daftar form">
             <ArrowLeft className="size-4" />

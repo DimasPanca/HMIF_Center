@@ -40,7 +40,7 @@ export function AcaraHeader({
       <nav
         aria-label="Breadcrumb"
         data-testid="acara-breadcrumb"
-        className="sticky top-0 z-10 -mx-4 border-b border-default bg-app/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+        className="sticky top-[52px] z-20 -mx-4 border-b border-default bg-app/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
       >
         <ol className="flex min-w-0 flex-wrap items-center gap-1 text-[13px] text-secondary">
           <li>

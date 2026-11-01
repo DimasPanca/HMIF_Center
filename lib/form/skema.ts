@@ -29,7 +29,7 @@ export const INFO_KATEGORI: Record<
   },
   EVALUASI: {
     label: 'Evaluasi Acara',
-    penjelasan: 'Umpan balik peserta setelah acara. Ringkasan nilainya tampil di halaman acara.',
+    penjelasan: 'Umpan balik peserta setelah acara. Ringkasan nilainya bisa dibuka dari tab Formulir di halaman acara.',
     acara: 'wajib',
     contoh: 'Evaluasi SYNCHRONIZE 2026',
   },
