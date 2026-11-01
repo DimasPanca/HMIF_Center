@@ -5,6 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import { AcaraHeader } from '@/components/acara/AcaraHeader';
 import { BelumTersedia } from '@/components/acara/BelumTersedia';
 import { DivisiCard } from '@/components/acara/DivisiCard';
+import { DaftarForm } from '@/components/form/DaftarForm';
 import { RingkasanAcara } from '@/components/acara/RingkasanAcara';
 import { TabNav, tabDari, type TabAcara } from '@/components/acara/TabNav';
 import { PemasukanPanel } from '@/components/rab/PemasukanPanel';
@@ -15,6 +16,8 @@ import { Card } from '@/components/ui/card';
 import { muatAcara, type RuangAcara } from '@/lib/acara/service';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { bolehBuat } from '@/lib/form/akses';
+import { daftarForm, type RingkasForm } from '@/lib/form/service';
 import { muatProposal } from '@/lib/proposal/service';
 import { muatPemasukan, type DataPemasukan } from '@/lib/rab/pemasukan';
 import { muatRab, muatRabAktual, type DataRab, type DataRabAktual } from '@/lib/rab/service';
@@ -60,6 +63,7 @@ function IsiTab({
   bolehBatal,
   tor,
   proposal,
+  formulir,
 }: {
   acara: RuangAcara;
   tab: TabAcara;
@@ -69,8 +73,12 @@ function IsiTab({
   bolehBatal: boolean;
   tor: { terisi: number; total: number; kurang: string[]; boleh_tulis: boolean } | null;
   proposal: { persen: number; tersimpan: boolean; boleh_tulis: boolean } | null;
+  formulir: { forms: RingkasForm[]; bolehBuat: boolean } | null;
 }) {
   switch (tab) {
+    case 'formulir':
+      return formulir ? <DaftarForm forms={formulir.forms} bolehBuat={formulir.bolehBuat} bolehTemplate={false} acaraId={acara.id} /> : null;
+
     case 'ringkasan':
       return <RingkasanAcara acara={acara} />;
 
@@ -233,7 +241,7 @@ function IsiTab({
 }
 
 /**
- * Ruang kerja acara besar (T-084, USER_FLOW §6.2): delapan tab. Tab yang belum
+ * Ruang kerja acara besar (T-084, USER_FLOW §6.2): delapan tab + Formulir (ADR-038). Tab yang belum
  * punya fitur menjelaskan dirinya dengan EmptyState, bukan halaman kosong.
  */
 export default async function RuangAcaraPage({ params, searchParams }: PageProps) {
@@ -256,6 +264,10 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
   const tor = torLengkap
     ? { ...ringkasKelengkapan(torLengkap), boleh_tulis: torLengkap.boleh_tulis }
     : null;
+  const formulir =
+    tab === 'formulir' && can(konteks.roles, 'form.read')
+      ? { forms: await daftarForm(konteks, { kepanitiaanId: acara.id }), bolehBuat: can(konteks.roles, 'form.create') && (await bolehBuat(konteks, acara.id)) }
+      : null;
   const propLengkap = tab === 'proposal' ? await muatProposal(konteks, acara.id) : null;
   const proposal = propLengkap
     ? {
@@ -281,6 +293,7 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
             bolehBatal={can(konteks.roles, 'nota.verify')}
             tor={tor}
             proposal={proposal}
+            formulir={formulir}
           />
         </section>
       </div>

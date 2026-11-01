@@ -71,6 +71,8 @@ export const MODUL_BACKUP = {
   notulensi: ['notulensi', 'notulensi_attendance', 'notulensi_lampiran', 'action_item'],
   pengurus: ['user_role', 'pengurus'],
   'audit-log': ['audit_log'],
+  // ADR-038 #11: modul ke-13 (PRD F-16.1 menyebut 12; formulir menyusul).
+  formulir: ['form_template', 'form', 'form_bagian', 'form_pertanyaan', 'form_respons', 'form_jawaban'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type ModulBackup = keyof typeof MODUL_BACKUP;

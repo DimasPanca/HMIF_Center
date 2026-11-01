@@ -65,6 +65,31 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Formulir HMIF Center — pengganti Google Form (2026-11-01, permintaan pemilik)
+
+Keputusan pemilik (sesi tanya-jawab) tercatat di **ADR-038**; kontrak teknis di
+`docs/ai/FORM_CONTRACT.md`. Ringkasnya: kategori wajib (Pendaftaran/Evaluasi terikat acara,
+Oprec/Pendataan organisasi, Lainnya bebas), 13 tipe pertanyaan + bagian + logika lompat, akses
+PUBLIK/INTERNAL per form, anonim, batas waktu & kuota, unggah berkas (privat), template global
+Sekum/Admin.
+
+- DB: migrasi `052_formulir.sql` + `053_formulir_peran_positif.sql`, tes `supabase/tests/052_formulir.sql`.
+  Respons TIDAK punya policy INSERT — hanya server (`lib/form/respons.ts kirimRespons`).
+- Server: `lib/form/{skema,jawaban,akses,service,respons,template,template-bawaan}.ts`.
+  Validasi jawaban (`jawaban.ts`) dipakai klien & server.
+- Integrasi: Pendaftaran → baris `peserta` otomatis; Pendataan → tombol "Terapkan" (Sekum/Admin)
+  upsert `pengurus` by NIM; Oprec → `status_seleksi`.
+- Rute: `/form`, `/form/baru` (wizard 3 langkah), `/form/{id}` (editor, auto-save 1 dtk),
+  `/form/{id}/respons`, `/form/template[/{id}|/baru]`, publik `/f/{token}` + `/api/f/{token}`
+  (rate limit 20/jam/IP/form, honeypot `situs_web`). Tab acara ke-9 "Formulir" (`?tab=formulir`).
+  Menu "Formulir" di sidebar Ketua/Wakil/Sekum/Admin, dan Bendum/Kadept/Anggota bila panitia.
+- **Batas unggah 4 MB/berkas, 4,4 MB/kiriman** — badan permintaan Vercel maks 4,5 MB; foto
+  dikompres di peramban (`IsiForm kecilkanGambar`).
+- **Template KT1 masih kerangka** (nama + NIM). Isi aslinya menyusul dari pemilik — isi lewat
+  `/form/template` (UI) atau ubah `TEMPLATE_BAWAAN` (hanya menyemai bila nama belum ada).
+- Gate: `e2e/formulir.spec.ts` (desktop + mobile), `lib/form/__tests__/*`, menu test.
+- Berikutnya yang disepakati: **rombak tampilan/UX** (psikologi pengguna, isi halaman acara).
+
 ### Sidebar per peran, surat hanya Sekum, HP tanpa geser (2026-10-19, permintaan pemilik)
 
 Pemilik mencoba data demo di HP dan meminta: tampilan HP muat tanpa geser ke samping (huruf

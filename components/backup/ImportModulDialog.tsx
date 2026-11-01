@@ -16,7 +16,7 @@ import type { PratinjauRestore } from '@/lib/backup/restore';
 
 import { TabelPratinjau, kirimRestore } from './RestoreDialog';
 
-/** Urutan & label 12 modul PRD F-16.1 (nilai = nama berkas `modules/{nilai}.json`). */
+/** Urutan & label 12 modul PRD F-16.1 + formulir (ADR-038) — nilai = nama berkas `modules/{nilai}.json`. */
 const MODUL = [
   ['prokers', 'Program kerja'],
   ['kepanitiaan', 'Kepanitiaan & dokumen acara'],
@@ -29,6 +29,7 @@ const MODUL = [
   ['pengurus', 'Pengurus & role'],
   ['departemen', 'Departemen & ruangan'],
   ['periode', 'Periode & konfigurasi'],
+  ['formulir', 'Formulir & respons'],
   ['audit-log', 'Audit log (hanya Tambah)'],
 ] as const;
 

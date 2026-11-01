@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import {
   Archive,
+  ClipboardList,
+  LayoutTemplate,
   BadgeCheck,
   Building2,
   CalendarDays,
@@ -106,6 +108,8 @@ const IKON: Record<IkonMenu, ComponentType<LucideProps>> = {
   periode: CalendarDays,
   backup: DatabaseBackup,
   audit: History,
+  formulir: ClipboardList,
+  template: LayoutTemplate,
 };
 
 function BadgeAngka({ nilai, terang = false }: { nilai: number; terang?: boolean }) {

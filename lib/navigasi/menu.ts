@@ -14,13 +14,13 @@
 
 import { can, type Permission, type RoleCode } from '@/lib/auth/permissions';
 
-export type SlugMenu = 'beranda' | 'proker' | 'acara' | 'surat' | 'keuangan' | 'sekretariat' | 'departemen' | 'admin';
+export type SlugMenu = 'beranda' | 'proker' | 'acara' | 'formulir' | 'surat' | 'keuangan' | 'sekretariat' | 'departemen' | 'admin';
 export type ModeMenu = 'penuh' | 'baca';
 export type BadgeMenu = 'proker' | 'surat' | 'nota';
 export type IkonMenu =
   | 'beranda' | 'proker' | 'tambah' | 'kalender' | 'gantt' | 'approval' | 'acara' | 'surat' | 'buat-surat' | 'massal'
   | 'arsip' | 'sk-aktif' | 'keuangan' | 'nota' | 'verifikasi' | 'sekretariat' | 'notulensi' | 'pengurus' | 'ruangan'
-  | 'departemen' | 'kanban' | 'kendala' | 'admin' | 'pengguna' | 'periode' | 'backup' | 'audit';
+  | 'departemen' | 'kanban' | 'kendala' | 'admin' | 'pengguna' | 'periode' | 'backup' | 'audit' | 'formulir' | 'template';
 
 export interface ItemMenu {
   label: string;
@@ -70,6 +70,7 @@ const MODE: Record<SlugMenu, (roles: readonly RoleCode[]) => ModeMenu | null> = 
   beranda: () => 'penuh',
   proker: (r) => akses(r, 'proker.read', ['proker.create', 'proker.approve']),
   acara: (r) => akses(r, 'kepanitiaan.read', ['kepanitiaan.update', 'rab.update', 'nota.create', 'nota.verify']),
+  formulir: (r) => akses(r, 'form.read', ['form.create']),
   surat: (r) => akses(r, 'surat.read', ['surat.create', 'surat.approve', 'surat.ajukan_aktif']),
   keuangan: (r) => akses(r, 'nota.read', ['nota.verify', 'nota.create']),
   sekretariat: (r) => akses(r, 'notulensi.read', ['notulensi.create', 'pengurus.create', 'ruangan.create']),
@@ -107,11 +108,17 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
     periode: { label: 'Periode Kepengurusan', href: '/admin/periode', ikon: 'periode', syarat: 'periode.create' },
     backup: { label: 'Backup & Restore', href: '/admin/backup', ikon: 'backup', syarat: 'backup.manage' },
     audit: { label: 'Audit Log', href: '/admin/audit', ikon: 'audit', syarat: 'audit.read' },
+    formulir: { label: 'Semua Form', href: '/form', ikon: 'formulir', syarat: 'form.read' },
+    templateForm: { label: 'Template Form', href: '/form/template', ikon: 'template', syarat: 'form_template.manage' },
   } satisfies Record<string, Butir>;
 
   const proker = (items: Butir[]): RencanaGrup => ({ slug: 'proker', label: 'Program Kerja', href: '/proker', ikon: 'proker', items });
   const surat = (items: Butir[]): RencanaGrup => ({ slug: 'surat', label: 'Persuratan', href: '/surat', ikon: 'surat', items });
   const sekretariat = (items: Butir[]): RencanaGrup => ({ slug: 'sekretariat', label: 'Kesekretariatan', href: '/sekretariat/notulensi', ikon: 'sekretariat', items });
+  // Formulir (ADR-038): satu butir tampil sebagai tautan tunggal "Formulir"; panitia
+  // non-pimpinan hanya melihatnya bila duduk di kepanitiaan.
+  const formulir = (items: Butir[]): RencanaGrup => ({ slug: 'formulir', label: 'Formulir', href: '/form', ikon: 'formulir', items });
+  const formSaja = formulir([{ ...I.formulir, label: 'Formulir' }]);
 
   switch (peran) {
     case 'KETUA':
@@ -120,6 +127,7 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
         beranda,
         proker([I.daftarProker, I.kalender, I.gantt, I.approvalProker]),
         acara,
+        formSaja,
         surat([I.approvalSurat, I.arsip, I.skAktif]),
         { slug: 'departemen', label: 'Departemen', href: '/departemen/kanban', ikon: 'departemen', items: [I.kanban, I.kendala] },
         sekretariat([I.notulensi]),
@@ -129,6 +137,7 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
         beranda,
         surat([I.buatSurat, I.massal, I.approvalSurat, I.arsip]),
         sekretariat([I.notulensi, I.pengurus, I.ruangan]),
+        formulir([I.formulir, I.templateForm]),
         proker([I.daftarProker, I.kalender]),
         acara,
       ];
@@ -137,6 +146,7 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
         beranda,
         { slug: 'keuangan', label: 'Keuangan', href: '/keuangan/nota/verifikasi', ikon: 'keuangan', items: [I.verifikasi, I.semuaNota] },
         acara,
+        ...(fakta.panitia ? [formSaja] : []),
         surat([I.skAktif]),
       ];
     case 'KADEPT':
@@ -145,6 +155,7 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
         { slug: 'departemen', label: 'Departemen Saya', href: dept('kanban'), ikon: 'departemen', items: [I.kanban, I.kendala, I.ganttDept] },
         proker([I.daftarProker, I.buatProker, I.kalender]),
         acara,
+        ...(fakta.panitia ? [formSaja] : []),
         sekretariat([I.notulensi, I.ruangan]),
         surat([I.skAktif]),
       ];
@@ -153,12 +164,13 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
         beranda,
         { slug: 'departemen', label: 'Departemen Saya', href: dept('kanban'), ikon: 'departemen', items: [{ ...I.kanban, label: 'Tugas Saya' }, I.kendala] },
         { ...acara, label: 'Acara Saya', items: fakta.panitia ? [{ label: 'Acara Saya', href: '/acara', ikon: 'acara' }, I.uploadNota] : [] },
+        ...(fakta.panitia ? [formSaja] : []),
         surat([I.skAktif]),
       ];
     case 'BPH':
       return [beranda, proker([I.daftarProker, I.gantt]), acara, surat([I.arsip]), { slug: 'admin', label: 'Audit Log', href: '/admin/audit', ikon: 'audit', items: [I.audit] }];
     case 'ADMIN':
-      return [beranda, { slug: 'admin', label: 'Administrasi', href: '/admin/pengguna', ikon: 'admin', items: [I.pengguna, I.periode, I.backup, I.audit] }];
+      return [beranda, { slug: 'admin', label: 'Administrasi', href: '/admin/pengguna', ikon: 'admin', items: [I.pengguna, I.periode, I.backup, I.audit] }, formulir([I.formulir, I.templateForm])];
   }
 }
 
@@ -205,6 +217,7 @@ const AWALAN_GRUP: Record<SlugMenu, readonly string[]> = {
   beranda: [],
   proker: ['/proker'],
   acara: ['/acara'],
+  formulir: ['/form'],
   surat: ['/surat'],
   keuangan: ['/keuangan'],
   sekretariat: ['/sekretariat'],

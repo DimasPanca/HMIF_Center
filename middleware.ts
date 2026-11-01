@@ -58,6 +58,12 @@ const RUTE_PUBLIK = [
   // sehingga '/undangan' ikut membuka '/undangan/<token>'.
   '/undangan',
   '/api/auth/activate',
+
+  // Formulir HMIF Center (ADR-038): calon peserta mengisi tanpa akun. Yang
+  // menjaga adalah token 122-bit di tautan + validasi server; form INTERNAL
+  // tetap menuntut sesi di dalam route/halamannya sendiri.
+  '/f',
+  '/api/f',
 ];
 
 /**

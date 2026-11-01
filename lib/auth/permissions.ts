@@ -114,6 +114,10 @@ const MATRIKS: Record<string, Baris> = {
 
   backup:              { ADMIN:'CRUD', KETUA:'R',    WAKIL:'',     SEKUM:'',     BENDUM:'',    KADEPT:'',     ANGGOTA:'',    BPH:'R' },
   audit:               { ADMIN:'R',    KETUA:'R',    WAKIL:'R',    SEKUM:'R',    BENDUM:'R',   KADEPT:'R*',   ANGGOTA:'',    BPH:'R' },
+
+  // ADR-038: formulir. `*` = hanya form acara tempat ia panitia (lib/form/akses.ts).
+  form:                { ADMIN:'CRUD', KETUA:'CRUD', WAKIL:'CRUD', SEKUM:'CRUD', BENDUM:'CRU*', KADEPT:'CRU*', ANGGOTA:'CRU*', BPH:'R' },
+  form_template:       { ADMIN:'CRUD', KETUA:'R',    WAKIL:'R',    SEKUM:'CRUD', BENDUM:'R',   KADEPT:'R',    ANGGOTA:'R',   BPH:'R' },
 };
 
 /**
@@ -205,6 +209,9 @@ const AKSI = {
 
   'backup.read':              ['backup', 'R'],
   'backup.manage':            ['backup', 'U'],
+  'form.read':                ['form', 'R'],
+  'form.create':              ['form', 'C'],
+  'form_template.manage':     ['form_template', 'U'],
 
   'audit.read':               ['audit', 'R'],
 } as const satisfies Record<string, readonly [string, Hak]>;

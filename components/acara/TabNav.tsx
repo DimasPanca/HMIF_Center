@@ -1,5 +1,5 @@
 /**
- * Delapan tab ruang kerja acara (USER_FLOW §6.2). Tab adalah tautan `?tab=`
+ * Sembilan tab ruang kerja acara: delapan dari USER_FLOW §6.2 + Formulir (ADR-038). Tab adalah tautan `?tab=`
  * di rute yang sama, jadi setiap tab dapat dibagikan dan tombol Kembali bekerja.
  *
  * Test id: acara-tab-{slug}.
@@ -18,6 +18,7 @@ export const TAB_ACARA = [
   { slug: 'proposal', label: 'Proposal' },
   { slug: 'nota', label: 'Nota' },
   { slug: 'lpj', label: 'LPJ' },
+  { slug: 'formulir', label: 'Formulir' },
 ] as const;
 
 export type TabAcara = (typeof TAB_ACARA)[number]['slug'];
@@ -28,10 +29,10 @@ export function tabDari(v: string | undefined): TabAcara {
 
 export function TabNav({ acaraId, aktif }: { acaraId: string; aktif: TabAcara }) {
   return (
-    // HP: delapan tab tampil sekaligus sebagai kisi 4×2 — tidak ada yang tersembunyi
+    // HP: sembilan tab tampil sekaligus sebagai kisi 3×3 — tidak ada yang tersembunyi
     // di luar layar dan tidak perlu digeser (ADR-037). Layar lebar: tab bergaris bawah.
     <nav aria-label="Bagian ruang kerja acara">
-      <ul className="grid grid-cols-4 gap-1.5 sm:flex sm:gap-1 sm:border-b sm:border-default">
+      <ul className="grid grid-cols-3 gap-1.5 sm:flex sm:gap-1 sm:border-b sm:border-default">
         {TAB_ACARA.map((t) => (
           <li key={t.slug} className="min-w-0">
             <Link
