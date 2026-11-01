@@ -127,8 +127,17 @@ function DaftarItem({ data, tenggat }: { data: readonly ItemDashboard[]; tenggat
 export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardProps) {
   // ADR-039: kartu yang kosong tidak memakan satu kotak penuh — diringkas menjadi satu
   // baris "tidak ada yang perlu ditindak" sehingga kartu berisi naik ke atas.
-  const terisi = kartu.filter((k) => !k.tersedia || k.data.length > 0);
-  const kosong = kartu.filter((k) => k.tersedia && k.data.length === 0);
+  // Kartu yang seluruh isinya sudah tampil di kartu sebelumnya (mis. "Deadline terdekat"
+  // Anggota = subset "Tugas saya") tidak diulang — data sama dua kali membingungkan.
+  const sudahTampil = new Set<string>();
+  const unik = kartu.filter((k) => {
+    if (!k.tersedia || k.data.length === 0) return true;
+    const adaBaru = k.data.some((d) => !sudahTampil.has(d.id));
+    for (const d of k.data) sudahTampil.add(d.id);
+    return adaBaru;
+  });
+  const terisi = unik.filter((k) => !k.tersedia || k.data.length > 0);
+  const kosong = unik.filter((k) => k.tersedia && k.data.length === 0);
   return (
     <section data-testid={`panel-${panel}`} aria-labelledby={`panel-${panel}-title`}>
       <div className="mb-3">

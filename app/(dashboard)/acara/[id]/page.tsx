@@ -1,4 +1,4 @@
-import { CalendarRange, FileText } from 'lucide-react';
+import { CalendarRange, FileText, Receipt } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -51,6 +51,7 @@ function IsiTab({
   proposal,
   formulir,
   ikhtisar,
+  aksesNota,
 }: {
   acara: RuangAcara;
   tab: TabAcara;
@@ -61,6 +62,7 @@ function IsiTab({
   tor: { terisi: number; total: number; kurang: string[]; boleh_tulis: boolean } | null;
   proposal: { persen: number; tersimpan: boolean; boleh_tulis: boolean } | null;
   formulir: { forms: RingkasForm[]; bolehBuat: boolean } | null;
+  aksesNota: { upload: boolean; verifikasi: boolean };
   ikhtisar: {
     jalur: { langkah: LangkahJalur[]; berikutnya: IdLangkah | null };
     tugas: TugasSaya[] | null;
@@ -154,13 +156,38 @@ function IsiTab({
           aksi={ringkasan(acara.id)}
         />
       ) : (
-        <BelumTersedia
-          testid="acara-isi-nota"
-          ikon="nota"
-          judul={`${acara.ringkasan.nota.terverifikasi} nota terverifikasi · ${acara.ringkasan.nota.menunggu} menunggu`}
-          penjelasan="Unggah dan verifikasi nota belum tersedia di versi ini. Daftar nota per divisi ada di ruang kerja divisi."
-          aksi={{ label: 'Lihat divisi', href: `/acara/${acara.id}?tab=divisi` }}
-        />
+        <Card className="space-y-3 p-4" data-testid="acara-isi-nota">
+          <div className="flex items-start gap-3">
+            <Receipt aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-tertiary" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[15px] font-semibold">Nota belanja</h2>
+              <p className="text-[13px] text-secondary">
+                {acara.ringkasan.nota.terverifikasi} terverifikasi · {acara.ringkasan.nota.menunggu} menunggu verifikasi ·{' '}
+                {acara.ringkasan.nota.ditolak} ditolak. Nota yang terverifikasi otomatis masuk ke RAB Aktual dan LPJ.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {aksesNota.upload ? (
+              <Link href="/keuangan/nota/upload" className={buttonVariants({ variant: 'primary' })} data-testid="acara-upload-nota">
+                Upload nota
+              </Link>
+            ) : null}
+            {aksesNota.verifikasi ? (
+              <Link href="/keuangan/nota/verifikasi" className={buttonVariants({ variant: aksesNota.upload ? 'secondary' : 'primary' })}>
+                Verifikasi nota
+              </Link>
+            ) : null}
+            {aksesNota.upload ? (
+              <Link href="/keuangan/nota" className={buttonVariants({ variant: 'secondary' })}>
+                Nota saya
+              </Link>
+            ) : null}
+            <Link href={`/acara/${acara.id}?tab=divisi`} className={buttonVariants({ variant: 'ghost' })}>
+              Nota per divisi
+            </Link>
+          </div>
+        </Card>
       );
 
     case 'tor':
@@ -299,6 +326,11 @@ export default async function RuangAcaraPage({ params, searchParams }: PageProps
             proposal={proposal}
             formulir={formulir}
             ikhtisar={ikhtisar}
+            aksesNota={{
+              // Upload nota hanya untuk panitia acara ini (halaman upload memilih divisi pengguna).
+              upload: can(konteks.roles, 'nota.create') && panitia,
+              verifikasi: can(konteks.roles, 'nota.verify'),
+            }}
           />
         </section>
       </div>
