@@ -126,8 +126,9 @@ disetujui** sebelum bisa diunduh, sama seperti surat lain.
 3. Setelah disetujui, nomor surat dialokasikan dan status menjadi **Terbit**. Barulah tombol **Unduh**
    muncul di halaman yang sama.
 4. Bila **Ditolak**, alasan penolakan tampil di halaman itu; perbaiki keperluannya lalu ajukan lagi.
-5. Belum disetujui juga? Hubungi Sekretaris Umum, Wakil Ketua, atau Ketua Himpunan supaya memeriksa
-   Antrian Approval.
+5. Pengaju hanya melihat statusnya (Menunggu persetujuan, Terbit, atau Ditolak), tidak melihat siapa yang
+   sedang memeriksa; Antrian Approval hanya bisa dibuka Ketua Himpunan, Wakil Ketua, dan Sekretaris Umum.
+   Belum disetujui juga? Hubungi salah satu dari mereka supaya memeriksa Antrian Approval.
 
 Surat lain (undangan, peminjaman, permohonan, dan sebagainya) dibuat oleh Sekretaris Umum. Sekum juga
 bisa mengajukan SK Aktif untuk banyak pengurus sekaligus lewat **Surat aktif massal**.

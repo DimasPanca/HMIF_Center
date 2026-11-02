@@ -29,6 +29,8 @@ Dashboard Supabase → **Project Settings → API Keys**
 | `SUPABASE_SECRET_KEY` | **Secret key** | **RAHASIA.** Melewati seluruh RLS |
 | `GEMINI_API_KEY` | Google AI Studio → API key | **RAHASIA.** Untuk Dhana (ADR-060); server saja, tanpa awalan `NEXT_PUBLIC_`. Kosong = Dhana menjawab "belum dikonfigurasi". |
 | `GEMINI_MODEL` | — | Opsional, bawaan `gemini-2.5-flash`. |
+| `GROQ_API_KEY` | console.groq.com → API Keys (`gsk_…`) | **RAHASIA.** Cadangan pertama Dhana bila Gemini gagal (ADR-063). Model: `GROQ_MODEL`, bawaan `openai/gpt-oss-120b`. |
+| `OPENROUTER_API_KEY` | openrouter.ai → Keys (`sk-or-…`) | **RAHASIA.** Cadangan kedua Dhana. Model: `OPENROUTER_MODEL`, bawaan `openai/gpt-4o-mini` (memakai saldo OpenRouter). |
 
 > **Format kunci baru.** Project Supabase yang dibuat sejak 2025 menerbitkan kunci berformat
 > `sb_publishable_...` dan `sb_secret_...`, menggantikan anon/service_role JWT lama yang diawali `eyJ...`.

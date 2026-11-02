@@ -30,6 +30,8 @@ const RAHASIA = [
   'DATABASE_URL',
   'DIRECT_URL',
   'GEMINI_API_KEY', // Dhana (ADR-060) — hanya app/api/dhana
+  'GROQ_API_KEY', // cadangan Dhana (ADR-063)
+  'OPENROUTER_API_KEY', // cadangan Dhana (ADR-063)
 ];
 
 /** Modul yang hanya boleh hidup di server. */
