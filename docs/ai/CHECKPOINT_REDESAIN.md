@@ -8,7 +8,7 @@
 | **Dimulai** | 2026-11-02 |
 | **Branch** | `claude/sharp-gates-ngoq4i` (belum di-merge ke `main`) |
 | **Commit terakhir sebelum tahap ini** | `1f5d926` |
-| **Status** | Keputusan lengkap (2026-11-02). Berikutnya: pasang skill, lalu Tahap 1. |
+| **Status** | Tahap 0: skill terpasang. Berikutnya: ADR arah visual, lalu Tahap 1. |
 
 ## Permintaan pemilik (ringkas, 2026-11-02)
 
@@ -61,7 +61,12 @@
 ## Rencana kerja
 
 **Tahap 0 — persiapan**
-- [ ] Pasang skill: taste-skill (design-taste-frontend), web-design-guidelines, DESIGN.md Linear, playwright-cli.
+- [x] Pasang skill (2026-11-02) di `.claude/skills/`:
+  - `design-taste-frontend` — taste-skill @12af471 (MIT); untuk layar app baca `references/app-screens.md`.
+  - `web-design-guidelines` — vercel-labs/agent-skills @1a2c79d (audit UI, ambil aturan terbaru via WebFetch).
+  - `playwright-cli` — microsoft/playwright-cli @c2d8d19 (Apache-2.0); CLI global `@playwright/cli` 0.1.23 terpasang di Node 22 laptop ini (di komputer lain: `npm install -g @playwright/cli@latest`).
+  - `hmif-design-linear` — adaptor HMIF: Linear (awesome-design-md @fcc7028, MIT) + navy HMIF + terang/gelap ikut sistem.
+  - `.claude/**` dikecualikan dari ESLint (kode vendor).
 - [ ] ADR baru: arah visual Linear (pertentangan dengan DESIGN_SYSTEM beku dicatat di ADR), Guide, Dhana (Gemini via REST, tanpa SDK), Report bug.
 
 **Tahap 1**
@@ -84,3 +89,4 @@
 ## Progres
 
 - 2026-11-02 — tanya-jawab selesai, `GEMINI_API_KEY` disimpan di `.env.local`.
+- 2026-11-02 — Tahap 0: empat skill terpasang, verify hijau.
