@@ -1,12 +1,11 @@
 'use client';
 
-import { AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
-import Image, { getImageProps } from 'next/image';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { AlertCircle, ArrowRight, LockKeyhole, Mail } from 'lucide-react';
+import { useCallback, useState, type FormEvent } from 'react';
+
+import { PanelLogin } from '@/components/auth/PanelLogin';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 type JsonObject = Record<string, unknown>;
 
@@ -28,15 +27,9 @@ function readErrorMessage(payload: unknown): string | null {
   return root?.ok === false && typeof error?.message === 'string' ? error.message : null;
 }
 
-// Poster lewat optimizer Next (WebP seukuran tampilan, ±5 KB) alih-alih PNG
-// mentah 113 KB yang berebut bandwidth dengan JS halaman di 4G (T-114).
-const POSTER_LOGO = getImageProps({ src: '/logo-hmif.png', alt: '', width: 84, height: 84 }).props.src;
-
 function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [videoAktif, setVideoAktif] = useState(false);
-  useEffect(() => setVideoAktif(true), []);
   const setFormRef = useCallback((node: HTMLFormElement | null) => {
     if (node) node.setAttribute('data-testid', 'login-form');
   }, []);
@@ -83,120 +76,82 @@ function LoginPage() {
     }
   }
 
-  return (
-    <main className="grid min-h-dvh bg-app text-primary lg:grid-cols-[minmax(0,1.08fr)_minmax(28rem,0.92fr)]">
-      <section
-        data-testid="login-hero"
-        className="relative flex min-h-[17rem] items-end overflow-hidden px-6 py-8 text-white sm:min-h-[20rem] sm:px-10 sm:py-10 lg:min-h-dvh lg:items-center lg:px-14 xl:px-20"
-        style={{ background: 'var(--gradient-primary)' }}
-      >
-        <div className="relative z-10 max-w-xl">
-          {/*
-            Logo beranimasi (permintaan pemilik 2026-10-17). Video WebM tanpa latar
-            (transparan). Poster = logo statis:
-            tampil seketika selagi video dimuat dan bila video gagal. Pengguna
-            dengan "kurangi gerakan" hanya melihat logo statis.
-            Video baru dipasang setelah hidrasi, dan berkasnya di-encode ulang
-            ke 256 px (4,6 MB → 0,35 MB): unduhan & decoding-nya tidak lagi
-            berebut dengan JS halaman — siap pakai di 4G turun ±200 ms (T-114).
-          */}
-          <video
-            src={videoAktif ? '/logo-hmif-animasi.webm' : undefined}
-            poster={POSTER_LOGO}
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-label="Logo HMIF Fakultas Teknik UNTIRTA"
-            data-testid="login-logo-animasi"
-            className="size-[68px] object-contain motion-reduce:hidden sm:size-[84px]"
-          />
-          <Image
-            src="/logo-hmif.png"
-            alt="Logo HMIF Fakultas Teknik UNTIRTA"
-            width={84}
-            height={84}
-            priority
-            className="hidden h-auto w-[68px] motion-reduce:block sm:w-[84px]"
-          />
-          <p className="mt-6 text-[11px] leading-4 font-semibold tracking-[0.16em] uppercase">
-            Sistem E-Administrasi
-          </p>
-          <h1 className="mt-2 text-[clamp(2rem,5vw,3.5rem)] leading-[1.04] font-bold tracking-[-0.035em]">
-            HMIF Center
-          </h1>
-          <p className="mt-4 max-w-lg text-[15px] leading-6 sm:text-[17px] sm:leading-7">
-            Satu ruang kerja untuk program, persuratan, dan administrasi Himpunan Mahasiswa
-            Informatika FT UNTIRTA.
-          </p>
-          <div className="mt-6 flex items-center gap-2 text-[13px] leading-[18px] font-medium">
-            <ShieldCheck aria-hidden="true" className="size-[18px] shrink-0" />
-            <span>Akses aman sesuai peran dan periode kepengurusan.</span>
-          </div>
-        </div>
-      </section>
+  const kolom =
+    'h-12 w-full rounded-xl border border-white/10 bg-white/[0.04] pr-3 pl-10 text-[15px] text-white outline-none placeholder:text-[#64748B] transition-[border-color,box-shadow,background-color] duration-200 hover:border-white/20 focus:border-[#1E90FF]/70 focus:bg-[#0B1A3A]/60 focus:shadow-[0_0_0_1px_rgba(30,144,255,0.45),0_0_32px_rgba(30,144,255,0.45)] disabled:opacity-60 motion-reduce:transition-none';
 
-      <section className="flex items-center justify-center px-4 py-10 sm:px-8 lg:px-12">
-        <div className="w-full max-w-[26rem]">
-          <div>
-            <p className="text-[11px] leading-4 font-semibold tracking-[0.14em] text-secondary uppercase">
-              Area pengurus
-            </p>
-            <h2 className="mt-2 text-[28px] leading-9 font-semibold tracking-[-0.02em]">
-              Masuk ke akun Anda
-            </h2>
-            <p className="mt-2 text-[14px] leading-5 text-secondary">
-              Gunakan akun kepengurusan yang dikelola oleh Admin.
-            </p>
-          </div>
+  return (
+    // ADR-064 (revisi): gaya referensi pemilik dalam palet HMIF — navy gelap dengan pendar biru dari
+    // bawah, panel pemandangan di kiri, form bercahaya di kanan. Halaman ini selalu gelap.
+    <main
+      className="grid min-h-dvh text-white lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]"
+      style={{ background: 'radial-gradient(120% 75% at 72% 115%, #0066A9 0%, #0B2A66 38%, #060B1A 72%, #03050C 100%)' }}
+    >
+      <PanelLogin />
+
+      <section className="flex items-center justify-center px-5 pt-6 pb-14 sm:px-8 lg:px-14 lg:py-12">
+        <div className="w-full max-w-[23rem]">
+          <p className="text-[13px] font-medium text-[#94A3B8]">Masuk ke HMIF Center</p>
+          <h2 className="mt-1 text-[32px] leading-10 font-semibold tracking-[-0.025em] text-white">Selamat datang kembali!</h2>
+          <p className="mt-2 text-[15px] leading-6 text-[#94A3B8]">Masukkan email dan kata sandi akun kepengurusan Anda.</p>
 
           <form
             ref={setFormRef}
             action="/api/auth/login"
             method="post"
-            className="mt-8 space-y-5"
+            className="mt-9 space-y-5"
             aria-busy={isSubmitting}
             onSubmit={handleSubmit}
           >
-            <div className="space-y-1.5">
-              <Label htmlFor="login-email" required>
+            <div className="space-y-2">
+              <label htmlFor="login-email" className="text-[13px] font-medium text-[#94A3B8]">
                 Email
-              </Label>
-              <Input
-                id="login-email"
-                name="email"
-                type="email"
-                data-testid="login-email"
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                inputMode="email"
-                maxLength={254}
-                placeholder="nama@hmif.or.id"
-                required
-                disabled={isSubmitting}
-                aria-describedby={errorMessage ? 'login-error-message' : undefined}
-                onChange={clearError}
-              />
+              </label>
+              <div className="relative">
+                <Mail aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#7C8BA6]" />
+                <input
+                  id="login-email"
+                  name="email"
+                  type="email"
+                  data-testid="login-email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
+                  maxLength={254}
+                  placeholder="nama@hmif.or.id"
+                  required
+                  disabled={isSubmitting}
+                  aria-describedby={errorMessage ? 'login-error-message' : undefined}
+                  className={kolom}
+                  onChange={clearError}
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="login-password" required>
-                Password
-              </Label>
-              <Input
-                id="login-password"
-                name="password"
-                type="password"
-                data-testid="login-password"
-                autoComplete="current-password"
-                placeholder="Masukkan password"
-                minLength={8}
-                required
-                disabled={isSubmitting}
-                aria-describedby={errorMessage ? 'login-error-message' : undefined}
-                onChange={clearError}
-              />
+            <div className="space-y-2">
+              <label htmlFor="login-password" className="text-[13px] font-medium text-[#94A3B8]">
+                Kata sandi
+              </label>
+              <div className="relative">
+                <LockKeyhole aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#7C8BA6]" />
+                <input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  data-testid="login-password"
+                  autoComplete="current-password"
+                  placeholder="Masukkan kata sandi…"
+                  minLength={8}
+                  required
+                  disabled={isSubmitting}
+                  aria-describedby={errorMessage ? 'login-error-message' : undefined}
+                  className={kolom}
+                  onChange={clearError}
+                />
+              </div>
+              <p className="text-[13px] text-[#94A3B8]">
+                Lupa kata sandi? <span className="text-[#7CC4FF]">Hubungi Admin HMIF.</span>
+              </p>
             </div>
 
             {errorMessage ? (
@@ -205,9 +160,9 @@ function LoginPage() {
                 data-testid="login-error"
                 role="alert"
                 aria-live="polite"
-                className="flex items-start gap-2 rounded-sm border border-[var(--danger)] bg-[var(--danger-subtle)] p-3 text-[13px] leading-[18px] text-primary"
+                className="flex items-start gap-2 rounded-xl border border-[#F87171]/40 bg-[#F87171]/10 p-3 text-[14px] leading-5 text-[#FECACA]"
               >
-                <AlertCircle aria-hidden="true" className="mt-px size-4 shrink-0 text-danger" />
+                <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#F87171]" />
                 <p>{errorMessage}</p>
               </div>
             ) : null}
@@ -215,16 +170,16 @@ function LoginPage() {
             <Button
               type="submit"
               data-testid="login-submit"
-              className="w-full"
               loading={isSubmitting}
+              className="h-12 w-full rounded-xl border border-white/10 bg-[#070B16] bg-[linear-gradient(180deg,#161D31_0%,#05070D_100%)] text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/25 hover:bg-[#0B1222] focus-visible:ring-[#1E90FF]"
             >
               Masuk
               <ArrowRight aria-hidden="true" />
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-[12px] leading-4 text-secondary">
-            Akses bermasalah? Hubungi Admin HMIF.
+          <p className="mt-10 text-[12px] leading-5 text-[#64748B]">
+            Akun dibuat oleh Admin HMIF. HMIF Center dibangun oleh Kabinet Vardhana 2026–2027.
           </p>
         </div>
       </section>
