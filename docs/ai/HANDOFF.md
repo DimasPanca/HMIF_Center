@@ -65,6 +65,13 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Rombak desain v2 Tahap 1: gaya Linear, Guide, Dhana, Lapor bug (2026-11-02, permintaan pemilik)
+
+Keputusan di **ADR-060**; status & rencana lengkap di `docs/ai/CHECKPOINT_REDESAIN.md` (baca itu
+untuk melanjutkan). Skill desain terpasang di `.claude/skills/`. `GEMINI_API_KEY` hanya di
+`.env.local` (dan perlu diisi di Vercel). Migrasi `054_laporan_bug.sql` sudah diterapkan ke DB dummy
+tanpa `db:reset` (keputusan pemilik).
+
 ### Rombak tampilan: acara per fase, jalur dokumen, beranda tugas dulu (2026-11-01, permintaan pemilik)
 
 Keputusan di **ADR-039**. Ringkasnya:

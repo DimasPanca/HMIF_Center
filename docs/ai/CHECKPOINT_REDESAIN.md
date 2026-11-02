@@ -8,7 +8,7 @@
 | **Dimulai** | 2026-11-02 |
 | **Branch** | `claude/sharp-gates-ngoq4i` (belum di-merge ke `main`) |
 | **Commit terakhir sebelum tahap ini** | `1f5d926` |
-| **Status** | Tahap 0: skill terpasang. Berikutnya: ADR arah visual, lalu Tahap 1. |
+| **Status** | Tahap 1 selesai dibangun & dicek lokal (2026-11-02). Berikutnya: Tahap 2 (halaman lain). |
 
 ## Permintaan pemilik (ringkas, 2026-11-02)
 
@@ -67,16 +67,16 @@
   - `playwright-cli` — microsoft/playwright-cli @c2d8d19 (Apache-2.0); CLI global `@playwright/cli` 0.1.23 terpasang di Node 22 laptop ini (di komputer lain: `npm install -g @playwright/cli@latest`).
   - `hmif-design-linear` — adaptor HMIF: Linear (awesome-design-md @fcc7028, MIT) + navy HMIF + terang/gelap ikut sistem.
   - `.claude/**` dikecualikan dari ESLint (kode vendor).
-- [ ] ADR baru: arah visual Linear (pertentangan dengan DESIGN_SYSTEM beku dicatat di ADR), Guide, Dhana (Gemini via REST, tanpa SDK), Report bug.
+- [x] ADR-060: arah visual Linear (pertentangan dengan DESIGN_SYSTEM beku dicatat di ADR), Guide, Dhana (Gemini via REST, tanpa SDK), Report bug.
 
 **Tahap 1**
-- [ ] Token visual gaya Linear (warna, tipografi, radius, garis) di `app/globals.css`; tema ikut sistem.
-- [ ] Sidebar: tetap susunan per peran (ADR-037); tambah **Guide** dan **Report bug** di bawah Surat Keterangan Aktif untuk semua peran.
-- [ ] Beranda: data per peran, Gantt lebih enak dilihat, tugas simple & minimalis.
-- [ ] Guide: halaman `/guide` berisi panduan per modul & per peran + pencarian cepat (client-side).
-- [ ] Dhana: tombol pojok kiri bawah, panel chat, endpoint server `/api/dhana` → Gemini (REST), konteks = isi Guide + identitas Dhana + Kabinet Vardhana; rate limit; kunci hanya di server.
-- [ ] Report bug: tabel + storage privat + RLS, form (deskripsi + screenshot opsional), halaman Admin dengan status, pelapor melihat statusnya.
-- [ ] Cek lokal: verify, e2e terkait, cek visual 3 lebar (desktop/tablet/HP) — baru push.
+- [x] Token visual gaya Linear (warna, tipografi, radius, garis) di `app/globals.css`; tema ikut sistem.
+- [x] Sidebar: tetap susunan per peran (ADR-037); tambah **Guide** dan **Report bug** di bawah Surat Keterangan Aktif untuk semua peran.
+- [x] Beranda: data per peran, Gantt lebih enak dilihat, tugas simple & minimalis.
+- [x] Guide: halaman `/guide` berisi panduan per modul & per peran + pencarian cepat (client-side).
+- [x] Dhana: tombol pojok kiri bawah, panel chat, endpoint server `/api/dhana` → Gemini (REST), konteks = isi Guide + identitas Dhana + Kabinet Vardhana; rate limit; kunci hanya di server.
+- [x] Report bug: tabel + storage privat + RLS, form (deskripsi + screenshot opsional), halaman Admin dengan status, pelapor melihat statusnya.
+- [x] Cek lokal: verify, e2e terkait, cek visual 3 lebar (desktop/tablet/HP) — baru push.
 
 **Tahap 2** — rapikan halaman lain (proker, acara, surat, keuangan, form, sekretariat, admin).
 
@@ -90,3 +90,15 @@
 
 - 2026-11-02 — tanya-jawab selesai, `GEMINI_API_KEY` disimpan di `.env.local`.
 - 2026-11-02 — Tahap 0: empat skill terpasang, verify hijau.
+- 2026-11-02 — Tahap 1 dibangun: token Linear (`app/globals.css`), Bantuan di sidebar
+  (`components/layout/Sidebar.tsx`), Guide (`lib/guide/*`, `components/guide/*`, `/guide`,
+  sumber `docs/panduan/*.md` + `umum.md` baru), Dhana (`lib/dhana/prompt.ts`, `/api/dhana`,
+  `components/dhana/DhanaPanel.tsx`; model `gemini-2.5-flash`, 30 pertanyaan/jam/pengguna),
+  Lapor bug (migrasi `054_laporan_bug.sql` sudah diterapkan ke DB dummy, `lib/bug/service.ts`,
+  `/api/bug`, `/bantuan/lapor-bug`, `/admin/laporan-bug`), Beranda (baris tugas gaya Linear,
+  grid kartu adaptif, judul kalender tenang). Gate e2e baru: `e2e/bantuan.spec.ts`.
+- Verifikasi 2026-11-02: `npm run verify` hijau (1100 tes); e2e bantuan (desktop+HP), sidebar-role,
+  sidebar-tautan, mobile-tanpa-geser, master-gantt lolos. **Perlu dicek:** `kendala.spec` "Kritis muncul
+  < 3 detik" goyah di server dev (lolos ±50%; diukur muncul 2,5 detik) — cek ulang di build produksi.
+- Catatan Tahap 2: tabel/filter kalender masih gaya lama; halaman proker/acara/surat/keuangan/
+  form/sekretariat/admin belum dirapikan per halaman (hanya ikut token baru).

@@ -53,6 +53,17 @@ const nextConfig: NextConfig = {
     pagesBufferLength: 100,
   },
 
+  /**
+   * Guide & Dhana (ADR-060) membaca `docs/panduan/*.md` dari disk saat berjalan; jejak berkas
+   * Next tidak mendeteksinya sendiri, jadi disertakan eksplisit ke fungsi server rutenya.
+   */
+  outputFileTracingIncludes: {
+    '/guide': ['./docs/panduan/**/*'],
+    '/guide/[dok]': ['./docs/panduan/**/*'],
+    '/guide/img/[nama]': ['./docs/panduan/img/**/*'],
+    '/api/dhana': ['./docs/panduan/**/*.md'],
+  },
+
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

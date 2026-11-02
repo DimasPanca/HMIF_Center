@@ -27,6 +27,8 @@ Dashboard Supabase → **Project Settings → API Keys**
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Bentuknya `https://<project-ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **Publishable key** | Boleh terekspos ke browser |
 | `SUPABASE_SECRET_KEY` | **Secret key** | **RAHASIA.** Melewati seluruh RLS |
+| `GEMINI_API_KEY` | Google AI Studio → API key | **RAHASIA.** Untuk Dhana (ADR-060); server saja, tanpa awalan `NEXT_PUBLIC_`. Kosong = Dhana menjawab "belum dikonfigurasi". |
+| `GEMINI_MODEL` | — | Opsional, bawaan `gemini-2.5-flash`. |
 
 > **Format kunci baru.** Project Supabase yang dibuat sejak 2025 menerbitkan kunci berformat
 > `sb_publishable_...` dan `sb_secret_...`, menggantikan anon/service_role JWT lama yang diawali `eyJ...`.

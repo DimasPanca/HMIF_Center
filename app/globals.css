@@ -43,24 +43,24 @@
 :root {
   /* Latar */
   --bg-base:        #FFFFFF;
-  --bg-subtle:      #F7F9FC;
-  --bg-muted:       #E6EAF2;
+  --bg-subtle:      #F7F8FA;
+  --bg-muted:       #ECEFF3;
   --bg-panel:       #FFFFFF;
   --bg-elevated:    #FFFFFF;
-  --bg-inset:       #DCE6F1;
+  --bg-inset:       #E4E8EE;
 
   /* Teks */
   --text-primary:   #111C44;
-  --text-secondary: #3D5A80;
-  --text-tertiary:  #5B6672; /* T-115: #6C757D 3,89:1 di bg-muted */
+  --text-secondary: #454F5E;
+  --text-tertiary:  #5A6372; /* T-115: #6C757D 3,89:1 di bg-muted */
   --text-disabled:  #A0AEC0;
   --text-inverse:   #FFFFFF;
   --text-link:      #0066A9;
 
   /* Border */
-  --border-subtle:  #EDF1F7;
-  --border-default: #DCE6F1;
-  --border-strong:  #B8C7DC;
+  --border-subtle:  #EEF0F3;
+  --border-default: #E2E6EC;
+  --border-strong:  #C7CED9;
   --border-focus:   #1E90FF;
 
   /* Brand */
@@ -88,25 +88,25 @@
 
 [data-theme="dark"] {
   /* Latar */
-  --bg-base:        #0A0F1F;
-  --bg-subtle:      #111C44;
-  --bg-muted:       #1A2749;
-  --bg-panel:       #131D3D;
-  --bg-elevated:    #1A2749;
-  --bg-inset:       #0D1428;
+  --bg-base:        #080C18;
+  --bg-subtle:      #0B1121;
+  --bg-muted:       #161E34;
+  --bg-panel:       #0F1628;
+  --bg-elevated:    #172038;
+  --bg-inset:       #0A0F1D;
 
   /* Teks */
   --text-primary:   #F0F4FA;
-  --text-secondary: #A8BBD6;
-  --text-tertiary:  #94A3B8; /* T-115: #6C757D 3,13:1 */
+  --text-secondary: #A7B3C6;
+  --text-tertiary:  #8A96AB; /* T-115: #6C757D 3,13:1 */
   --text-disabled:  #4A5568;
   --text-inverse:   #111C44;
   --text-link:      #1E90FF;
 
   /* Border */
-  --border-subtle:  #1A2749;
-  --border-default: #23315C;
-  --border-strong:  #34477A;
+  --border-subtle:  #131B2E;
+  --border-default: #1D2741;
+  --border-strong:  #2C3858;
   --border-focus:   #1E90FF;
 
   /* Brand */
@@ -272,6 +272,15 @@
     font-family: var(--font-sans);
     font-size: var(--text-body);
     line-height: 20px;
+  }
+
+  /* ADR-060 — tipografi gaya Linear: judul rapat (tracking negatif), seimbang saat terbungkus. */
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  h1 {
+    letter-spacing: -0.022em;
   }
 }
 

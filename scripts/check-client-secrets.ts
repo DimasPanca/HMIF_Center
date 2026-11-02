@@ -29,6 +29,7 @@ const RAHASIA = [
   'GDRIVE_SERVICE_ACCOUNT_JSON',
   'DATABASE_URL',
   'DIRECT_URL',
+  'GEMINI_API_KEY', // Dhana (ADR-060) — hanya app/api/dhana
 ];
 
 /** Modul yang hanya boleh hidup di server. */

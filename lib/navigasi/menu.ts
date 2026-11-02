@@ -20,7 +20,7 @@ export type BadgeMenu = 'proker' | 'surat' | 'nota';
 export type IkonMenu =
   | 'beranda' | 'proker' | 'tambah' | 'kalender' | 'gantt' | 'approval' | 'acara' | 'surat' | 'buat-surat' | 'massal'
   | 'arsip' | 'sk-aktif' | 'keuangan' | 'nota' | 'verifikasi' | 'sekretariat' | 'notulensi' | 'pengurus' | 'ruangan'
-  | 'departemen' | 'kanban' | 'kendala' | 'admin' | 'pengguna' | 'periode' | 'backup' | 'audit' | 'formulir' | 'template';
+  | 'departemen' | 'kanban' | 'kendala' | 'admin' | 'pengguna' | 'periode' | 'backup' | 'audit' | 'formulir' | 'template' | 'bug';
 
 export interface ItemMenu {
   label: string;
@@ -108,6 +108,7 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
     periode: { label: 'Periode Kepengurusan', href: '/admin/periode', ikon: 'periode', syarat: 'periode.create' },
     backup: { label: 'Backup & Restore', href: '/admin/backup', ikon: 'backup', syarat: 'backup.manage' },
     audit: { label: 'Audit Log', href: '/admin/audit', ikon: 'audit', syarat: 'audit.read' },
+    laporanBug: { label: 'Laporan Bug', href: '/admin/laporan-bug', ikon: 'bug', syarat: 'user.create' },
     formulir: { label: 'Semua Form', href: '/form', ikon: 'formulir', syarat: 'form.read' },
     templateForm: { label: 'Template Form', href: '/form/template', ikon: 'template', syarat: 'form_template.manage' },
   } satisfies Record<string, Butir>;
@@ -170,7 +171,7 @@ function rencana(peran: RoleCode, fakta: FaktaMenu): RencanaGrup[] {
     case 'BPH':
       return [beranda, proker([I.daftarProker, I.gantt]), acara, surat([I.arsip]), { slug: 'admin', label: 'Audit Log', href: '/admin/audit', ikon: 'audit', items: [I.audit] }];
     case 'ADMIN':
-      return [beranda, { slug: 'admin', label: 'Administrasi', href: '/admin/pengguna', ikon: 'admin', items: [I.pengguna, I.periode, I.backup, I.audit] }, formulir([I.formulir, I.templateForm])];
+      return [beranda, { slug: 'admin', label: 'Administrasi', href: '/admin/pengguna', ikon: 'admin', items: [I.pengguna, I.periode, I.backup, I.audit, I.laporanBug] }, formulir([I.formulir, I.templateForm])];
   }
 }
 

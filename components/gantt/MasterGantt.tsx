@@ -1,7 +1,7 @@
 'use client';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { CalendarRange, Filter, Layers3, RotateCcw } from 'lucide-react';
+import { Filter, Layers3, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { GanttChart } from '@/components/gantt/GanttChart';
@@ -272,24 +272,14 @@ export function MasterGantt({
         Status pembaruan langsung: {koneksi}
       </span>
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
-        <div className="flex items-start gap-3">
-          <span
-            className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]"
-            aria-hidden="true"
-          >
-            <CalendarRange className="size-5" />
-          </span>
-          <div>
-            <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
-              Kalender bersama
-            </p>
-            <h1 id="master-gantt-title" className="mt-0.5 text-2xl font-semibold text-primary">
-              Timeline program kerja HMIF
-            </h1>
-            <p className="mt-1 max-w-2xl text-[13px] leading-[18px] text-secondary">
-              Seluruh proker yang disetujui dan berjalan pada periode aktif.
-            </p>
-          </div>
+        {/* ADR-060: judul tenang gaya Linear — tanpa label kapital kecil dan ikon berkotak. */}
+        <div>
+          <h2 id="master-gantt-title" className="text-lg font-semibold text-primary">
+            Kalender bersama
+          </h2>
+          <p className="mt-0.5 max-w-2xl text-[13px] leading-[18px] text-secondary">
+            Timeline seluruh program kerja yang disetujui dan berjalan pada periode aktif.
+          </p>
         </div>
 
         {modeDaftarHp ? null : (
