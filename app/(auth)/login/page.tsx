@@ -3,7 +3,7 @@
 import { AlertCircle, ArrowRight, LockKeyhole, Mail } from 'lucide-react';
 import { useCallback, useState, type FormEvent } from 'react';
 
-import { PanelLogin } from '@/components/auth/PanelLogin';
+import { LogoLogin, PanelLogin } from '@/components/auth/PanelLogin';
 
 import { Button } from '@/components/ui/button';
 
@@ -77,22 +77,26 @@ function LoginPage() {
   }
 
   const kolom =
-    'h-12 w-full rounded-xl border border-white/10 bg-white/[0.04] pr-3 pl-10 text-[15px] text-white outline-none placeholder:text-[#64748B] transition-[border-color,box-shadow,background-color] duration-200 hover:border-white/20 focus:border-[#1E90FF]/70 focus:bg-[#0B1A3A]/60 focus:shadow-[0_0_0_1px_rgba(30,144,255,0.45),0_0_32px_rgba(30,144,255,0.45)] disabled:opacity-60 motion-reduce:transition-none';
+    'h-12 w-full rounded-xl border border-[#D4E2F2] bg-white/90 pr-3 pl-10 text-[15px] text-[#0A0F1F] outline-none placeholder:text-[#64748B] transition-[border-color,box-shadow] duration-200 hover:border-[#B5CDE6] focus:border-[#0066A9]/60 focus:shadow-[0_0_0_4px_rgba(30,144,255,0.14),0_8px_28px_rgba(0,102,169,0.12)] disabled:opacity-60 motion-reduce:transition-none';
 
   return (
-    // ADR-064 (revisi): gaya referensi pemilik dalam palet HMIF — navy gelap dengan pendar biru dari
-    // bawah, panel pemandangan di kiri, form bercahaya di kanan. Halaman ini selalu gelap.
+    // ADR-064 (revisi): kartu foto Kabinet Vardhana di kiri, form di kanan, di atas gradien putih ke biru
+    // HMIF yang lembut (permintaan pemilik). Halaman ini selalu terang.
     <main
-      className="grid min-h-dvh text-white lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]"
-      style={{ background: 'radial-gradient(120% 75% at 72% 115%, #0066A9 0%, #0B2A66 38%, #060B1A 72%, #03050C 100%)' }}
+      className="grid min-h-dvh text-[#0A0F1F] [color-scheme:light] lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+      style={{
+        background:
+          'radial-gradient(60% 55% at 85% 100%, rgba(30,144,255,0.22) 0%, rgba(30,144,255,0) 100%), radial-gradient(55% 50% at 0% 0%, rgba(0,180,216,0.14) 0%, rgba(0,180,216,0) 100%), linear-gradient(160deg, #FFFFFF 0%, #F3F8FF 45%, #E2EFFD 100%)',
+      }}
     >
       <PanelLogin />
 
       <section className="flex items-center justify-center px-5 pt-6 pb-14 sm:px-8 lg:px-14 lg:py-12">
         <div className="w-full max-w-[23rem]">
-          <p className="text-[13px] font-medium text-[#94A3B8]">Masuk ke HMIF Center</p>
-          <h2 className="mt-1 text-[32px] leading-10 font-semibold tracking-[-0.025em] text-white">Selamat datang kembali!</h2>
-          <p className="mt-2 text-[15px] leading-6 text-[#94A3B8]">Masukkan email dan kata sandi akun kepengurusan Anda.</p>
+          <LogoLogin />
+          <p className="mt-8 text-[13px] font-medium text-[#0066A9]">Masuk ke HMIF Center</p>
+          <h1 className="mt-1 text-[32px] leading-10 font-semibold tracking-[-0.025em] text-[#0A0F1F]">Selamat datang kembali!</h1>
+          <p className="mt-2 text-[15px] leading-6 text-[#475569]">Masukkan email dan kata sandi akun kepengurusan Anda.</p>
 
           <form
             ref={setFormRef}
@@ -103,11 +107,11 @@ function LoginPage() {
             onSubmit={handleSubmit}
           >
             <div className="space-y-2">
-              <label htmlFor="login-email" className="text-[13px] font-medium text-[#94A3B8]">
+              <label htmlFor="login-email" className="text-[13px] font-medium text-[#334155]">
                 Email
               </label>
               <div className="relative">
-                <Mail aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#7C8BA6]" />
+                <Mail aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#64748B]" />
                 <input
                   id="login-email"
                   name="email"
@@ -129,11 +133,11 @@ function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="login-password" className="text-[13px] font-medium text-[#94A3B8]">
+              <label htmlFor="login-password" className="text-[13px] font-medium text-[#334155]">
                 Kata sandi
               </label>
               <div className="relative">
-                <LockKeyhole aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#7C8BA6]" />
+                <LockKeyhole aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#64748B]" />
                 <input
                   id="login-password"
                   name="password"
@@ -149,8 +153,8 @@ function LoginPage() {
                   onChange={clearError}
                 />
               </div>
-              <p className="text-[13px] text-[#94A3B8]">
-                Lupa kata sandi? <span className="text-[#7CC4FF]">Hubungi Admin HMIF.</span>
+              <p className="text-[13px] text-[#475569]">
+                Lupa kata sandi? <span className="font-medium text-[#0066A9]">Hubungi Admin HMIF.</span>
               </p>
             </div>
 
@@ -160,9 +164,9 @@ function LoginPage() {
                 data-testid="login-error"
                 role="alert"
                 aria-live="polite"
-                className="flex items-start gap-2 rounded-xl border border-[#F87171]/40 bg-[#F87171]/10 p-3 text-[14px] leading-5 text-[#FECACA]"
+                className="flex items-start gap-2 rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-3 text-[14px] leading-5 text-[#991B1B]"
               >
-                <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#F87171]" />
+                <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#DC2626]" />
                 <p>{errorMessage}</p>
               </div>
             ) : null}
@@ -171,14 +175,14 @@ function LoginPage() {
               type="submit"
               data-testid="login-submit"
               loading={isSubmitting}
-              className="h-12 w-full rounded-xl border border-white/10 bg-[#070B16] bg-[linear-gradient(180deg,#161D31_0%,#05070D_100%)] text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/25 hover:bg-[#0B1222] focus-visible:ring-[#1E90FF]"
+              className="h-12 w-full rounded-xl border border-[#00558F] bg-[#0066A9] bg-[linear-gradient(180deg,#0A72B8_0%,#00558F_100%)] text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_24px_-10px_rgba(0,102,169,0.6)] hover:bg-[#00558F] hover:bg-none focus-visible:ring-[#1E90FF]"
             >
               Masuk
               <ArrowRight aria-hidden="true" />
             </Button>
           </form>
 
-          <p className="mt-10 text-[12px] leading-5 text-[#64748B]">
+          <p className="mt-10 text-[12px] leading-5 text-[#475569]">
             Akun dibuat oleh Admin HMIF. HMIF Center dibangun oleh Kabinet Vardhana 2026–2027.
           </p>
         </div>
