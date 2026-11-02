@@ -283,9 +283,12 @@ export function MasterGantt({
         </div>
 
         {modeDaftarHp ? null : (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="w-32 space-y-1">
-            <Label htmlFor="master-gantt-skala">Skala</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* ADR-061: kontrol tampilan sebaris, label di samping — bukan kotak berlabel besar. */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="master-gantt-skala" className="text-[13px] font-normal text-secondary">
+              Skala
+            </Label>
             <Select
               id="master-gantt-skala"
               data-testid="master-gantt-skala"
@@ -321,12 +324,13 @@ export function MasterGantt({
       ) : null}
 
       <PanelFilterHp jumlahAktif={[departemenId, kategori, status].filter((v) => v !== SEMUA).length}>
-      <div
-        data-testid="master-gantt-filter"
-        className="grid gap-2 rounded-md border border-default bg-panel p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end"
-      >
-        <div className="space-y-1">
-          <Label htmlFor="master-gantt-departemen">Departemen</Label>
+      {/* Filter sebaris tanpa kotak; label tetap ada untuk pembaca layar (pilihan "Semua …" sudah
+          menjelaskan dirinya secara visual). */}
+      <div data-testid="master-gantt-filter" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="sm:w-52">
+          <Label htmlFor="master-gantt-departemen" className="sr-only">
+            Departemen
+          </Label>
           <Select
             id="master-gantt-departemen"
             data-testid="master-gantt-departemen"
@@ -342,8 +346,10 @@ export function MasterGantt({
             ))}
           </Select>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="master-gantt-kategori">Kategori</Label>
+        <div className="sm:w-44">
+          <Label htmlFor="master-gantt-kategori" className="sr-only">
+            Kategori
+          </Label>
           <Select
             id="master-gantt-kategori"
             data-testid="master-gantt-kategori"
@@ -357,8 +363,10 @@ export function MasterGantt({
             <option value="RESPONSIF">Responsif</option>
           </Select>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="master-gantt-status">Status</Label>
+        <div className="sm:w-44">
+          <Label htmlFor="master-gantt-status" className="sr-only">
+            Status
+          </Label>
           <Select
             id="master-gantt-status"
             data-testid="master-gantt-status"

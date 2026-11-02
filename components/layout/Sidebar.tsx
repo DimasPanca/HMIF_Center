@@ -313,7 +313,9 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="border-t border-default p-2">
+      {/* ADR-061: kaki sidebar ringkas — Dhana satu baris, tombol lipat menjadi ikon di samping
+          profil, supaya menu (termasuk Bantuan) tidak terdorong keluar layar. */}
+      <div className="space-y-1 border-t border-default p-2">
         {/* Dhana (ADR-060): pojok kiri bawah — di desktop menempel di kaki sidebar. */}
         <button
           type="button"
@@ -321,45 +323,33 @@ export function Sidebar({
           onClick={() => setDhanaBuka(true)}
           aria-haspopup="dialog"
           aria-expanded={dhanaBuka}
-          title={!tampilkanLabel ? 'Tanya Dhana' : undefined}
+          title={tampilkanLabel ? 'Dhana — Your Knowledge Companion' : 'Tanya Dhana'}
           className={cn(
-            'mb-1 flex min-h-10 w-full items-center gap-2.5 rounded-md border border-default bg-panel px-3 text-left text-[13px] font-medium text-primary transition-colors duration-fast hover:border-strong md:min-h-[38px] motion-reduce:transition-none',
+            'flex min-h-10 w-full items-center gap-2.5 rounded-md border border-default bg-panel px-3 text-left text-[13px] font-medium text-primary transition-colors duration-fast hover:border-strong md:min-h-[34px] motion-reduce:transition-none',
             !tampilkanLabel && 'justify-center px-0',
           )}
         >
           <Sparkles className="size-4 shrink-0 text-[var(--primary)]" strokeWidth={1.75} aria-hidden="true" />
-          {tampilkanLabel ? (
-            <span className="min-w-0">
-              <span className="block truncate">Tanya Dhana</span>
-              <span className="block truncate text-[11px] font-normal text-tertiary">Your Knowledge Companion</span>
-            </span>
-          ) : null}
+          {tampilkanLabel ? <span className="truncate">Tanya Dhana</span> : null}
         </button>
-        <div
-          className={cn(
-            'flex items-center gap-2 rounded-sm px-2 py-2',
-            !tampilkanLabel && 'justify-center px-0',
-          )}
-        >
+        <div className={cn('flex items-center gap-2 rounded-sm px-2 py-1.5', !tampilkanLabel && 'flex-col justify-center px-0')}>
           <Avatar name={nama} size="sm" />
           {tampilkanLabel ? (
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-[12px] font-medium text-primary">{nama}</p>
-              <p className="truncate text-[10px] text-tertiary">
-                {roles.join(' · ') || 'Tanpa role'}
-              </p>
+              <p className="truncate text-[11px] text-tertiary">{roles.join(' · ') || 'Tanpa role'}</p>
             </div>
           ) : null}
+          <button
+            type="button"
+            className="hidden size-8 shrink-0 items-center justify-center rounded-sm text-secondary transition-colors duration-fast hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 md:flex motion-reduce:transition-none"
+            aria-label={dilipat ? 'Perluas sidebar' : 'Lipat sidebar'}
+            title={dilipat ? 'Perluas sidebar' : 'Lipat sidebar'}
+            onClick={ubahLipatan}
+          >
+            {dilipat ? <ChevronRight className="size-4" aria-hidden="true" /> : <ChevronLeft className="size-4" aria-hidden="true" />}
+          </button>
         </div>
-        <button
-          type="button"
-          className="mt-1 hidden h-[34px] w-full items-center justify-center gap-2 rounded-sm text-[12px] text-secondary transition-colors duration-fast hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 md:flex motion-reduce:transition-none"
-          aria-label={dilipat ? 'Perluas sidebar' : 'Lipat sidebar'}
-          onClick={ubahLipatan}
-        >
-          {dilipat ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
-          {!dilipat ? <span>Lipat sidebar</span> : null}
-        </button>
       </div>
     </aside>
   );

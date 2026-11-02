@@ -8,7 +8,7 @@
 | **Dimulai** | 2026-11-02 |
 | **Branch** | `claude/sharp-gates-ngoq4i` (belum di-merge ke `main`) |
 | **Commit terakhir sebelum tahap ini** | `1f5d926` |
-| **Status** | Tahap 1 & Tahap 2 (putaran 1) selesai dan dicek lokal (2026-11-02). Sisa: lihat "Sisa Tahap 2". |
+| **Status** | Tahap 1 & Tahap 2 selesai dan dicek lokal + build produksi (2026-11-02). Belum di-merge ke `main`. |
 
 ## Permintaan pemilik (ringkas, 2026-11-02)
 
@@ -90,10 +90,12 @@ gagal selalu timeout di server dev yang baru dinyalakan/sibuk (kanban "Master Ga
 notulensi "konversi action item", audit "detail"). Cek ulang di build produksi bersama `kendala.spec`.
 
 **Sisa Tahap 2 (putaran berikutnya)**
-- [ ] Panel filter Kalender bersama (masih kotak berlabel besar) → baris filter ringkas.
-- [ ] Kaki sidebar terlalu tinggi untuk peran dengan banyak menu (Bantuan → Lapor bug perlu digulir).
-- [ ] Kerapatan tabel RAB & halaman detail proker/surat dicek satu per satu di 3 lebar.
-- [ ] Cek ulang `kendala.spec` "Kritis < 3 detik" di build produksi.
+- [x] Panel filter Kalender bersama → baris filter ringkas; Skala & Lipat semua sebaris (label di samping).
+- [x] Kaki sidebar ringkas: Tanya Dhana satu baris, tombol lipat jadi ikon di samping profil.
+- [x] RAB: lebar kolom tetap (Jumlah/Harga/Total sejajar antar-bagian). Detail proker & surat, RAB, arsip, beranda dicek di 1440 & 390 px — tanpa luapan.
+- [x] Build produksi (`NEXT_DIST_DIR=.next-bench next build`) sukses; e2e terhadap `next start`: kendala "Kritis < 3 detik"
+  LOLOS, 35 lolos. Sisa goyah (tidak terkait tampilan): kanban "drag keyboard" (timeout respons) dan kendala
+  "balasan berulir" (urutan ketikan di kolom mention tertukar) — keduanya pernah lolos di putaran lain.
 
 ## Melanjutkan di komputer lain
 
