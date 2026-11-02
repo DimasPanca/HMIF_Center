@@ -97,6 +97,12 @@ notulensi "konversi action item", audit "detail"). Cek ulang di build produksi b
   LOLOS, 35 lolos. Sisa goyah (tidak terkait tampilan): kanban "drag keyboard" (timeout respons) dan kendala
   "balasan berulir" (urutan ketikan di kolom mention tertukar) — keduanya pernah lolos di putaran lain.
 
+**Dhana: alur birokrasi & aturan organisasi (ADR-062, 2026-11-02)**
+- [x] Panduan Umum §8 (SK Aktif menunggu persetujuan) + §8a tabel alur persetujuan; Panduan Anggota dibetulkan.
+- [x] Aturan ormawa di `docs/pengetahuan/ormawa/` (AD/ART/GBHO/GBHK HMIF & BEM FT, Perfak DPM FT), dipotong per pasal, diambil hanya bila relevan (±1–3,5 ribu token konteks).
+- [x] Tanpa em dash (konteks, instruksi, jawaban, judul rujukan). Kuota AI habis → balasan cadangan berisi rujukan.
+- [ ] Kuota Gemini paket gratis habis saat uji (HTTP 429) — pemilik perlu aktifkan kuota/billing di Google AI Studio sebelum dipakai banyak orang.
+
 ## Melanjutkan di komputer lain
 
 1. `git pull` branch `claude/sharp-gates-ngoq4i`.

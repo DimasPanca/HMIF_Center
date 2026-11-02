@@ -116,9 +116,50 @@ global dikelola Sekretaris Umum dan Admin di **Template Form**.
 
 ## 8. Surat Keterangan Aktif
 
-Semua pengurus dapat mengajukan **Surat Keterangan Aktif** atas nama sendiri: buka menu **Surat
-Keterangan Aktif**, isi keperluannya; nama, NIM, dan jabatan terisi dari Data Pengurus. Surat yang
-sudah terbit dapat diunduh di halaman yang sama. Surat lain dibuat oleh Sekretaris Umum.
+Semua pengurus dapat mengajukan **Surat Keterangan Aktif** atas nama sendiri. Surat ini **tetap harus
+disetujui** sebelum bisa diunduh, sama seperti surat lain.
+
+1. Buka menu **Surat Keterangan Aktif**, isi **keperluan** (mis. persyaratan beasiswa). Nama, NIM, dan
+   jabatan terisi otomatis dari Data Pengurus.
+2. Klik **Ajukan**. Status menjadi **Menunggu persetujuan**: surat masuk Antrian Approval dan cukup
+   disetujui oleh **salah satu** dari Ketua Himpunan, Wakil Ketua, atau Sekretaris Umum.
+3. Setelah disetujui, nomor surat dialokasikan dan status menjadi **Terbit**. Barulah tombol **Unduh**
+   muncul di halaman yang sama.
+4. Bila **Ditolak**, alasan penolakan tampil di halaman itu; perbaiki keperluannya lalu ajukan lagi.
+5. Belum disetujui juga? Hubungi Sekretaris Umum, Wakil Ketua, atau Ketua Himpunan supaya memeriksa
+   Antrian Approval.
+
+Surat lain (undangan, peminjaman, permohonan, dan sebagainya) dibuat oleh Sekretaris Umum. Sekum juga
+bisa mengajukan SK Aktif untuk banyak pengurus sekaligus lewat **Surat aktif massal**.
+
+## 8a. Alur persetujuan (birokrasi)
+
+Siapa menyetujui apa di HMIF Center. Status di sistem selalu menunjukkan tahap terakhirnya.
+
+| Yang diajukan | Diajukan oleh | Disetujui oleh | Urutan status |
+|---|---|---|---|
+| Program kerja | Kepala Departemen | Ketua Himpunan atau Wakil Ketua | Draf, Menunggu approval, Disetujui (atau Perlu revisi / Ditolak), Berjalan, Selesai |
+| Perubahan proker yang sudah disetujui | Kepala Departemen | Ketua Himpunan atau Wakil Ketua | Menunggu approval revisi, lalu Disetujui |
+| Surat (semua jenis, termasuk SK Aktif) | Sekretaris Umum; SK Aktif oleh pengurus sendiri | Salah satu: Ketua Himpunan, Wakil Ketua, atau Sekretaris Umum | Draf, Menunggu persetujuan, Terbit (atau Ditolak); Terbit bisa Dibatalkan |
+| RAB acara | Panitia (ketua pelaksana/koordinator) | Bendahara Umum (Setujui & kunci) | Draf, Diajukan, Disetujui (terkunci), Realisasi, Selesai |
+| Nota belanja | Panitia acara | Bendahara Umum (verifikasi) | Menunggu verifikasi, Terverifikasi (atau Perlu perbaikan / Ditolak) |
+| LPJ acara | Panitia acara | Bendahara Umum, lalu Ketua Himpunan | Draf, Diajukan, Disetujui Bendahara, Final |
+| Peminjaman ruangan | Sekretaris Umum (dicatat) | Dekanat, lewat Surat Peminjaman Ruangan yang disetujui seperti surat biasa | Dicatat, surat diajukan, surat terbit |
+
+Catatan penting:
+
+- **Surat:** cukup satu penyetuju. Nomor surat baru dialokasikan saat disetujui dan tidak pernah dipakai
+  ulang, termasuk bila suratnya dibatalkan. Setiap surat resmi memakai tanda tangan Ketua Himpunan;
+  bila Ketua belum mengunggah tanda tangan di Profil, surat belum bisa terbit.
+- **Program kerja terjadwal** yang disetujui mengunci kalender pada rentangnya dan otomatis membentuk
+  kepanitiaan acara besar. Masa persiapan wajib 15 sampai 45 hari sebelum hari-H.
+- **RAB** yang terkunci tidak bisa diubah siapa pun. Bendahara dapat **Buka kunci** dengan alasan
+  (tercatat di audit log). Setelah nota pertama terverifikasi, RAB berstatus Realisasi.
+- **Nota** yang diminta perbaikan cukup dibetulkan datanya tanpa unggah ulang foto; nota yang ditolak
+  harus diunggah ulang. Nota terverifikasi otomatis masuk pengeluaran dan RAB aktual.
+- **LPJ** baru bisa dibuat bila ada minimal satu nota terverifikasi, RAB sudah Realisasi, dan ada foto
+  dokumentasi. LPJ yang dikembalikan kembali ke draf; LPJ final dibekukan.
+- **BPH** hanya memantau (lihat saja) dan tidak menyetujui apa pun di sistem.
 
 ## 9. Guide dan pencarian panduan
 
@@ -139,14 +180,19 @@ kekayaan yang dapat dibagikan kepada seluruh mahasiswa.**
 
 - Buka lewat tombol **Tanya Dhana** di pojok kiri bawah, lalu ketik pertanyaan tentang cara memakai
   HMIF Center, mis. "bagaimana cara upload nota?".
-- Dhana menjawab berdasarkan isi Guide ini. Dhana **tidak** melihat data Anda (tugas, nota, surat)
+- Dhana menjawab berdasarkan isi Guide ini dan **aturan organisasi**: AD, ART, GBHO, dan GBHK HMIF;
+  AD, ART, GBHO, dan GBHK BEM FT; serta Peraturan Fakultas DPM FT (susunan dan kedudukan ormawa,
+  mekanisme keuangan, pemilu raya, pola umum kaderisasi). Untuk aturan, Dhana menyebut dokumen dan
+  pasalnya.
+- Dhana **tidak** melihat data Anda (tugas, nota, surat)
   dan tidak dapat mengubah apa pun.
 - Percakapan tidak disimpan; menutup panel atau memuat ulang halaman memulai percakapan baru.
 - Ada batas jumlah pertanyaan per jam supaya layanan tetap adil untuk semua.
 - Jawaban AI bisa keliru. Untuk keputusan penting, cek kembali di Guide atau tanyakan ke pengurus
   terkait.
 
-Ke depan, Dhana akan dibekali pemahaman AD/ART, GBHK, dan GBHO himpunan.
+Dokumen aturan organisasi yang dipakai Dhana tersimpan di `docs/pengetahuan/ormawa` dan diperbarui
+oleh pengurus bila ada perubahan AD/ART atau peraturan.
 
 ## 11. Lapor bug
 

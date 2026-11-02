@@ -61,7 +61,7 @@ const nextConfig: NextConfig = {
     '/guide': ['./docs/panduan/**/*'],
     '/guide/[dok]': ['./docs/panduan/**/*'],
     '/guide/img/[nama]': ['./docs/panduan/img/**/*'],
-    '/api/dhana': ['./docs/panduan/**/*.md'],
+    '/api/dhana': ['./docs/panduan/**/*.md', './docs/pengetahuan/**/*.md'],
   },
 
   async headers() {

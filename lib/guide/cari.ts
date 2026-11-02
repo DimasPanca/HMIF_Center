@@ -35,7 +35,7 @@ export function normalisasi(s: string): string {
 }
 
 /** Kata umum yang tidak membedakan hasil. */
-const KATA_UMUM = new Set(['dan', 'atau', 'yang', 'di', 'ke', 'dari', 'untuk', 'cara', 'bagaimana', 'apa', 'saya', 'ini', 'itu', 'dengan', 'bisa', 'mau', 'gimana']);
+const KATA_UMUM = new Set(['dan', 'atau', 'yang', 'di', 'ke', 'dari', 'untuk', 'cara', 'bagaimana', 'apa', 'saya', 'ini', 'itu', 'dengan', 'bisa', 'mau', 'gimana', 'caranya', 'bikin', 'ft', 'untirta']);
 
 export function kataKunci(q: string): string[] {
   const kata = normalisasi(q).split(' ').filter(Boolean);
@@ -67,6 +67,9 @@ const SINONIM: Record<string, readonly string[]> = {
   kwitansi: ['nota'],
   anggaran: ['rab', 'anggaran'],
   sk: ['keterangan aktif', 'sk'],
+  syarat: ['syarat', 'ketentuan', 'lulus', 'memenuhi'],
+  persyaratan: ['syarat', 'ketentuan', 'lulus', 'memenuhi'],
+  menjabat: ['jabatan', 'menjabat', 'periode'],
 };
 export const varian = (k: string): readonly string[] => SINONIM[k] ?? [k];
 

@@ -35,8 +35,10 @@ dibuka lewat pencarian (**Ctrl/⌘ K**).
 
 **Surat.** Surat dibuat Sekretaris Umum. Anda dapat mengajukan **Surat
 Keterangan Aktif** atas nama sendiri lewat menu **Surat Keterangan Aktif**: isi
-keperluannya, nama/NIM/jabatan terisi dari Data Pengurus, dan surat yang sudah
-terbit dapat diunduh di halaman yang sama (ADR-036).
+keperluannya; nama/NIM/jabatan terisi dari Data Pengurus. Surat lalu **menunggu
+persetujuan** salah satu dari Ketua Himpunan, Wakil Ketua, atau Sekretaris Umum.
+Setelah disetujui (status **Terbit**), surat dapat diunduh di halaman yang sama
+(ADR-036).
 
 ## 3. Mengunggah nota belanja dari ponsel
 

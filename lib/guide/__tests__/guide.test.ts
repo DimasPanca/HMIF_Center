@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { pilihKonteks, SkemaChatDhana } from '@/lib/dhana/prompt';
+import { pilihKonteks, SkemaChatDhana, tanpaEmDash } from '@/lib/dhana/prompt';
 import { cari, indeksBagian, type DokumenGuide } from '@/lib/guide/cari';
 import { slug, uraiMarkdown } from '@/lib/guide/markdown';
 
@@ -59,9 +59,28 @@ describe('pencarian Guide', () => {
     expect(cari(indeks, 'nota kabinet')).toEqual([]);
   });
 
-  it('konteks Dhana selalu memuat identitas dan bagian yang relevan', () => {
-    const k = pilihKonteks(indeks, [{ peran: 'pengguna', teks: 'Bagaimana upload nota dari HP?' }]);
-    expect(k.map((b) => b.id)).toEqual(['1-tentang-hmif-center', '10-dhana-asisten-hmif-center', '3-mengunggah-nota-belanja-dari-ponsel']);
+  it('konteks Dhana: bagian relevan; tabel birokrasi hanya untuk soal persetujuan; aturan hanya bila relevan', () => {
+    const birokrasi = indeksBagian([
+      { id: 'umum', judul: 'Panduan Umum', ringkas: '', blok: uraiMarkdown('## 8a. Alur persetujuan (birokrasi)\nSurat disetujui Ketua, Wakil, atau Sekum.') },
+    ]);
+    const aturan = indeksBagian([
+      { id: 'aturan-02', judul: 'ART HMIF', ringkas: '', blok: uraiMarkdown('### Pasal 14 - Status HMIF\nMasa jabatan pengurus paling lama 2 periode.') },
+    ]);
+    const semua = [...indeks, ...birokrasi];
+
+    const nota = pilihKonteks(semua, [{ peran: 'pengguna', teks: 'Bagaimana upload nota dari HP?' }], aturan);
+    expect(nota.map((b) => b.id)).toContain('3-mengunggah-nota-belanja-dari-ponsel');
+    expect(nota.map((b) => b.dokId)).not.toContain('aturan-02');
+
+    const sk = pilihKonteks(semua, [{ peran: 'pengguna', teks: 'Surat saya menunggu persetujuan siapa?' }], aturan);
+    expect(sk[0]!.id).toBe('8a-alur-persetujuan-birokrasi');
+
+    const masa = pilihKonteks(semua, [{ peran: 'pengguna', teks: 'Berapa lama masa jabatan pengurus HMIF?' }], aturan);
+    expect(masa.map((b) => b.dokId)).toContain('aturan-02');
+  });
+
+  it('em dash dibuang dari teks', () => {
+    expect(tanpaEmDash('Buka menu — lalu isi.')).toBe('Buka menu, lalu isi.');
   });
 
   it('skema chat menolak pesan terakhir bukan dari pengguna dan pertanyaan terlalu panjang', () => {

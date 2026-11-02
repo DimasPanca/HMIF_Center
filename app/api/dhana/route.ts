@@ -5,8 +5,8 @@
  */
 
 import { konteksSaatIni } from '@/lib/auth/guard';
-import { instruksiSistem, pilihKonteks, SkemaChatDhana } from '@/lib/dhana/prompt';
-import { cari } from '@/lib/guide/cari';
+import { muatPengetahuan } from '@/lib/dhana/pengetahuan';
+import { instruksiSistem, pilihKonteks, SkemaChatDhana, tanpaEmDash } from '@/lib/dhana/prompt';
 import { muatIndeks } from '@/lib/guide/sumber';
 import { gagal, sukses } from '@/lib/http/respond';
 import { cekBatas, respons429 } from '@/lib/security/rate-limit';
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
   const batas = await cekBatas(`dhana:${konteks.sesi.userId}`, BATAS.batas, BATAS.jendelaDetik);
   if (!batas.ok) return respons429(batas, 'Kamu sudah bertanya cukup banyak dalam satu jam. Coba lagi sebentar lagi, ya.');
 
-  const indeks = await muatIndeks();
-  const pilihan = pilihKonteks(indeks, parse.data.pesan);
+  const [indeks, aturan] = await Promise.all([muatIndeks(), muatPengetahuan()]);
+  const pilihan = pilihKonteks(indeks, parse.data.pesan, aturan);
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
   let r: Response;
@@ -61,21 +61,38 @@ export async function POST(request: Request) {
 
   const data = (await r.json().catch(() => ({}))) as JawabanGemini;
   const jawaban = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim();
+  const sumber = pilihan
+    .slice(0, 4)
+    .map((b) => ({ dokId: b.dokId, id: b.id, judul: tanpaEmDash(b.judul), dokJudul: tanpaEmDash(b.dokJudul) }));
+
   if (!r.ok || !jawaban) {
     console.warn(`[dhana] Gemini ${r.status}: ${data.error?.message?.slice(0, 200) ?? data.candidates?.[0]?.finishReason ?? 'tanpa jawaban'}`);
-    return gagal('LAYANAN_TIDAK_TERSEDIA', 'Dhana belum bisa menjawab saat ini. Coba ulangi pertanyaannya.', { status: 502, headers: TANPA_CACHE });
+    // Layanan AI gagal (mis. kuota habis): tetap bantu dengan rujukan yang paling relevan.
+    if (sumber.length)
+      return sukses(
+        {
+          jawaban:
+            r.status === 429
+              ? 'Kuota layanan AI Dhana sedang habis, jadi aku belum bisa menyusun jawaban. Bagian berikut kemungkinan menjawab pertanyaanmu:'
+              : 'Dhana belum bisa menyusun jawaban saat ini. Bagian berikut kemungkinan menjawab pertanyaanmu:',
+          sumber,
+          cadangan: true,
+        },
+        { headers: TANPA_CACHE },
+      );
+    return gagal(
+      'LAYANAN_TIDAK_TERSEDIA',
+      r.status === 429 ? 'Kuota layanan AI Dhana sedang habis. Coba lagi beberapa saat lagi, atau cari di Guide.' : 'Dhana belum bisa menjawab saat ini. Coba ulangi pertanyaannya.',
+      { status: 503, headers: TANPA_CACHE },
+    );
   }
 
   return sukses(
     {
-      jawaban,
-      // Rujukan "Baca di Guide": bagian yang paling cocok dengan pertanyaan terakhir.
-      sumber: cari(indeks, parse.data.pesan[parse.data.pesan.length - 1]!.teks, 3).map((b) => ({
-        dokId: b.dokId,
-        id: b.id,
-        judul: b.judul,
-        dokJudul: b.dokJudul,
-      })),
+      // Jaga-jaga: model kadang tetap memakai em dash walau sudah dilarang.
+      jawaban: tanpaEmDash(jawaban),
+      // Rujukan: bagian Guide (bisa dibuka) dan pasal aturan organisasi yang dipakai sebagai konteks.
+      sumber,
     },
     { headers: TANPA_CACHE },
   );

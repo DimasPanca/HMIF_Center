@@ -8,7 +8,7 @@
  * Test id: dhana-panel, dhana-input, dhana-kirim, dhana-pesan, dhana-tutup.
  */
 
-import { ArrowUp, BookOpen, RotateCcw, Sparkles, X } from 'lucide-react';
+import { ArrowUp, BookOpen, RotateCcw, Scale, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -28,7 +28,7 @@ interface Pesan {
   galat?: boolean;
 }
 
-const SARAN = ['Bagaimana cara upload nota?', 'Cara membuat form pendaftaran acara', 'Apa itu Dhana?'];
+const SARAN = ['Surat Keterangan Aktif menunggu persetujuan siapa?', 'Bagaimana cara upload nota?', 'Berapa lama masa jabatan pengurus HMIF?'];
 
 export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; onTutup: () => void; sidebarDilipat: boolean }) {
   const [pesan, setPesan] = useState<Pesan[]>([]);
@@ -119,7 +119,7 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
                 <strong className="font-semibold text-primary">Digital Helper and Network Assistant</strong> HMIF Center. Namaku diambil dari Vardhana — dalam bahasa
                 Sanskerta, <em>dhana</em> berarti kekayaan: pengetahuan adalah kekayaan yang dapat dibagikan.
               </p>
-              <p>Tanyakan cara memakai HMIF Center; aku menjawab dari isi Guide.</p>
+              <p>Tanyakan cara memakai HMIF Center, alur persetujuan, atau aturan organisasi (AD/ART HMIF, BEM FT, Peraturan Fakultas).</p>
             </div>
             <ul className="space-y-2">
               {SARAN.map((s) => (
@@ -144,18 +144,28 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
                 </div>
                 {p.sumber?.length ? (
                   <ul className="flex flex-wrap gap-1.5">
-                    {p.sumber.map((s) => (
-                      <li key={`${s.dokId}-${s.id}`}>
-                        <Link
-                          href={`/guide/${s.dokId}${s.id ? `#${s.id}` : ''}`}
-                          onClick={onTutup}
-                          className="inline-flex max-w-full items-center gap-1 rounded-full border border-default px-2.5 py-1 text-[12px] text-secondary hover:border-strong hover:text-primary"
-                        >
-                          <BookOpen className="size-3 shrink-0" aria-hidden="true" />
-                          <span className="truncate">{s.judul}</span>
-                        </Link>
-                      </li>
-                    ))}
+                    {p.sumber.map((s) =>
+                      s.dokId.startsWith('aturan-') ? (
+                        // Pasal aturan organisasi: bukan halaman Guide, cukup disebut sumbernya.
+                        <li key={`${s.dokId}-${s.id}`} className="inline-flex max-w-full items-center gap-1 rounded-full bg-subtle px-2.5 py-1 text-[12px] text-secondary">
+                          <Scale className="size-3 shrink-0" aria-hidden="true" />
+                          <span className="truncate">
+                            {s.dokJudul.replace(/s*(.*)$/, '')} · {s.judul.replace(/s+-s+.*$/, '')}
+                          </span>
+                        </li>
+                      ) : (
+                        <li key={`${s.dokId}-${s.id}`}>
+                          <Link
+                            href={`/guide/${s.dokId}${s.id ? `#${s.id}` : ''}`}
+                            onClick={onTutup}
+                            className="inline-flex max-w-full items-center gap-1 rounded-full border border-default px-2.5 py-1 text-[12px] text-secondary hover:border-strong hover:text-primary"
+                          >
+                            <BookOpen className="size-3 shrink-0" aria-hidden="true" />
+                            <span className="truncate">{s.judul}</span>
+                          </Link>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 ) : null}
               </div>
