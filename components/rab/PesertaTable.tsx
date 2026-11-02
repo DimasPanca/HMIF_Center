@@ -254,7 +254,7 @@ export function PesertaTable({
               <tr key={p.id} data-testid="peserta-item" data-id={p.id} className="border-t border-default">
                 <td className="px-2 py-1 tabular-nums text-secondary">{p.no_urut}</td>
                 <td className="px-2 py-1">{p.nama_lengkap}</td>
-                <td className="px-2 py-1 tabular-nums">{p.nim ?? '—'}</td>
+                <td className="px-2 py-1 tabular-nums">{p.nim ?? '-'}</td>
                 <td className="px-2 py-1">
                   {izin.tulis ? (
                     <input
@@ -292,7 +292,7 @@ export function PesertaTable({
                   ) : p.tanggal_bayar ? (
                     formatTanggalPendek(p.tanggal_bayar)
                   ) : (
-                    '—'
+                    '-'
                   )}
                 </td>
                 <td className="px-2 py-1 text-right tabular-nums">

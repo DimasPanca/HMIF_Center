@@ -161,7 +161,7 @@ export function pasangGambar(zip: PizZip, modul: ModulGambar): void {
 
   const relsPath = 'word/_rels/document.xml.rels';
   const rels = zip.file(relsPath)?.asText();
-  if (!rels) throw new Error('Template tidak punya word/_rels/document.xml.rels — bukan .docx yang sah.');
+  if (!rels) throw new Error('Template tidak punya word/_rels/document.xml.rels - bukan .docx yang sah.');
   const tambahan = modul.terpakai
     .map((g) => `<Relationship Id="${g.rId}" Type="${REL_GAMBAR}" Target="${g.berkas}"/>`)
     .join('');

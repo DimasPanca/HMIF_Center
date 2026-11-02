@@ -135,7 +135,7 @@ export function AdminLaporanBug({ laporan }: { laporan: LaporanBug[] }) {
     <div className="mx-auto max-w-[76rem] space-y-5 px-4 pt-6 pb-24 sm:px-6">
       <div>
         <h1 className="text-[28px] leading-9 font-semibold text-primary">Laporan bug</h1>
-        <p className="mt-1 text-[15px] text-secondary">Laporan dari pengguna. Ubah status dan beri catatan — pelapor melihatnya di halaman Lapor bug.</p>
+        <p className="mt-1 text-[15px] text-secondary">Laporan dari pengguna. Ubah status dan beri catatan - pelapor melihatnya di halaman Lapor bug.</p>
       </div>
       <div role="group" aria-label="Saring status" className="flex flex-wrap gap-1.5">
         {(['BARU', 'DITANGANI', 'SELESAI', 'DITOLAK', 'SEMUA'] as const).map((s) => (

@@ -191,7 +191,7 @@ function Isi({ data, bolehTerapkan, kembali }: { data: DataRespons; bolehTerapka
                       )}
                       {aktif.slice(0, 6).map((p) => (
                         <td key={p.id} className="max-w-[16rem] truncate px-3 py-2" title={r.jawaban[p.id]?.teks}>
-                          {r.jawaban[p.id]?.teks || <span className="text-tertiary">—</span>}
+                          {r.jawaban[p.id]?.teks || <span className="text-tertiary">-</span>}
                         </td>
                       ))}
                     </tr>
@@ -211,7 +211,7 @@ function Isi({ data, bolehTerapkan, kembali }: { data: DataRespons; bolehTerapka
                                       <FileText className="size-3.5" /> {r.jawaban[p.id]!.teks}
                                     </a>
                                   ) : (
-                                    r.jawaban[p.id]?.teks || <span className="text-tertiary">—</span>
+                                    r.jawaban[p.id]?.teks || <span className="text-tertiary">-</span>
                                   )}
                                 </dd>
                               </div>

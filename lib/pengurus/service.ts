@@ -276,7 +276,7 @@ export async function simpanImportPengurus(
     } else {
       const sebelumnya = baru.get(b.data.nim);
       if (sebelumnya) {
-        laporan.dilewati.push({ nomor: sebelumnya.nomor, alasan: `NIM ${b.data.nim} ganda di berkas — dipakai baris ${b.nomor}.` });
+        laporan.dilewati.push({ nomor: sebelumnya.nomor, alasan: `NIM ${b.data.nim} ganda di berkas - dipakai baris ${b.nomor}.` });
       }
       baru.set(b.data.nim, { data: b.data, nomor: b.nomor });
     }
@@ -316,7 +316,7 @@ export async function exportPengurusXlsx(baris: BarisPengurus[], judul: string):
       aman(b.nama_lengkap),
       b.nim,
       aman(b.jabatan),
-      aman(b.nama_departemen ?? '—'),
+      aman(b.nama_departemen ?? '-'),
       b.angkatan ?? '',
       b.is_aktif ? 'Aktif' : 'Nonaktif',
       b.punya_akun ? 'Ya' : 'Tidak',

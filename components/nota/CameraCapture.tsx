@@ -151,9 +151,9 @@ export function CameraCapture({ onGunakan, onBatal }: { onGunakan: (h: HasilTang
     if (p) {
       const s = p.deteksiCepat(bingkai, bingkai.width, bingkai.height);
       hasilKanvas = s ? p.potong(bingkai, s) : null;
-      if (!hasilKanvas) catatan = 'Tepi dokumen tidak terdeteksi — foto dipakai apa adanya.';
+      if (!hasilKanvas) catatan = 'Tepi dokumen tidak terdeteksi - foto dipakai apa adanya.';
     } else {
-      catatan = 'Deteksi tepi belum tersedia — foto dipakai apa adanya.';
+      catatan = 'Deteksi tepi belum tersedia - foto dipakai apa adanya.';
     }
 
     try {
@@ -223,7 +223,7 @@ export function CameraCapture({ onGunakan, onBatal }: { onGunakan: (h: HasilTang
                   ? 'Tepi dokumen terdeteksi'
                   : 'Arahkan kamera ke nota'
                 : status === 'gagal'
-                  ? 'Deteksi tepi tidak tersedia — foto tetap dapat diambil'
+                  ? 'Deteksi tepi tidak tersedia, foto tetap dapat diambil'
                   : 'Menyiapkan deteksi tepi…'}
             </p>
           </div>

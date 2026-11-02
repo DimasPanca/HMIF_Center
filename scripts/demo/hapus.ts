@@ -16,7 +16,7 @@ export async function hapusDemo(sql: Sql): Promise<void> {
   const pola = `%@${DOMAIN_DEMO}`;
   const demo = (await sql<{ id: string }[]>`SELECT id::text FROM app_user WHERE email LIKE ${pola}`).map((r) => r.id);
   if (demo.length === 0) {
-    ok('tidak ada akun demo — tidak ada yang dibersihkan');
+    ok('tidak ada akun demo - tidak ada yang dibersihkan');
     return;
   }
 
@@ -92,5 +92,5 @@ export async function hapusDemo(sql: Sql): Promise<void> {
     .join(', ');
   ok(`dihapus: ${ringkas || 'tidak ada baris'}; ${berkas} berkas storage`);
   ok(`${demo.length} akun demo dinonaktifkan (jalankan seeder lagi untuk mengaktifkannya)`);
-  peringatan('Audit log tidak dihapus (append-only) — riwayat aktivitas demo tetap tercatat.');
+  peringatan('Audit log tidak dihapus (append-only) - riwayat aktivitas demo tetap tercatat.');
 }

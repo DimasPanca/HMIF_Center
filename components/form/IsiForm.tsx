@@ -200,7 +200,7 @@ export function IsiForm({ form, pratinjau = false }: { form: FormIsi; pratinjau?
             </span>
             {form.anonim && (
               <span className="inline-flex items-center gap-1">
-                <ShieldCheck aria-hidden className="size-3.5" /> Anonim — identitas akun tidak disimpan
+                <ShieldCheck aria-hidden className="size-3.5" /> Anonim - identitas akun tidak disimpan
               </span>
             )}
             {form.akses === 'INTERNAL' && (

@@ -137,7 +137,7 @@ export function FormPengurusDialog({
                 onChange={(e) => ubah('departemen_id', e.target.value || null)}
                 data-testid="form-pengurus-departemen"
               >
-                <option value="">— Tanpa departemen (BPH/inti) —</option>
+                <option value="">Tanpa departemen (BPH/inti)</option>
                 {departemen.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.nama}

@@ -426,7 +426,7 @@ export const BagianManual = React.forwardRef<
       </section>
 
       <section className="space-y-2" aria-label="Pejabat lembar pengesahan">
-        <h3 className="text-[13px] font-semibold">Lembar pengesahan — pihak fakultas *</h3>
+        <h3 className="text-[13px] font-semibold">Lembar pengesahan: pihak fakultas *</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           <Pendek
             id="lpj-kaprodi-nama"

@@ -72,7 +72,7 @@ export function PilihUntukSurat({
         </label>
         <span data-testid="massal-terpilih" className={kebanyakan ? 'font-semibold text-danger' : 'text-secondary'}>
           Terpilih: <span className="tabular-nums">{terpilih.size}</span> orang
-          {kebanyakan ? ` — lebih dari ${maks}, pecah menjadi beberapa batch` : ''}
+          {kebanyakan ? ` - lebih dari ${maks}, pecah menjadi beberapa batch` : ''}
         </span>
       </div>
       <ul className="max-h-80 divide-y divide-[var(--border-subtle)] overflow-y-auto rounded-sm border border-default" data-testid="massal-pengurus">

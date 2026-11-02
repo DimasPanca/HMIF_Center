@@ -142,7 +142,7 @@ export function ImportModulDialog({
                   data-testid={`strategi-${nilai}`}
                 />
                 <span>
-                  <strong>{nama}</strong> — {ket}
+                  <strong>{nama}</strong> - {ket}
                 </span>
               </label>
             ))}

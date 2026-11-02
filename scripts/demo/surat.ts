@@ -2,7 +2,7 @@
  * Surat demo: tanda tangan Ketua, 11 jenis surat dengan semua status
  * (SK Aktif diajukan pemohonnya sendiri lewat /api/surat/keterangan-aktif, ADR-036)
  * (Draf, Menunggu approval, Terbit bernomor + DOCX, Ditolak, Dibatalkan) dan
- * satu batch Surat Keterangan Aktif massal — seluruhnya lewat API sungguhan.
+ * satu batch Surat Keterangan Aktif massal - seluruhnya lewat API sungguhan.
  * Nomor surat dialokasikan sistem berurutan saat disetujui.
  */
 

@@ -54,7 +54,7 @@ function Info({ label, nilai }: { label: string; nilai: React.ReactNode }) {
   return (
     <div className="border-b border-subtle py-3 last:border-b-0">
       <dt className="text-[12px] font-medium text-secondary">{label}</dt>
-      <dd className="mt-1 text-[13px] leading-[18px] text-primary">{nilai || '—'}</dd>
+      <dd className="mt-1 text-[13px] leading-[18px] text-primary">{nilai || '-'}</dd>
     </div>
   );
 }
@@ -218,12 +218,12 @@ export default async function DetailApprovalPage({ params }: DetailApprovalPageP
                 <Info
                   label="Diajukan"
                   nilai={
-                    proker.diajukan_at ? formatTanggalPendek(proker.diajukan_at.slice(0, 10)) : '—'
+                    proker.diajukan_at ? formatTanggalPendek(proker.diajukan_at.slice(0, 10)) : '-'
                   }
                 />
                 <Info
                   label="Estimasi peserta"
-                  nilai={proker.estimasi_peserta ? `${proker.estimasi_peserta} orang` : '—'}
+                  nilai={proker.estimasi_peserta ? `${proker.estimasi_peserta} orang` : '-'}
                 />
                 <Info
                   label="Estimasi anggaran"
@@ -234,7 +234,7 @@ export default async function DetailApprovalPage({ params }: DetailApprovalPageP
                   nilai={
                     (proker.sumber_dana ?? [])
                       .map((item) => LABEL_SUMBER[item] ?? item)
-                      .join(', ') || '—'
+                      .join(', ') || '-'
                   }
                 />
                 <Info

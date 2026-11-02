@@ -400,7 +400,7 @@ export async function aktifkanPeriode(
     return {
       ok: false,
       kode: 'BUKAN_PERSIAPAN',
-      pesan: `Periode berstatus ${p.status} — hanya periode berstatus PERSIAPAN yang dapat diaktifkan.`,
+      pesan: `Periode berstatus ${p.status} - hanya periode berstatus PERSIAPAN yang dapat diaktifkan.`,
     };
   }
 

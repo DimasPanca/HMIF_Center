@@ -323,7 +323,7 @@ export function Sidebar({
           onClick={() => setDhanaBuka(true)}
           aria-haspopup="dialog"
           aria-expanded={dhanaBuka}
-          title={tampilkanLabel ? 'Dhana — Your Knowledge Companion' : 'Tanya Dhana'}
+          title={tampilkanLabel ? 'Dhana - Your Knowledge Companion' : 'Tanya Dhana'}
           className={cn(
             'flex min-h-10 w-full items-center gap-2.5 rounded-md border border-default bg-panel px-3 text-left text-[13px] font-medium text-primary transition-colors duration-fast hover:border-strong md:min-h-[34px] motion-reduce:transition-none',
             !tampilkanLabel && 'justify-center px-0',

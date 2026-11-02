@@ -114,7 +114,7 @@ export function versiSkema(): string {
   const v = process.env.SCHEMA_VERSION?.trim();
   if (!v)
     throw new Error(
-      'SCHEMA_VERSION belum diisi — versi skema backup tidak dapat ditentukan. Jalankan: npm run check:env',
+      'SCHEMA_VERSION belum diisi - versi skema backup tidak dapat ditentukan. Jalankan: npm run check:env',
     );
   return v;
 }
@@ -123,7 +123,7 @@ export function versiSkema(): string {
 export async function migrasiTerakhir(): Promise<string> {
   const r = await db.$queryRaw<{ nama: string | null }[]>`SELECT max(nama) AS nama FROM _migrasi`;
   const v = r[0]?.nama;
-  if (!v) throw new Error('Tabel _migrasi kosong — versi skema tidak dapat ditentukan.');
+  if (!v) throw new Error('Tabel _migrasi kosong - versi skema tidak dapat ditentukan.');
   return v.replace(/\.sql$/, '');
 }
 
@@ -234,7 +234,7 @@ function tagAman(teks: string): string {
  */
 export function susunDumpSql(tabel: IsiTabel[], meta: MetaBundel): string {
   const baris: string[] = [
-    '-- HMIF Center — dump data per tabel (fallback tanpa pg_dump)',
+    '-- HMIF Center - dump data per tabel (fallback tanpa pg_dump)',
     `-- Versi skema : ${meta.versiSkema} (migrasi terakhir ${meta.migrasiTerakhir})`,
     `-- Dibuat      : ${meta.dibuatPada}`,
     '-- Hanya DATA, tanpa DDL. Pulihkan ke database yang sudah dimigrasi sampai migrasi',

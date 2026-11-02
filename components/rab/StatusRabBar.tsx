@@ -29,7 +29,7 @@ type Dialog = null | 'kunci' | 'kembalikan' | 'buka';
 const PENJELASAN: Record<string, string> = {
   DRAFT: 'RAB sedang disusun panitia.',
   DIAJUKAN: 'Menunggu persetujuan Ketua Pelaksana dan Bendahara.',
-  DISETUJUI: 'RAB disetujui dan dikunci — item tidak dapat diubah.',
+  DISETUJUI: 'RAB disetujui dan dikunci - item tidak dapat diubah.',
   REALISASI: 'Belanja berjalan; RAB tetap terkunci.',
   SELESAI: 'LPJ sudah dibuat.',
 };

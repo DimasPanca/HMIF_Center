@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 // Token ada di URL: jangan bocor lewat Referer, jangan diindeks mesin pencari.
 export const metadata: Metadata = {
-  title: 'Formulir — HMIF Center',
+  title: 'Formulir - HMIF Center',
   referrer: 'no-referrer',
   robots: { index: false, follow: false },
 };

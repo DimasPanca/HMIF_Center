@@ -1,4 +1,4 @@
-# Panduan Umum — HMIF Center
+# Panduan Umum - HMIF Center
 
 HMIF Center adalah sistem e-administrasi Himpunan Mahasiswa Informatika FT UNTIRTA: program
 kerja, acara besar, keuangan, persuratan, kesekretariatan, dan formulir dalam satu tempat.
@@ -33,7 +33,7 @@ Menu di sidebar disusun **per peran**, jadi setiap orang hanya melihat yang ia p
 | Bendahara Umum | Keuangan (verifikasi nota, semua nota), Acara Besar, Surat Keterangan Aktif |
 | Kepala Departemen | Departemen Saya (Kanban, Kendala, Gantt), Program Kerja (termasuk Buat Proker), Acara Besar, Kesekretariatan, Surat Keterangan Aktif |
 | Anggota | Departemen Saya (Tugas Saya, Kendala), Acara Saya (Upload Nota bila panitia), Surat Keterangan Aktif |
-| BPH | Program Kerja, Acara Besar, Arsip Surat, Audit Log — hanya baca |
+| BPH | Program Kerja, Acara Besar, Arsip Surat, Audit Log - hanya baca |
 | Admin | Administrasi (pengguna & peran, periode, backup, audit log, laporan bug), Formulir |
 
 **Formulir** muncul juga untuk Bendahara, Kadept, dan Anggota bila mereka duduk di kepanitiaan
@@ -59,7 +59,7 @@ tidak dapat mengubah isinya.
 
 ## 5. Beranda
 
-Beranda menyapa Anda dan menampilkan **panel sesuai peran** terlebih dahulu — hal yang perlu Anda
+Beranda menyapa Anda dan menampilkan **panel sesuai peran** terlebih dahulu - hal yang perlu Anda
 tindak (tugas, antrian approval, nota yang menunggu, kendala). Kartu yang sedang kosong diringkas
 menjadi satu baris "Tidak ada yang perlu ditindak". Di bawahnya ada **Kalender bersama**: timeline
 seluruh program kerja yang disetujui pada periode aktif, bisa difilter per departemen dan kategori.
@@ -164,16 +164,16 @@ Catatan penting:
 
 ## 9. Guide dan pencarian panduan
 
-Guide berisi seluruh panduan HMIF Center. Ketik di kotak **Cari di Guide** (atau tekan **/**) — hasil
+Guide berisi seluruh panduan HMIF Center. Ketik di kotak **Cari di Guide** (atau tekan **/**) - hasil
 muncul langsung dari semua panduan, judul bagian yang cocok diutamakan. Klik hasilnya untuk langsung
 menuju bagian tersebut. Panduan untuk peran Anda ditandai **untuk Anda**.
 
 Tips mencari: pakai kata kunci pendek, mis. "upload nota", "approval surat", "kuota form",
 "backup".
 
-## 10. Dhana — asisten HMIF Center
+## 10. Dhana - asisten HMIF Center
 
-**DHANA — Digital Helper and Network Assistant.** *Your Knowledge Companion.*
+**DHANA - Digital Helper and Network Assistant.** *Your Knowledge Companion.*
 
 Nama Dhana memiliki hubungan langsung dengan **Vardhana**, nama kabinet yang membangun HMIF Center.
 Dalam bahasa Sanskerta, *dhana* berarti kekayaan atau harta. Filosofinya: **pengetahuan adalah

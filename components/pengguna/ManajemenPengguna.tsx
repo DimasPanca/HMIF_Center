@@ -158,7 +158,7 @@ function Manajemen({ awal, departemen, userIdSaya, bolehUndang, bolehUbah }: Man
                   <p className="text-[12px] break-all text-secondary">{p.email}</p>
                 </TableCell>
                 <TableCell className="tabular-nums">{p.nim}</TableCell>
-                <TableCell className="tabular-nums">{p.angkatan ?? '—'}</TableCell>
+                <TableCell className="tabular-nums">{p.angkatan ?? '-'}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {p.roles.map((r) => (

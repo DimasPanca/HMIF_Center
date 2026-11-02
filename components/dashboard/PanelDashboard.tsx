@@ -206,7 +206,7 @@ export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardP
           )}
         >
           <Inbox className="size-4 shrink-0 text-tertiary" aria-hidden="true" />
-          <span>{terisi.length ? 'Tidak ada yang perlu ditindak di' : 'Semua beres — tidak ada yang perlu ditindak di'}</span>
+          <span>{terisi.length ? 'Tidak ada yang perlu ditindak di' : 'Semua beres - tidak ada yang perlu ditindak di'}</span>
           {kosong.map((item) => (
             <span key={item.kunci} data-testid={`dashboard-card-${item.kunci}`} className="rounded-full bg-subtle px-2 py-0.5 text-[12px] text-primary">
               {item.judul}

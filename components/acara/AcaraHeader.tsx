@@ -127,7 +127,7 @@ export function AcaraHeader({
             <div className="flex gap-1">
               <dt>Kode kegiatan:</dt>
               <dd data-testid="acara-kode-kegiatan" className="font-mono text-primary">
-                {acara.kode_kegiatan ?? '—'}
+                {acara.kode_kegiatan ?? '-'}
               </dd>
             </div>
           </dl>

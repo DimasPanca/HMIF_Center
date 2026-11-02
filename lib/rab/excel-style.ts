@@ -17,7 +17,7 @@ export const RAB_MAP = {
   RAB: {
     kolom: { no: 2, jenisBarang: 3, jumlah: 4, hargaSatuan: 5, total: 6 }, // B C D E F
     lebar: { A: 5.77734375, B: 8.77734375, C: 30.44140625, D: 26.77734375, E: 17.109375, F: 16.33203125, I: 21.109375, J: 25.109375 },
-    headerKolom: ['NO', 'Jenis Barang', 'Jumlah', 'Harga satuan', 'Total '], // "Total " berspasi — salin apa adanya
+    headerKolom: ['NO', 'Jenis Barang', 'Jumlah', 'Harga satuan', 'Total '], // "Total " berspasi - salin apa adanya
     barisAwal: 2,
     ringkasan: { kolomNo: 8, kolomDivisi: 9, kolomBiaya: 10, barisHeader: 3, header: ['NO.', 'DIVISI', 'BESARAN BIAYA'] },
   },

@@ -1,8 +1,8 @@
-# Panduan Admin — HMIF Center
+# Panduan Admin - HMIF Center
 
 Untuk pengurus yang memegang peran **Admin**: mengelola akun, peran, periode
 kepengurusan, backup, dan memantau audit log. Admin juga dapat membuka seluruh
-modul lain dengan akses penuh — untuk alur modul itu, lihat panduan role yang
+modul lain dengan akses penuh - untuk alur modul itu, lihat panduan role yang
 bersangkutan.
 
 > Tangkapan layar diambil dari lingkungan demo (data contoh). Nama, tanggal,
@@ -12,9 +12,9 @@ bersangkutan.
 
 1. Buka alamat HMIF Center di browser, lalu isi **Email** dan **Kata sandi**.
 2. Klik **Masuk**. Setelah 5 kali gagal dalam 15 menit, login dikunci
-   sementara — tunggu sesuai waktu yang ditampilkan.
+   sementara - tunggu sesuai waktu yang ditampilkan.
 3. Anda tiba di **Beranda**: Master Gantt seluruh proker, lalu panel Admin di
-   bawahnya — kesehatan sistem, statistik pengguna, backup terakhir, dan audit
+   bawahnya - kesehatan sistem, statistik pengguna, backup terakhir, dan audit
    terbaru.
 
 ![Halaman login](img/login.png)
@@ -27,7 +27,7 @@ Di bagian atas setiap halaman:
 
 - **Cari** (atau tekan `Ctrl`/`⌘` + `K`) membuka palet perintah untuk melompat
   ke halaman mana pun.
-- **Pemilih periode** — periode lama dapat dibuka sebagai arsip baca-saja.
+- **Pemilih periode** - periode lama dapat dibuka sebagai arsip baca-saja.
 - **Tombol tema** terang/gelap.
 - **Menu pengguna** (inisial nama di kanan atas) → **Keluar**.
 
@@ -49,7 +49,7 @@ dibuka lewat pencarian (**Ctrl/⌘ K**).
 2. Klik **Undang pengurus**.
 3. Isi nama, NIM, email, dan angkatan; pilih satu atau lebih **peran**. Untuk
    Kepala Departemen dan Anggota, pilih juga **departemennya**.
-4. Kirim undangan. Tautan aktivasi (berlaku 7 hari) ditampilkan — klik
+4. Kirim undangan. Tautan aktivasi (berlaku 7 hari) ditampilkan - klik
    **Salin** dan kirimkan lewat WhatsApp/email bila email tidak sampai.
 5. Pengurus membuka tautan, membuat kata sandi (minimal 8 karakter, huruf dan
    angka), lalu dapat masuk.
@@ -95,13 +95,13 @@ terakhir. Backup manual:
    seluruh berkas diperiksa ulang checksum-nya.
 3. Batas backup manual 3 kali per hari.
 
-**Restore** (hanya bila benar-benar perlu — misalnya data rusak):
+**Restore** (hanya bila benar-benar perlu - misalnya data rusak):
 
 1. Pada baris backup, pilih **Restore penuh** atau **Impor per modul**.
 2. Sistem SELALU membuat backup pra-restore dulu, lalu memverifikasi berkas.
 3. Untuk restore penuh, ketik **HMIF Center** sebagai konfirmasi.
-4. Untuk impor per modul, pilih modul dan strategi (**Tambah** — lewati yang
-   sudah ada; **Timpa** — ganti seluruh kolom; **Gabung** — isi kolom yang
+4. Untuk impor per modul, pilih modul dan strategi (**Tambah** - lewati yang
+   sudah ada; **Timpa** - ganti seluruh kolom; **Gabung** - isi kolom yang
    berbeda saja), periksa pratinjau baru/berubah/sama, lalu jalankan.
 5. Bila proses terputus, buka kembali halaman dan lanjutkan dari tahap terakhir.
 

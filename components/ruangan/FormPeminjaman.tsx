@@ -166,7 +166,7 @@ export function FormPeminjaman({
           >
             <DialogHeader>
               <DialogTitle>Catat peminjaman ruangan</DialogTitle>
-              <DialogDescription>Jadwal bentrok hanya diperingatkan — keputusan akhir ada di Dekanat.</DialogDescription>
+              <DialogDescription>Jadwal bentrok hanya diperingatkan - keputusan akhir ada di Dekanat.</DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-3">
@@ -179,7 +179,7 @@ export function FormPeminjaman({
                   onChange={(e) => ubah('ruangan_id', e.target.value)}
                   data-testid="form-booking-ruangan"
                 >
-                  <option value="">— Pilih ruangan —</option>
+                  <option value=""> - Pilih ruangan - </option>
                   {ruangan.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.nama}

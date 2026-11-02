@@ -17,7 +17,7 @@ function rentangPersiapan(entri: EntriKalender): string {
 }
 
 function rentangHariH(entri: EntriKalender): string {
-  if (!entri.hari_h_mulai || !entri.hari_h_selesai) return '—';
+  if (!entri.hari_h_mulai || !entri.hari_h_selesai) return '-';
   return formatRentangTanggal(entri.hari_h_mulai, entri.hari_h_selesai);
 }
 

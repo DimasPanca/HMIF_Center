@@ -69,7 +69,7 @@ export default async function IndeksGanttPage() {
                     >
                       <span className="min-w-0 truncate font-medium text-primary">{c.judul}</span>
                       <span className="shrink-0 text-xs text-secondary">
-                        {c.departemen ?? '—'} · {c.jumlah_task} task
+                        {c.departemen ?? '-'} · {c.jumlah_task} task
                       </span>
                     </Link>
                   </li>

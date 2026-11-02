@@ -61,7 +61,7 @@ function Isi({ forms, bolehBuat, bolehTemplate, acaraId }: { forms: RingkasForm[
             <div>
               <h1 className="text-2xl font-semibold">Formulir</h1>
               <p className="mt-1 max-w-2xl text-[14px] leading-5 text-secondary">
-                Pengganti Google Form: pendaftaran peserta, evaluasi acara, open recruitment, dan pendataan pengurus — datanya langsung masuk sistem.
+                Pengganti Google Form: pendaftaran peserta, evaluasi acara, open recruitment, dan pendataan pengurus - datanya langsung masuk sistem.
               </p>
             </div>
           </div>

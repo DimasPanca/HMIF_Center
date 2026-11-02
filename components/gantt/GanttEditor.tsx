@@ -259,7 +259,7 @@ export function GanttEditor({
           {galat}
         </p>
       ) : null}
-      {data.chart.arsip ? <p className="text-xs text-tertiary">Chart periode lain — hanya dapat dibaca.</p> : null}
+      {data.chart.arsip ? <p className="text-xs text-tertiary">Chart periode lain - hanya dapat dibaca.</p> : null}
       {hak.tambah && data.grup.length === 0 ? (
         <p className="text-[13px] text-secondary">Chart ini masih kosong. Mulai dengan menambah grup, lalu task di dalamnya.</p>
       ) : null}

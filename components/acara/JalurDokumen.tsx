@@ -53,7 +53,7 @@ export function JalurDokumen({
             {dibatalkan
               ? 'Acara ini dibatalkan; dokumen tetap dapat dibuka sebagai arsip.'
               : lanjut
-                ? `Langkah berikutnya: ${lanjut.label} — ${lanjut.keterangan.toLowerCase()}.`
+                ? `Langkah berikutnya: ${lanjut.label} - ${lanjut.keterangan.toLowerCase()}.`
                 : 'Semua langkah yang dapat Anda lihat sudah selesai.'}
           </p>
         </div>

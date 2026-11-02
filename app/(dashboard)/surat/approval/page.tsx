@@ -104,7 +104,7 @@ export default async function ApprovalSuratPage({ searchParams }: PageProps) {
           >
             <Files aria-hidden="true" className="size-4 text-[var(--primary)]" />
             {batchMenunggu.length} batch Surat Keterangan Aktif massal (
-            {batchMenunggu.reduce((n, b) => n + b.menunggu, 0)} surat) menunggu — disetujui per batch di halaman Surat Massal.
+            {batchMenunggu.reduce((n, b) => n + b.menunggu, 0)} surat) menunggu - disetujui per batch di halaman Surat Massal.
           </Link>
         ) : null}
 

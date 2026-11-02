@@ -436,7 +436,7 @@ export const SkemaAlasan = z.object({
   alasan: z
     .string({ error: 'Alasan wajib diisi.' })
     .trim()
-    .min(10, 'Alasan minimal 10 karakter — tuliskan apa yang perlu diubah.')
+    .min(10, 'Alasan minimal 10 karakter - tuliskan apa yang perlu diubah.')
     .max(500, 'Alasan maksimal 500 karakter.'),
 });
 
@@ -483,7 +483,7 @@ export async function ubahStatusRab(
   // Diperiksa sebelum UPDATE: penolakan trigger 041 di tengah transaksi
   // membatalkan seluruh transaksi dan hanya terbaca sebagai galat 500.
   if (alasan && alasan === meta.alasan_buka_kunci) {
-    return gagal('VALIDASI_GAGAL', 'Tuliskan alasan baru — alasan ini sama persis dengan pembukaan kunci sebelumnya.');
+    return gagal('VALIDASI_GAGAL', 'Tuliskan alasan baru - alasan ini sama persis dengan pembukaan kunci sebelumnya.');
   }
 
   const izin = await hitungIzinStatus(tx, konteks, kepanitiaanId, status);
@@ -779,7 +779,7 @@ export async function rencanaImpor(
 ): Promise<Hasil<RencanaImpor>> {
   const { status } = await statusRab(k, kepanitiaanId);
   if (!STATUS_TERBUKA.includes(status)) {
-    return gagal('RAB_TERKUNCI', `RAB berstatus ${status} dan terkunci — impor ditolak. Minta Bendahara membuka kuncinya.`);
+    return gagal('RAB_TERKUNCI', `RAB berstatus ${status} dan terkunci - impor ditolak. Minta Bendahara membuka kuncinya.`);
   }
   const hak = await hakDivisiAcara(k, konteks, kepanitiaanId);
 

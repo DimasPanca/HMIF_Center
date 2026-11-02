@@ -191,8 +191,8 @@ export function PengurusTable({
                 </TableCell>
                 <TableCell className="font-mono text-[12px]">{b.nim}</TableCell>
                 <TableCell className="text-[13px]">{b.jabatan}</TableCell>
-                <TableCell className="text-[13px]">{b.nama_departemen ?? '—'}</TableCell>
-                <TableCell className="tabular-nums text-[13px]">{b.angkatan ?? '—'}</TableCell>
+                <TableCell className="text-[13px]">{b.nama_departemen ?? '-'}</TableCell>
+                <TableCell className="tabular-nums text-[13px]">{b.angkatan ?? '-'}</TableCell>
                 <TableCell className="text-[13px]">{b.is_aktif ? 'Aktif' : <span className="text-tertiary">Nonaktif</span>}</TableCell>
                 {izin.tulis ? (
                   <TableCell action>

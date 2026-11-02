@@ -407,7 +407,7 @@ function Isi({ form }: { form: DetailForm }) {
 
       {tab === 'pratinjau' && (
         <div className="rounded-md bg-subtle p-4 sm:p-6">
-          <p className="mb-3 text-center text-[12px] text-tertiary">Pratinjau — tampilan yang dilihat pengisi. Jawaban di sini tidak dikirim.</p>
+          <p className="mb-3 text-center text-[12px] text-tertiary">Pratinjau - tampilan yang dilihat pengisi. Jawaban di sini tidak dikirim.</p>
           <div className="mx-auto max-w-[42rem]">
             <IsiForm
               key={JSON.stringify(struktur).length}

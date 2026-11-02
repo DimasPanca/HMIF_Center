@@ -175,7 +175,7 @@ export function bacaBlokItem(ws: ExcelJS.Worksheet): { ok: true; divisi: DivisiI
       for (const [k, j] of Object.entries(JUDUL_KOLOM)) {
         const isi = teksSel(ws.getCell(r, Number(k)).value);
         if (!j.boleh.test(isi)) {
-          return { ok: false, pesan: `Sheet "${ws.name}" baris ${r} kolom ${j.huruf}: judul "${isi || '(kosong)'}" tidak dikenali — diharapkan "${j.baku.trim()}".` };
+          return { ok: false, pesan: `Sheet "${ws.name}" baris ${r} kolom ${j.huruf}: judul "${isi || '(kosong)'}" tidak dikenali - diharapkan "${j.baku.trim()}".` };
         }
       }
       dalamBlok = true;

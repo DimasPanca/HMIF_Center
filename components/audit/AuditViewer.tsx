@@ -129,7 +129,7 @@ function keObjek(nilai: NilaiJson): Record<string, NilaiJson | undefined> {
 }
 
 function teksNilai(nilai: NilaiJson | undefined): string {
-  if (nilai === undefined) return '—';
+  if (nilai === undefined) return '-';
   if (nilai === null) return 'null';
   if (typeof nilai === 'string') return nilai || '(kosong)';
   return JSON.stringify(nilai, null, 2);

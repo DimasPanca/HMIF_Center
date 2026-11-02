@@ -16,7 +16,7 @@ export interface Respons {
   ok: boolean;
   /** Badan JSON mentah (`{ok,data}` / `{ok:false,error}`), atau `null`. */
   badan: { ok?: boolean; data?: any; error?: { code?: string; message?: string; details?: unknown } } | null;
-  /** `badan.data` — pintasan. */
+  /** `badan.data` - pintasan. */
   data: any;
 }
 

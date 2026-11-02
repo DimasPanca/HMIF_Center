@@ -225,7 +225,7 @@ async function periksaIsian(
     return {
       ok: false,
       kode: 'ALOKASI_TIDAK_SEIMBANG',
-      pesan: `Total alokasi ${rp(totalAlokasi)} tidak sama dengan total nota ${rp(n.total_nota)} — selisih ${rp(Math.abs(selisih))}.`,
+      pesan: `Total alokasi ${rp(totalAlokasi)} tidak sama dengan total nota ${rp(n.total_nota)} - selisih ${rp(Math.abs(selisih))}.`,
       details: { total_nota: n.total_nota, total_alokasi: totalAlokasi, selisih },
     };
   }

@@ -180,7 +180,7 @@ export function peringatanBobot(p: readonly { bobot: number | null }[]): string 
   const t = totalBobot(p);
   if (t === 100) return null;
   const selisih = Math.round(Math.abs(100 - t) * 100) / 100;
-  return `Total bobot ${formatPersen(t)}% — ${t < 100 ? 'kurang' : 'lebih'} ${formatPersen(selisih)}% dari 100%.`;
+  return `Total bobot ${formatPersen(t)}% - ${t < 100 ? 'kurang' : 'lebih'} ${formatPersen(selisih)}% dari 100%.`;
 }
 
 const formatPersen = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 2 });

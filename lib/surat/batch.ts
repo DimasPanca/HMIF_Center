@@ -50,7 +50,7 @@ export const SkemaBuatBatch = z.object({
   pengurus: z
     .array(z.uuid({ error: 'Pengurus tidak valid.' }), { error: 'Pilih pengurus.' })
     .min(1, 'Pilih minimal satu pengurus.')
-    .max(MAKS_BATCH, `Paling banyak ${MAKS_BATCH} surat per batch — pecah menjadi beberapa batch.`),
+    .max(MAKS_BATCH, `Paling banyak ${MAKS_BATCH} surat per batch - pecah menjadi beberapa batch.`),
   keperluan: z.string({ error: 'Keperluan wajib diisi.' }).trim().min(1, 'Keperluan wajib diisi.').max(300, 'Keperluan maksimal 300 karakter.'),
   tanggal_surat: z.string({ error: 'Tanggal surat wajib diisi.' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'Tanggal surat tidak valid.'),
 });

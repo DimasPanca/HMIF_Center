@@ -119,7 +119,7 @@ export function GuideApp({
                 buka(pilih);
               } else if (e.key === 'Escape') setQ('');
             }}
-            placeholder="Cari di Guide — mis. upload nota, approval surat, kuota form…"
+            placeholder="Cari di Guide - mis. upload nota, approval surat, kuota form…"
             name="cari-guide"
             autoComplete="off"
             spellCheck={false}

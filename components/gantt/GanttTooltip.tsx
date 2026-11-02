@@ -31,12 +31,12 @@ const formatPersentase = new Intl.NumberFormat('id-ID', {
 
 function nilaiAtauStrip(value: string | undefined): string {
   const normalized = value?.trim();
-  return normalized || '—';
+  return normalized || '-';
 }
 
 function formatStatus(status: string | undefined): string {
   const normalized = status?.trim();
-  if (!normalized) return '—';
+  if (!normalized) return '-';
   if (!/^[A-Z0-9_]+$/.test(normalized)) return normalized;
 
   return normalized
@@ -50,7 +50,7 @@ function formatHariH(item: GanttDisplayItem): string {
   const start = item.hariHStart ?? item.hariHEnd;
   const end = item.hariHEnd ?? item.hariHStart;
 
-  return start && end ? formatRentangTanggal(start, end) : '—';
+  return start && end ? formatRentangTanggal(start, end) : '-';
 }
 
 function formatProgress(progress: number): string {

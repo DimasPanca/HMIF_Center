@@ -50,7 +50,7 @@ export function DeadlineBadge({
       className={cn('inline-flex items-center gap-1 text-[11px] leading-4 whitespace-nowrap', kelas, className)}
       data-slot="deadline-badge"
       data-tingkat={tingkat}
-      title={`Deadline ${label}${keterangan ? ` — ${keterangan}` : ''} (${LABEL_TINGKAT[tingkat]})`}
+      title={`Deadline ${label}${keterangan ? ` - ${keterangan}` : ''} (${LABEL_TINGKAT[tingkat]})`}
     >
       <Ikon className="size-3 shrink-0" aria-hidden="true" />
       <span>

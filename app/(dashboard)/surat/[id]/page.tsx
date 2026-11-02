@@ -53,13 +53,13 @@ export default async function DetailSuratPage({ params }: PageProps) {
 
   const rincian: [string, React.ReactNode][] = [
     ['Jenis', s.nama_jenis],
-    ['Perihal', s.perihal || '—'],
-    ['Tujuan', s.tujuan_nama === '-' ? '—' : `${s.tujuan_nama}${s.tujuan_alamat && s.tujuan_alamat !== '-' ? `, ${s.tujuan_alamat}` : ''}`],
+    ['Perihal', s.perihal || '-'],
+    ['Tujuan', s.tujuan_nama === '-' ? '-' : `${s.tujuan_nama}${s.tujuan_alamat && s.tujuan_alamat !== '-' ? `, ${s.tujuan_alamat}` : ''}`],
     ['Tanggal surat', formatTanggalSurat(s.tanggal_surat)],
-    ['Kegiatan', s.kode_kegiatan || '—'],
-    ['Departemen', s.nama_departemen ?? '—'],
+    ['Kegiatan', s.kode_kegiatan || '-'],
+    ['Departemen', s.nama_departemen ?? '-'],
     ['Pembuat', s.nama_pembuat],
-    ['Approver', s.nama_penyetuju ? `${s.nama_penyetuju}${s.disetujui_at ? ` · ${formatTanggalWaktu(s.disetujui_at)}` : ''}` : '—'],
+    ['Approver', s.nama_penyetuju ? `${s.nama_penyetuju}${s.disetujui_at ? ` · ${formatTanggalWaktu(s.disetujui_at)}` : ''}` : '-'],
     ['Periode', s.nama_periode],
   ];
 
@@ -89,7 +89,7 @@ export default async function DetailSuratPage({ params }: PageProps) {
             <InlineAlert
               data-testid="surat-detail-batal"
               title="Surat ini dibatalkan"
-              detail={`${s.alasan_pembatalan ?? 'Tanpa alasan tercatat.'}${s.nama_pembatal ? ` — ${s.nama_pembatal}` : ''}${
+              detail={`${s.alasan_pembatalan ?? 'Tanpa alasan tercatat.'}${s.nama_pembatal ? ` - ${s.nama_pembatal}` : ''}${
                 s.dibatalkan_at ? `, ${formatTanggalWaktu(s.dibatalkan_at)}` : ''
               }. Nomornya tetap tercatat dan tidak dipakai ulang.`}
             />

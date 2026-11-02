@@ -116,7 +116,7 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
             <div className="space-y-2 text-[14px] leading-6 text-secondary">
               <p className="text-[16px] font-semibold text-primary">Halo! Aku Dhana.</p>
               <p>
-                <strong className="font-semibold text-primary">Digital Helper and Network Assistant</strong> HMIF Center. Namaku diambil dari Vardhana — dalam bahasa
+                <strong className="font-semibold text-primary">Digital Helper and Network Assistant</strong> HMIF Center. Namaku diambil dari Vardhana - dalam bahasa
                 Sanskerta, <em>dhana</em> berarti kekayaan: pengetahuan adalah kekayaan yang dapat dibagikan.
               </p>
               <p>Tanyakan cara memakai HMIF Center, alur persetujuan, atau aturan organisasi (AD/ART HMIF, BEM FT, Peraturan Fakultas).</p>
@@ -228,7 +228,7 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
             <ArrowUp className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-tertiary">Dhana bisa keliru — untuk hal penting, cek kembali di Guide.</p>
+        <p className="mt-2 text-center text-[11px] text-tertiary">Dhana bisa keliru - untuk hal penting, cek kembali di Guide.</p>
       </form>
     </section>
   );

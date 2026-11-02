@@ -253,7 +253,7 @@ function IsiTab({
           testid="acara-isi-lpj"
           ikon="dokumen"
           judul="Laporan Pertanggungjawaban"
-          penjelasan="LPJ disusun dari RAB, nota terverifikasi, dan pemasukan acara ini — laporan keuangan, kepanitiaan, dan lampiran nota terisi otomatis; disetujui Bendahara lalu Ketua Himpunan."
+          penjelasan="LPJ disusun dari RAB, nota terverifikasi, dan pemasukan acara ini - laporan keuangan, kepanitiaan, dan lampiran nota terisi otomatis; disetujui Bendahara lalu Ketua Himpunan."
           aksi={{ label: 'Buka LPJ', href: `/acara/${acara.id}/lpj` }}
         />
       );

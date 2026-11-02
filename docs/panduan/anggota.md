@@ -1,4 +1,4 @@
-# Panduan Anggota & Panitia — HMIF Center
+# Panduan Anggota & Panitia - HMIF Center
 
 Untuk **Anggota departemen** dan panitia acara: mengunggah nota belanja dari
 ponsel, bekerja di ruang kerja divisi, dan mengerjakan kartu Kanban.
@@ -45,19 +45,19 @@ Setelah disetujui (status **Terbit**), surat dapat diunduh di halaman yang sama
 ![Form upload nota](img/nota-upload-ponsel.png)
 
 1. Buka **Acara Saya → Upload Nota**, ketuk **Upload nota**.
-2. **Divisi** — terisi otomatis bila Anda hanya di satu divisi; bila lebih,
+2. **Divisi** - terisi otomatis bila Anda hanya di satu divisi; bila lebih,
    pilih divisi yang berbelanja.
-3. **Item RAB** — pilih item yang dibelanjakan (boleh lebih dari satu). Kamera
+3. **Item RAB** - pilih item yang dibelanjakan (boleh lebih dari satu). Kamera
    baru aktif setelah item dipilih, dan hanya item RAB divisi Anda yang muncul.
    Belanja yang tidak ada di RAB: pilih **Pengeluaran di luar RAB**.
-4. **Foto nota** — ketuk **Ambil / pilih foto nota**:
+4. **Foto nota** - ketuk **Ambil / pilih foto nota**:
    - Arahkan kamera ke nota lalu ketuk tombol **Ambil foto**, atau
    - **Pilih dari galeri** untuk foto yang sudah ada.
    Sistem mendeteksi tepi nota dan meluruskan perspektifnya ("Tepi dokumen
    terdeteksi"). Periksa hasilnya, lalu **Gunakan** atau **Ambil Ulang**.
 5. Foto diperkecil dan dibersihkan dari data lokasi di ponsel Anda sebelum
-   terkirim — biasanya hanya beberapa detik.
-6. **Rincian & alokasi** — isi **Tanggal belanja** dan **Total nota**, lalu
+   terkirim - biasanya hanya beberapa detik.
+6. **Rincian & alokasi** - isi **Tanggal belanja** dan **Total nota**, lalu
    bagi nominal ke item RAB yang dipilih. Penanda di bawah menunjukkan sisa:
    jumlah alokasi harus **sama persis** dengan total nota.
 7. Ketuk **Kirim nota**. Status nota menjadi *Menunggu Verifikasi* Bendahara.
@@ -67,11 +67,11 @@ Setelah disetujui (status **Terbit**), surat dapat diunduh di halaman yang sama
 ![Nota saya](img/nota-saya-ponsel.png)
 
 1. **Acara Saya → Upload Nota** menampilkan **Nota saya** beserta statusnya.
-2. *Perlu Perbaikan* — Bendahara meminta koreksi data (mis. nominal atau item
+2. *Perlu Perbaikan* - Bendahara meminta koreksi data (mis. nominal atau item
    salah). Ketuk **Perbaiki**, ubah datanya (foto tidak perlu diambil ulang),
    lalu **Kirim perbaikan**.
-3. *Ditolak* — baca alasannya, lalu unggah nota baru bila memang perlu.
-4. *Terverifikasi* — nominal sudah tercatat sebagai pengeluaran acara.
+3. *Ditolak* - baca alasannya, lalu unggah nota baru bila memang perlu.
+4. *Terverifikasi* - nominal sudah tercatat sebagai pengeluaran acara.
 
 ## 5. Ruang kerja divisi
 
@@ -79,10 +79,10 @@ Setelah disetujui (status **Terbit**), surat dapat diunduh di halaman yang sama
 
 1. Buka **Acara Saya**, pilih acara, lalu tab **Divisi**.
 2. Di halaman divisi Anda tersedia:
-   - **Job Desk** — tugas tiap anggota (koordinator dapat **Ubah job desk**).
-   - **Gantt Divisi** — timeline internal divisi.
-   - **RAB Divisi** — susun item RAB divisi selama RAB masih Draf.
-   - **Progres** — kartu Kanban divisi.
+   - **Job Desk** - tugas tiap anggota (koordinator dapat **Ubah job desk**).
+   - **Gantt Divisi** - timeline internal divisi.
+   - **RAB Divisi** - susun item RAB divisi selama RAB masih Draf.
+   - **Progres** - kartu Kanban divisi.
    - **Dokumen** dan **Nota** divisi.
 3. Divisi lain dapat dilihat sebatas yang diizinkan (ringkasan), tidak
    diubah.

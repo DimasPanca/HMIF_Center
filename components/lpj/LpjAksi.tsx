@@ -81,7 +81,7 @@ export function LpjAksi({
     if (await panggil('generate', `/api/lpj/${kepanitiaanId}/generate`)) {
       setHasil({
         galat: false,
-        pesan: 'Dokumen LPJ dibuat — snapshot analisis keuangan tersimpan.',
+        pesan: 'Dokumen LPJ dibuat - snapshot analisis keuangan tersimpan.',
         kurang: [],
       });
       router.refresh();
@@ -154,7 +154,7 @@ export function LpjAksi({
         </div>
         {status === 'FINAL' ? (
           <p className="text-[13px] text-success" data-testid="lpj-final">
-            LPJ FINAL — isi dan angkanya tidak dapat diubah lagi.
+            LPJ FINAL - isi dan angkanya tidak dapat diubah lagi.
           </p>
         ) : null}
         {hasil ? (

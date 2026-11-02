@@ -143,7 +143,7 @@ test('bobot parameter ≠ 100% ditandai; auto-save; penghitung bagian terisi', a
   await koor.locator('#parameter-0-bobot').fill('40');
   await koor.locator('#parameter-1-kriteria').fill('Kehadiran');
   await koor.locator('#parameter-1-bobot').fill('50');
-  await expect(koor.getByTestId('tor-bobot-peringatan')).toContainText('Total bobot 90% — kurang 10%');
+  await expect(koor.getByTestId('tor-bobot-peringatan')).toContainText('Total bobot 90% - kurang 10%');
   await koor.locator('#parameter-1-bobot').fill('60');
   await expect(koor.getByTestId('tor-bobot-peringatan')).toHaveCount(0);
   await expect(koor.getByTestId('tor-bobot-total')).toHaveAttribute('data-total', '100');

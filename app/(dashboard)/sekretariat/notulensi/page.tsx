@@ -99,7 +99,7 @@ export default async function ArsipNotulensiPage({
                     </Link>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{formatTanggalPanjang(n.tanggal)}</TableCell>
-                  <TableCell>{n.tempat ?? '—'}</TableCell>
+                  <TableCell>{n.tempat ?? '-'}</TableCell>
                   <TableCell>{n.nama_departemen ?? 'Himpunan'}</TableCell>
                 </TableRow>
               ))}

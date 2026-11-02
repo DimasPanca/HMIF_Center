@@ -54,7 +54,7 @@ export const TEMPLATE_BAWAAN: TemplateBawaan[] = [
           id: 'b-eval-1',
           judul: 'Penilaian kegiatan',
           deskripsi:
-            'Formulir ini mengumpulkan umpan balik yang konstruktif dan terukur mengenai seluruh rangkaian kegiatan. Jawaban teman-teman menjadi bahan evaluasi panitia untuk menyempurnakan program berikutnya. Identitas pengisi dirahasiakan — mohon isi dengan jujur dan objektif.',
+            'Formulir ini mengumpulkan umpan balik yang konstruktif dan terukur mengenai seluruh rangkaian kegiatan. Jawaban teman-teman menjadi bahan evaluasi panitia untuk menyempurnakan program berikutnya. Identitas pengisi dirahasiakan - mohon isi dengan jujur dan objektif.',
           lanjut_ke: null,
           pertanyaan: [
             skala('Tingkat kepuasan keseluruhan'),
@@ -137,7 +137,7 @@ export const TEMPLATE_BAWAAN: TemplateBawaan[] = [
         {
           id: 'b-data-1',
           judul: 'Data pengurus',
-          deskripsi: 'Pastikan NIM sesuai KTM — data ini dipakai untuk surat dan administrasi himpunan.',
+          deskripsi: 'Pastikan NIM sesuai KTM - data ini dipakai untuk surat dan administrasi himpunan.',
           lanjut_ke: null,
           pertanyaan: [
             ...dataDiri(),
@@ -152,7 +152,7 @@ export const TEMPLATE_BAWAAN: TemplateBawaan[] = [
   {
     nama: 'Template KT1',
     kategori: 'LAINNYA',
-    deskripsi: 'Kerangka awal form KT1 — isi lengkapnya menyusul dari panitia.',
+    deskripsi: 'Kerangka awal form KT1 - isi lengkapnya menyusul dari panitia.',
     isi: {
       bagian: [
         {

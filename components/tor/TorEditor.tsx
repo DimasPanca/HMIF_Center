@@ -315,7 +315,7 @@ export function TorEditor({
               className="border-t border-default pt-3 text-[12px] text-secondary"
               data-testid="tor-baca-saja"
             >
-              Tampilan baca saja — TOR disusun panitia acara ini.
+              Tampilan baca saja - TOR disusun panitia acara ini.
             </p>
           )}
           {dokumenAt ? (
@@ -556,7 +556,7 @@ export function TorEditor({
 
         <Bagian id="anggaran" no={12} judul="Anggaran" terisi={terisi.anggaran}>
           <p className="text-[12px] text-secondary">
-            Diambil otomatis dari RAB — ubah angkanya di RAB, bukan di sini.
+            Diambil otomatis dari RAB - ubah angkanya di RAB, bukan di sini.
           </p>
           {anggaran === 'TERBATAS' ? (
             <p className="text-[13px] text-secondary">

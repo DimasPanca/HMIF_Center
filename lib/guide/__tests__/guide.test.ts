@@ -42,14 +42,14 @@ describe('uraiMarkdown (ADR-060)', () => {
   it('jangkar unik untuk judul kembar', () => {
     const id = blok.filter((b) => b.jenis === 'judul').map((b) => (b.jenis === 'judul' ? b.id : ''));
     expect(id).toEqual(['judul', '1-mengunggah-nota', '1-mengunggah-nota-2']);
-    expect(slug('Tanda **Lihat saja** — ADR!')).toBe('tanda-lihat-saja-adr');
+    expect(slug('Tanda **Lihat saja** - ADR!')).toBe('tanda-lihat-saja-adr');
   });
 });
 
 describe('pencarian Guide', () => {
   const dok: DokumenGuide[] = [
     { id: 'anggota', judul: 'Panduan Anggota', ringkas: '', blok: uraiMarkdown('## 3. Mengunggah nota belanja dari ponsel\nBuka Upload Nota, ambil foto nota.\n## 4. Kanban\nKartu tugas.') },
-    { id: 'umum', judul: 'Panduan Umum', ringkas: '', blok: uraiMarkdown('## 1. Tentang HMIF Center\nKabinet Vardhana.\n## 10. Dhana — asisten HMIF Center\nYour Knowledge Companion.') },
+    { id: 'umum', judul: 'Panduan Umum', ringkas: '', blok: uraiMarkdown('## 1. Tentang HMIF Center\nKabinet Vardhana.\n## 10. Dhana - asisten HMIF Center\nYour Knowledge Companion.') },
   ];
   const indeks = indeksBagian(dok);
 
@@ -81,6 +81,7 @@ describe('pencarian Guide', () => {
 
   it('em dash dibuang dari teks', () => {
     expect(tanpaEmDash('Buka menu — lalu isi.')).toBe('Buka menu, lalu isi.');
+    expect(tanpaEmDash('Dies Natalis ke-12')).toBe('Dies Natalis ke-12');
   });
 
   it('skema chat menolak pesan terakhir bukan dari pengguna dan pertanyaan terlalu panjang', () => {
@@ -98,7 +99,7 @@ describe('isi panduan nyata', () => {
     for (const f of berkas) expect(uraiMarkdown(fs.readFileSync(path.join(folder, f), 'utf8')).length).toBeGreaterThan(5);
     const umum = fs.readFileSync(path.join(folder, 'umum.md'), 'utf8');
     expect(umum).toContain('Kabinet Vardhana (2026–2027)');
-    expect(umum).toContain('## 10. Dhana — asisten HMIF Center');
+    expect(umum).toContain('## 10. Dhana - asisten HMIF Center');
     expect(umum).toContain('## 1. Tentang HMIF Center');
   });
 });

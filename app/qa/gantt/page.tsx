@@ -100,7 +100,7 @@ const model100Task = transformGanttRows({
     return {
       id: `task-${taskIndex}`,
       group_id: groupId,
-      nama: `Task ${taskIndex + 1} — ${groupName}`,
+      nama: `Task ${taskIndex + 1} - ${groupName}`,
       tanggal_mulai: tanggal(geser),
       tanggal_selesai: tanggal(geser + 12),
       progres: (taskIndex * 7) % 101,

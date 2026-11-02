@@ -42,7 +42,7 @@ async function baca(): Promise<DokumenGuide[]> {
       b.jenis === 'gambar' && SRC_GAMBAR.test(b.src) ? { ...b, src: `/guide/img/${SRC_GAMBAR.exec(b.src)![1]}` } : b,
     );
     const h1 = blok.find((b) => b.jenis === 'judul' && b.level === 1);
-    const judul = h1 && h1.jenis === 'judul' ? polos(h1.teks).replace(/\s+—\s+HMIF Center$/, '') : d.id;
+    const judul = h1 && h1.jenis === 'judul' ? polos(h1.teks).replace(/\s+[-—]\s+HMIF Center$/, '') : d.id;
     const p1 = blok.find((b) => b.jenis === 'paragraf');
     hasil.push({
       id: d.id,

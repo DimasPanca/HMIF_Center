@@ -388,7 +388,7 @@ function KartuPertanyaan(props: {
           </select>
           {terkunci && (
             <p className="mt-1 flex items-center gap-1 text-[11px] text-tertiary">
-              <Lock className="size-3" /> Sudah dijawab — jenis terkunci
+              <Lock className="size-3" /> Sudah dijawab - jenis terkunci
             </p>
           )}
         </div>
@@ -522,7 +522,7 @@ function KartuPertanyaan(props: {
             disabled={nonaktif}
             className={KELAS_KECIL}
           >
-            <option value="">— tidak ada —</option>
+            <option value=""> - tidak ada - </option>
             {PERAN.map((r) => (
               <option key={r} value={r} disabled={props.peranLain(r)}>
                 {LABEL_PERAN[r]}

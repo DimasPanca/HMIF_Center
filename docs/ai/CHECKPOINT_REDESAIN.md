@@ -104,6 +104,11 @@ notulensi "konversi action item", audit "detail"). Cek ulang di build produksi b
 - [x] Rantai cadangan AI (ADR-063): Gemini → Groq (`openai/gpt-oss-120b`) → OpenRouter (`openai/gpt-4o-mini`); teruji nyata 2026-11-02 (Gemini 429 → dijawab Groq). Kunci `GROQ_API_KEY` & `OPENROUTER_API_KEY` di `.env.local`.
 - [ ] Isi `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY` di Vercel sebelum online. Kuota Gemini gratis cepat habis; OpenRouter memakai saldo.
 
+**Tanpa em dash di seluruh web (2026-11-02)**
+- [x] Teks tampilan di kode (app/components/lib), panduan, seed demo: em dash berspasi → " - ", tanda kosong "—" → "-". Komentar kode dibiarkan.
+- [x] Data DB dummy: 35 baris di 12 kolom dibersihkan (backup.manifest dan audit_log tidak disentuh). Migrasi SQL lama masih memuat em dash pada data bawaan template surat; muncul lagi hanya bila `db:reset`.
+- [x] Dicek di 13 halaman + panel Dhana: 0 em dash tampil.
+
 ## Melanjutkan di komputer lain
 
 1. `git pull` branch `claude/sharp-gates-ngoq4i`.

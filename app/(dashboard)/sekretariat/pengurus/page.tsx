@@ -40,7 +40,7 @@ export default async function DataPengurusPage({ searchParams }: PageProps) {
           <div>
             <h1 className="text-2xl font-semibold">Data pengurus</h1>
             <p className="mt-1 max-w-2xl text-[14px] leading-5 text-secondary">
-              Daftar pengurus periode ini — sumber Surat Keterangan Aktif Organisasi dan daftar hadir notulensi. Pengurus tidak harus
+              Daftar pengurus periode ini - sumber Surat Keterangan Aktif Organisasi dan daftar hadir notulensi. Pengurus tidak harus
               punya akun.
             </p>
           </div>

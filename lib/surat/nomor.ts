@@ -98,7 +98,7 @@ function periksa(s: BarisSurat | undefined, konteks: Konteks): HasilAlokasi | nu
     return {
       ok: false,
       kode: 'STATUS_TIDAK_SESUAI',
-      pesan: `Surat berstatus ${s.status} — nomor hanya diberikan saat surat disetujui.`,
+      pesan: `Surat berstatus ${s.status} - nomor hanya diberikan saat surat disetujui.`,
     };
   }
   return null;
@@ -140,7 +140,7 @@ export async function alokasiNomorBatch(tx: TxKlien, konteks: Konteks, suratIds:
     return {
       ok: false,
       kode: 'BATCH_TERLALU_BESAR',
-      pesan: `Paling banyak ${MAKS_BATCH_NOMOR} surat per batch — pecah menjadi beberapa batch.`,
+      pesan: `Paling banyak ${MAKS_BATCH_NOMOR} surat per batch - pecah menjadi beberapa batch.`,
     };
   }
 

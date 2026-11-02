@@ -153,10 +153,10 @@ export function Langkah6Tinjau({ departemen, draft, pengurus }: Langkah6TinjauPr
         <article className="rounded-sm border border-default bg-panel p-4">
           <h3 className="text-[14px] font-semibold text-primary">Informasi proker</h3>
           <dl className="mt-2">
-            <BarisRingkasan label="Nama" nilai={draft.nama || '—'} />
+            <BarisRingkasan label="Nama" nilai={draft.nama || '-'} />
             <BarisRingkasan
               label="Kategori"
-              nilai={draft.kategori ? LABEL_KATEGORI[draft.kategori] : '—'}
+              nilai={draft.kategori ? LABEL_KATEGORI[draft.kategori] : '-'}
             />
             <BarisRingkasan
               label="Departemen"
@@ -186,7 +186,7 @@ export function Langkah6Tinjau({ departemen, draft, pengurus }: Langkah6TinjauPr
               />
               <BarisRingkasan
                 label="Divisi"
-                nilai={(kepanitiaan?.divisi ?? []).map((item) => item.nama).join(', ') || '—'}
+                nilai={(kepanitiaan?.divisi ?? []).map((item) => item.nama).join(', ') || '-'}
               />
               <BarisRingkasan label="Fase Gantt" nilai={`${groups.length} fase`} />
               <BarisRingkasan label="Task Gantt" nilai={`${jumlahTask} task`} />

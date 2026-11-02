@@ -402,8 +402,8 @@ export function durasiPersiapan(draft: WizardDraft): number | null {
  * minimal 15 hari" alih-alih "durasi tidak valid".
  */
 export function pesanDurasi(durasi: number): string {
-  if (durasi < 15) return `Persiapan ${durasi} hari — minimal 15 hari.`;
-  if (durasi > 45) return `Persiapan ${durasi} hari — maksimal 45 hari.`;
+  if (durasi < 15) return `Persiapan ${durasi} hari - minimal 15 hari.`;
+  if (durasi > 45) return `Persiapan ${durasi} hari - maksimal 45 hari.`;
   return `Persiapan ${durasi} hari.`;
 }
 

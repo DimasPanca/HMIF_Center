@@ -78,7 +78,7 @@ export default async function ApprovalProkerPage() {
                     </span>
                     <span>
                       Diajukan{' '}
-                      {item.diajukan_at ? formatTanggalPendek(item.diajukan_at.slice(0, 10)) : '—'}
+                      {item.diajukan_at ? formatTanggalPendek(item.diajukan_at.slice(0, 10)) : '-'}
                     </span>
                     <span className="ml-auto inline-flex items-center gap-1 font-medium text-primary">
                       Buka detail

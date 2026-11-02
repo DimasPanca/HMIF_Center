@@ -141,7 +141,7 @@ describe('berkas berstruktur lain ditolak dengan pesan yang menyebut sheet/kolom
 
   it('judul kolom salah', async () => {
     const h = await bacaRabExcel(await bukuDenganRab((ws) => blokSah(ws, ['NO', 'Barang', 'Jumlah', 'Harga satuan', 'Total'])));
-    expect(h).toEqual({ ok: false, pesan: 'Sheet "RAB" baris 3 kolom C: judul "Barang" tidak dikenali — diharapkan "Jenis Barang".' });
+    expect(h).toEqual({ ok: false, pesan: 'Sheet "RAB" baris 3 kolom C: judul "Barang" tidak dikenali - diharapkan "Jenis Barang".' });
   });
 
   it('harga satuan bukan angka', async () => {

@@ -128,7 +128,7 @@ test('divisi lain: banner baca saja, RAB terbaca lengkap, tombol tulis tidak ada
   const koor = await sesi(browser, AKUN.anggota);
   await koor.goto(`/acara/${acaraId}/divisi/${div.pdd}`, { waitUntil: 'load' });
   await expect(koor.getByTestId('ruang-divisi')).toHaveAttribute('data-mode', 'baca', { timeout: 60_000 });
-  await expect(koor.getByTestId('mode-baca-saja')).toContainText('Tampilan baca saja — Divisi PDD');
+  await expect(koor.getByTestId('mode-baca-saja')).toContainText('Tampilan baca saja - Divisi PDD');
   await expect(koor.getByTestId('rab-item')).toHaveCount(2);
   await expect(koor.getByTestId('rab-item').first()).toContainText('Sewa kamera');
   // Grid RAB (T-087) divisi lain: tanpa satu pun input atau tombol (INV-30).

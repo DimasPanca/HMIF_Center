@@ -163,7 +163,7 @@ export function ImportRabDialog({ kepanitiaanId, onSelesai }: { kepanitiaanId: s
                           <Badge tone={NADA[b.aksi]}>{LABEL[b.aksi]}</Badge>
                         </td>
                         <td className="px-2 py-1">
-                          {b.tingkat === 'DIVISI' ? <strong>Divisi {b.divisi}</strong> : b.tingkat === 'SUB-SECTION' ? <em>{b.section || '(tanpa sub-section)'}</em> : b.jenis_barang || '—'}
+                          {b.tingkat === 'DIVISI' ? <strong>Divisi {b.divisi}</strong> : b.tingkat === 'SUB-SECTION' ? <em>{b.section || '(tanpa sub-section)'}</em> : b.jenis_barang || '-'}
                         </td>
                         <td className="px-2 py-1">
                           {b.tingkat === 'ITEM' ? (

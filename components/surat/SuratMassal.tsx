@@ -162,7 +162,7 @@ export function BuatBatch({
                 .sort((a, b) => a.nama_lengkap.localeCompare(b.nama_lengkap, 'id'))
                 .map((p) => (
                   <li key={p.id}>
-                    {p.nama_lengkap} — {p.nim} — {p.jabatan}
+                    {p.nama_lengkap} - {p.nim} - {p.jabatan}
                   </li>
                 ))}
             </ol>
@@ -300,7 +300,7 @@ export function AksiBatch({ batch, bolehSetujui }: { batch: BatchUi; bolehSetuju
                     <XCircle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-danger" />
                   )}
                   <span>
-                    <span className="font-mono">{b.nomor}</span> — {b.nama}
+                    <span className="font-mono">{b.nomor}</span> - {b.nama}
                     {b.pesan ? <span className="block text-danger">{b.pesan}</span> : null}
                   </span>
                 </li>

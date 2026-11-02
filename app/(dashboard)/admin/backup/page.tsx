@@ -21,7 +21,7 @@ export default async function BackupPage() {
             <h1 className="text-2xl font-semibold">Backup</h1>
             <p className="mt-1 max-w-3xl text-[14px] leading-5 text-secondary">
               Setiap bundel berisi dump database, ekspor JSON 12 modul, Excel RAB & daftar surat,
-              serta arsip seluruh berkas — masing-masing dengan checksum SHA-256 di manifest. Backup
+              serta arsip seluruh berkas - masing-masing dengan checksum SHA-256 di manifest. Backup
               hanya dinyatakan sukses setelah seluruh berkasnya terverifikasi ulang.
             </p>
           </div>

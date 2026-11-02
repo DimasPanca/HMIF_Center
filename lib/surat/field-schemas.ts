@@ -366,7 +366,7 @@ const SKEMA_KHUSUS = {
       jenis_mitra: m(wajib('Jenis instansi mitra', 100), {
         label: 'Jenis instansi mitra',
         tipe: 'text',
-        bantuan: 'Contoh: Rumah Sakit — dipakai di kalimat "kerjasama dengan Rumah Sakit Bapak/Ibu/Saudara".',
+        bantuan: 'Contoh: Rumah Sakit - dipakai di kalimat "kerjasama dengan Rumah Sakit Bapak/Ibu/Saudara".',
       }),
       hari_tanggal: f.hari_tanggal(),
       tempat: f.tempat(),
@@ -595,7 +595,7 @@ function bukaPembungkus(skema: z.ZodType): z.ZodType {
 
 function deskripsikan(key: string, skema: z.ZodType): DeskripsiField {
   const meta = bacaMeta(skema);
-  if (!meta) throw new Error(`Field "${key}" tidak punya meta label — tambahkan lewat m().`);
+  if (!meta) throw new Error(`Field "${key}" tidak punya meta label - tambahkan lewat m().`);
 
   const kosong = skema.safeParse(undefined);
   const d: DeskripsiField = { key, label: meta.label, type: meta.tipe, required: !kosong.success };
@@ -742,12 +742,12 @@ function labelDariPath(konfig: KonfigSurat, jenis: JenisSurat, path: PropertyKey
     if (!d) return kunci;
     if (indeks === undefined) return d.label;
     const sub = anak ? d.item?.[anak]?.label : undefined;
-    return `${d.label} #${Number(indeks) + 1}${sub ? ` — ${sub}` : ''}`;
+    return `${d.label} #${Number(indeks) + 1}${sub ? ` - ${sub}` : ''}`;
   }
   if (akar === 'penandatangan_tambahan') {
     const sub = anak ? (SkemaPenandatangan.shape as Record<string, z.ZodType>)[anak] : undefined;
     const label = sub ? (bacaMeta(sub)?.label ?? anak) : undefined;
-    return `Penandatangan kolom kiri${label ? ` — ${label}` : ''}`;
+    return `Penandatangan kolom kiri${label ? ` - ${label}` : ''}`;
   }
   const s = (fieldUmum(konfig, jenis) as Record<string, z.ZodType>)[akar ?? ''];
   return (s && bacaMeta(s)?.label) || akar || 'Surat';

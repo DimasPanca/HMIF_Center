@@ -57,16 +57,16 @@ export const KOLOM_EXPORT = [
 export function barisExport(b: BarisArsip, i: number): (string | number)[] {
   return [
     i + 1,
-    b.nomor_lengkap ?? '—',
+    b.nomor_lengkap ?? '-',
     b.nama_jenis,
     selAman(b.perihal),
     selAman(b.tujuan_nama),
     formatTanggalSurat(b.tanggal_surat),
     selAman(b.nama_pembuat),
-    selAman(b.nama_penyetuju ?? '—'),
+    selAman(b.nama_penyetuju ?? '-'),
     LABEL_STATUS[b.status],
     selAman(b.kode_kegiatan),
-    selAman(b.nama_departemen ?? '—'),
+    selAman(b.nama_departemen ?? '-'),
     selAman(b.alasan_pembatalan ?? ''),
   ];
 }

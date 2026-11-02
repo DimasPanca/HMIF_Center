@@ -131,7 +131,7 @@ describe('periksaKelengkapan — daftar field yang kurang', () => {
   it('galat di dalam baris daftar menyebut nomor baris dan subfield', () => {
     const awal = nilaiAwalSurat(KONFIG, 'PEMINJAMAN_BARANG') as Record<string, unknown>;
     const m = periksaKelengkapan(KONFIG, { ...awal, data_dinamis: { items: [{ kebutuhan: '', banyaknya: '2' }] } });
-    expect(m.find((x) => x.path === 'data_dinamis.items.0.kebutuhan')?.label).toBe('Tabel kebutuhan #1 — Kebutuhan');
+    expect(m.find((x) => x.path === 'data_dinamis.items.0.kebutuhan')?.label).toBe('Tabel kebutuhan #1 - Kebutuhan');
   });
 
   it('jenis tidak sah → satu masalah: pilih jenis surat', () => {

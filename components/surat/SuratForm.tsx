@@ -378,7 +378,7 @@ function Form({ konfig, preset, awal, jenisAwal, ketua, alasanPenolakan, isianAw
             >
               {JENIS_SURAT.map((j) => (
                 <option key={j.jenis} value={j.jenis}>
-                  {j.kode} — {j.nama}
+                  {j.kode} - {j.nama}
                 </option>
               ))}
             </Select>
@@ -611,7 +611,7 @@ function AreaAjukan({
                 >
                   {m.label}
                 </a>
-                <span className="text-tertiary"> — {m.pesan}</span>
+                <span className="text-tertiary"> - {m.pesan}</span>
               </li>
             ))}
           </ul>

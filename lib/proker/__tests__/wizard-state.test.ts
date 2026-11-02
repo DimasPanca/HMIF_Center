@@ -203,10 +203,10 @@ describe('durasiPersiapan', () => {
 
 describe('pesanDurasi', () => {
   it('di bawah 15 menyebut minimal', () => {
-    expect(pesanDurasi(12)).toBe('Persiapan 12 hari — minimal 15 hari.');
+    expect(pesanDurasi(12)).toBe('Persiapan 12 hari - minimal 15 hari.');
   });
   it('di atas 45 menyebut maksimal', () => {
-    expect(pesanDurasi(50)).toBe('Persiapan 50 hari — maksimal 45 hari.');
+    expect(pesanDurasi(50)).toBe('Persiapan 50 hari - maksimal 45 hari.');
   });
 });
 

@@ -170,7 +170,7 @@ export function BidangJawaban({ p, nilai, galat, berkas, onUbah, onBerkas, nonak
                   type="button"
                   role="radio"
                   aria-checked={aktif}
-                  aria-label={`${n}${n === min && o.label_min ? ` — ${o.label_min}` : n === maks && o.label_maks ? ` — ${o.label_maks}` : ''}`}
+                  aria-label={`${n}${n === min && o.label_min ? ` - ${o.label_min}` : n === maks && o.label_maks ? ` - ${o.label_maks}` : ''}`}
                   disabled={nonaktif}
                   onClick={() => onUbah(n)}
                   className={cn(

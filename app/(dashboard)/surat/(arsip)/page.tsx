@@ -124,7 +124,7 @@ export default async function ArsipSuratPage({ searchParams }: PageProps) {
                       </Link>
                       <span className="mt-0.5 block text-[12px] text-tertiary">{s.nama_jenis}</span>
                     </TableCell>
-                    <TableCell className="min-w-44 text-[13px]">{s.tujuan_nama === '-' ? '—' : s.tujuan_nama}</TableCell>
+                    <TableCell className="min-w-44 text-[13px]">{s.tujuan_nama === '-' ? '-' : s.tujuan_nama}</TableCell>
                     <TableCell className="whitespace-nowrap text-[13px]">{formatTanggalSurat(s.tanggal_surat)}</TableCell>
                     <TableCell className="min-w-36 text-[13px]">
                       {s.nama_pembuat}

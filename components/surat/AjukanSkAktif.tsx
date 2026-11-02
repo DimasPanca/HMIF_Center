@@ -74,15 +74,15 @@ export function AjukanSkAktif({ identitas, pengajuan }: { identitas: Identitas; 
         <dl className="grid grid-cols-1 gap-3 text-[14px] sm:grid-cols-3">
           <div className="min-w-0">
             <dt className="text-[12px] text-tertiary">Nama</dt>
-            <dd className="font-medium break-words">{identitas.nama || '—'}</dd>
+            <dd className="font-medium break-words">{identitas.nama || '-'}</dd>
           </div>
           <div className="min-w-0">
             <dt className="text-[12px] text-tertiary">NIM</dt>
-            <dd className="font-medium tabular-nums">{identitas.nim || '—'}</dd>
+            <dd className="font-medium tabular-nums">{identitas.nim || '-'}</dd>
           </div>
           <div className="min-w-0">
             <dt className="text-[12px] text-tertiary">Jabatan</dt>
-            <dd className="font-medium break-words">{identitas.jabatan || '—'}</dd>
+            <dd className="font-medium break-words">{identitas.jabatan || '-'}</dd>
           </div>
         </dl>
         {identitas.tercatat ? (
