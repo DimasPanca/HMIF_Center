@@ -145,7 +145,7 @@ export function ImportRabDialog({ kepanitiaanId, onSelesai }: { kepanitiaanId: s
               </label>
               <div className="max-h-[50dvh] overflow-auto rounded-sm border border-default">
                 <table className="w-full min-w-[640px] border-collapse text-[12px]">
-                  <thead className="sticky top-0 bg-subtle text-left text-[11px] tracking-wide text-tertiary uppercase">
+                  <thead className="sticky top-0 bg-subtle text-left text-[12px] font-medium text-tertiary">
                     <tr>
                       <th className="px-2 py-1">Baris</th>
                       <th className="px-2 py-1">Status</th>

@@ -39,7 +39,7 @@ export function TanggalTooltip({ entri }: TanggalTooltipProps) {
       <dl className="space-y-2">
         {baris.map(([label, nilai]) => (
           <div key={label} data-testid="kalender-tooltip-baris">
-            <dt className="text-[10px] font-semibold tracking-wide text-tertiary uppercase">
+            <dt className="text-[11px] font-medium text-tertiary">
               {label}
             </dt>
             <dd className="mt-0.5 text-[12px] leading-4 font-medium text-primary">{nilai}</dd>

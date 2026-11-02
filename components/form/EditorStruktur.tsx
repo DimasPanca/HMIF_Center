@@ -270,7 +270,7 @@ function PemilihTipe({ onPilih, onTutup }: { onPilih: (t: Tipe) => void; onTutup
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {KELOMPOK.map((k) => (
           <div key={k}>
-            <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-tertiary uppercase">{k}</p>
+            <p className="mb-1.5 text-[12px] font-medium text-tertiary">{k}</p>
             <div className="grid gap-1">
               {TIPE.filter((t) => INFO_TIPE[t].kelompok === k).map((t) => (
                 <button key={t} type="button" onClick={() => onPilih(t)} className="rounded-sm px-2 py-1.5 text-left hover:bg-subtle" data-testid={`tipe-${t}`}>

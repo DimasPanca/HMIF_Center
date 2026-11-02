@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-const KOLOM = ['Nomor', 'Jenis', 'Perihal', 'Tujuan', 'Tanggal', 'Pembuat', 'Approver', 'Status', 'Aksi'];
+const KOLOM = ['Nomor', 'Perihal', 'Tujuan', 'Tanggal', 'Oleh', 'Status', 'Aksi'];
 
 /**
  * Skeleton Arsip Surat (kontrak T-063 butir 6) — tampil saat filter, pencarian,

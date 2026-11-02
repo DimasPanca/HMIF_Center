@@ -44,7 +44,7 @@ export default function KalenderQaPage() {
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
       <div className="mx-auto max-w-[92rem] space-y-4">
         <header>
-          <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+          <p className="text-[12px] font-medium text-tertiary">
             Halaman verifikasi nonproduksi
           </p>
           <h1 className="mt-1 text-xl font-semibold">Harness kalender ketersediaan</h1>

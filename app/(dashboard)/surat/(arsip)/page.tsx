@@ -1,4 +1,4 @@
-import { Archive, ChevronRight, Download, FilePlus2, FileSpreadsheet, Files, Inbox } from 'lucide-react';
+import { ChevronRight, Download, FilePlus2, FileSpreadsheet, Files, Inbox } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -43,15 +43,8 @@ export default async function ArsipSuratPage({ searchParams }: PageProps) {
       <div className="mx-auto max-w-[92rem] space-y-5">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div className="flex items-start gap-3">
-            <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]"
-              aria-hidden="true"
-            >
-              <Archive className="size-5" />
-            </span>
             <div>
-              <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">Persuratan</p>
-              <h1 className="mt-0.5 text-2xl font-semibold">Arsip surat</h1>
+              <h1 className="text-2xl font-semibold">Arsip surat</h1>
               <p className="mt-1 text-[14px] leading-5 text-secondary" data-testid="arsip-jumlah">
                 <span className="tabular-nums">{halaman.total}</span> surat
                 {filter.q ? (
@@ -106,13 +99,13 @@ export default async function ArsipSuratPage({ searchParams }: PageProps) {
           >
             <TableHeader>
               <TableRow>
+                {/* ADR-061: jenis menempel di bawah perihal, pembuat & penyetuju satu kolom — tabel
+                    tidak lagi terbungkus tiga baris atau terpotong di kanan. */}
                 <TableHead>Nomor</TableHead>
-                <TableHead>Jenis</TableHead>
                 <TableHead>Perihal</TableHead>
                 <TableHead>Tujuan</TableHead>
                 <TableHead>Tanggal</TableHead>
-                <TableHead>Pembuat</TableHead>
-                <TableHead>Approver</TableHead>
+                <TableHead>Oleh</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
               </TableRow>
@@ -125,17 +118,19 @@ export default async function ArsipSuratPage({ searchParams }: PageProps) {
                     <TableCell className={cn('whitespace-nowrap font-mono text-[12px]', batal && 'text-secondary')}>
                       {s.nomor_lengkap ?? <span className="font-sans text-tertiary">Belum bernomor</span>}
                     </TableCell>
-                    <TableCell className="text-[13px]">{s.nama_jenis}</TableCell>
-                    <TableCell className="min-w-56 font-medium">
-                      <Link href={`/surat/${s.id}`} className={tautan}>
+                    <TableCell className="min-w-56">
+                      <Link href={`/surat/${s.id}`} className={cn(tautan, 'font-medium')}>
                         {s.perihal || s.nama_jenis}
                       </Link>
+                      <span className="mt-0.5 block text-[12px] text-tertiary">{s.nama_jenis}</span>
                     </TableCell>
                     <TableCell className="min-w-44 text-[13px]">{s.tujuan_nama === '-' ? '—' : s.tujuan_nama}</TableCell>
                     <TableCell className="whitespace-nowrap text-[13px]">{formatTanggalSurat(s.tanggal_surat)}</TableCell>
-                    <TableCell className="text-[13px]">{s.nama_pembuat}</TableCell>
-                    <TableCell className="text-[13px]">{s.nama_penyetuju ?? '—'}</TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-36 text-[13px]">
+                      {s.nama_pembuat}
+                      {s.nama_penyetuju ? <span className="mt-0.5 block text-[12px] text-tertiary">Disetujui {s.nama_penyetuju}</span> : null}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <StatusPill status={s.status} />
                     </TableCell>
                     <TableCell action>

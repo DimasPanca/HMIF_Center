@@ -1,4 +1,4 @@
-import { ArrowLeft, GanttChartSquare, PencilLine } from 'lucide-react';
+import { ArrowLeft, GanttChartSquare } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -48,14 +48,8 @@ export default async function EditProkerPage({ params }: EditProkerPageProps) {
       <div className="mx-auto max-w-[92rem] space-y-5">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div className="flex items-start gap-3">
-            <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]"
-              aria-hidden="true"
-            >
-              <PencilLine className="size-5" />
-            </span>
             <div>
-              <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+              <p className="text-[12px] font-medium text-tertiary">
                 Program kerja
               </p>
               <div className="mt-0.5 flex flex-wrap items-center gap-2">

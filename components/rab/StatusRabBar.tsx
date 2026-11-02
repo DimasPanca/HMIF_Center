@@ -69,7 +69,7 @@ export function StatusRabBar({
   return (
     <div data-testid="status-rab" data-status={rab.status} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-sm border border-default bg-panel px-3 py-2">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-[12px] font-semibold tracking-wide text-tertiary uppercase">Status RAB</span>
+        <span className="text-[12px] font-medium text-tertiary">Status RAB</span>
         {status ? <StatusPill status={status} /> : <span className="text-[13px]">{rab.status}</span>}
         <span className="text-[13px] text-secondary">{PENJELASAN[rab.status] ?? ''}</span>
         {rab.meta.disetujui_oleh && rab.meta.disetujui_at ? (

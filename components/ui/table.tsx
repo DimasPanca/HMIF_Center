@@ -171,7 +171,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, React.ComponentPro
         ref={ref}
         data-slot="table-header"
         className={cn(
-          'sticky top-0 z-10 bg-subtle text-[12px] font-semibold text-secondary uppercase',
+          'sticky top-0 z-10 bg-subtle text-[12px] font-medium text-secondary',
           '[&_tr]:border-b [&_tr]:border-subtle',
           className,
         )}

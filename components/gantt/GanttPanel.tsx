@@ -74,7 +74,7 @@ function GanttPanel({ item, open, onClose, className }: GanttPanelProps) {
     >
       <header className="flex min-h-14 items-start justify-between gap-3 border-b border-default px-4 py-3">
         <div className="min-w-0">
-          <p className="text-[11px] leading-[14px] font-medium tracking-wide text-tertiary uppercase">
+          <p className="text-[12px] leading-4 font-medium text-tertiary">
             Detail Gantt
           </p>
           <h2

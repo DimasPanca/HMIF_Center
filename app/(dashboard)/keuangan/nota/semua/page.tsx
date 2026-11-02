@@ -1,4 +1,3 @@
-import { ReceiptText } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -62,12 +61,8 @@ export default async function SemuaNotaPage({ searchParams }: { searchParams: Pr
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
       <div className="mx-auto max-w-5xl space-y-5">
         <header className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]" aria-hidden="true">
-            <ReceiptText className="size-5" />
-          </span>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">Keuangan</p>
-            <h1 className="mt-0.5 text-2xl font-semibold">Semua nota</h1>
+            <h1 className="text-2xl font-semibold">Semua nota</h1>
             <p className="mt-1 text-[14px] leading-5 text-secondary">Nota belanja seluruh acara periode ini. Ketuk nota untuk membuka acaranya.</p>
           </div>
         </header>

@@ -110,7 +110,7 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
         </button>
       </header>
 
-      <div ref={daftar} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4" aria-live="polite">
+      <div ref={daftar} className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
         {pesan.length === 0 ? (
           <div className="space-y-4 pt-2">
             <div className="space-y-2 text-[14px] leading-6 text-secondary">
@@ -165,9 +165,9 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
         {memuat ? (
           <p className="flex items-center gap-2 text-[13px] text-tertiary">
             <span className="inline-flex gap-1" aria-hidden="true">
-              <span className="size-1.5 animate-pulse rounded-full bg-current" />
-              <span className="size-1.5 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
-              <span className="size-1.5 animate-pulse rounded-full bg-current [animation-delay:300ms]" />
+              <span className="size-1.5 animate-pulse rounded-full bg-current motion-reduce:animate-none" />
+              <span className="size-1.5 animate-pulse rounded-full bg-current [animation-delay:150ms] motion-reduce:animate-none" />
+              <span className="size-1.5 animate-pulse rounded-full bg-current [animation-delay:300ms] motion-reduce:animate-none" />
             </span>
             Dhana sedang menyusun jawaban…
           </p>
@@ -189,6 +189,8 @@ export function DhanaPanel({ buka, onTutup, sidebarDilipat }: { buka: boolean; o
             id="dhana-input"
             ref={input}
             data-testid="dhana-input"
+            name="pertanyaan-dhana"
+            autoComplete="off"
             rows={1}
             value={teks}
             maxLength={1500}

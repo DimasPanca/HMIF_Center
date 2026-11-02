@@ -2,7 +2,6 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   CalendarRange,
-  ClipboardCheck,
   FileText,
   Target,
   Users,
@@ -170,17 +169,8 @@ export default async function DetailApprovalPage({ params }: DetailApprovalPageP
 
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div className="flex items-start gap-3">
-            <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]"
-              aria-hidden="true"
-            >
-              <ClipboardCheck className="size-5" />
-            </span>
             <div>
-              <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
-                Detail approval proker
-              </p>
-              <h1 className="mt-0.5 text-2xl font-semibold">{proker.nama}</h1>
+              <h1 className="text-2xl font-semibold">{proker.nama}</h1>
               <p className="mt-1 text-[14px] text-secondary">
                 {proker.nama_departemen} · {LABEL_KATEGORI[proker.kategori]}
               </p>

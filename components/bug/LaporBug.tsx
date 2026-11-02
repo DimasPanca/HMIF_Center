@@ -112,6 +112,8 @@ export function LaporBug({ laporan }: { laporan: LaporanBug[] }) {
             <textarea
               id="bug-deskripsi"
               data-testid="bug-deskripsi"
+              name="deskripsi"
+              autoComplete="off"
               rows={6}
               maxLength={5000}
               value={deskripsi}
@@ -120,7 +122,7 @@ export function LaporBug({ laporan }: { laporan: LaporanBug[] }) {
                 setTerkirim(false);
               }}
               aria-describedby="bug-deskripsi-bantu"
-              placeholder="Contoh: Di halaman RAB acara SYNCHRONIZE, tombol Simpan tidak merespons setelah saya mengubah jumlah item."
+              placeholder="Contoh: Di halaman RAB acara SYNCHRONIZE, tombol Simpan tidak merespons setelah saya mengubah jumlah item…"
               className="w-full resize-y rounded-md border border-default bg-base px-3 py-2 text-[14px] leading-6 text-primary outline-none placeholder:text-tertiary focus:border-[var(--border-focus)]"
             />
             <p id="bug-deskripsi-bantu" className="text-[12px] text-tertiary">

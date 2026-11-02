@@ -151,7 +151,7 @@ function PanelBulan({
         {NAMA_HARI.map((hari) => (
           <span
             key={hari}
-            className="py-1 text-center text-[11px] font-semibold tracking-wide text-tertiary uppercase"
+            className="py-1 text-center text-[12px] font-medium text-tertiary"
           >
             {hari}
           </span>
@@ -264,7 +264,7 @@ export function KalenderKetersediaan({
     >
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+          <p className="text-[12px] font-medium text-tertiary">
             Ketersediaan dua bulan
           </p>
           <h2 data-testid="kalender-bulan" className="mt-0.5 text-lg font-semibold capitalize">

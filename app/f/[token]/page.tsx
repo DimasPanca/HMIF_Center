@@ -61,7 +61,7 @@ export default async function HalamanIsiForm({ params }: { params: Promise<{ tok
       <div className="mx-auto w-full max-w-[42rem]">
         <div className="mb-4 flex items-center gap-2.5 px-1">
           <Image src="/logo-hmif.png" alt="" width={28} height={28} />
-          <span className="text-[12px] leading-4 font-semibold tracking-[0.14em] text-secondary uppercase">HMIF Center · Formulir</span>
+          <span className="text-[13px] leading-5 font-medium text-secondary">HMIF Center · Formulir</span>
         </div>
         {isi}
         <p className="mt-6 px-1 text-center text-[12px] leading-4 text-tertiary">

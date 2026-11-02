@@ -540,7 +540,7 @@ export function CommandPalette({ onOpenChange, open, roles }: CommandPaletteProp
                   <section key={namaBagian} aria-labelledby={`command-section-${namaBagian}`}>
                     <h3
                       id={`command-section-${namaBagian}`}
-                      className="px-2 pt-2 pb-1 text-[10px] font-semibold tracking-[0.08em] text-tertiary uppercase"
+                      className="px-2 pt-2 pb-1 text-[12px] font-medium text-tertiary"
                     >
                       {namaBagian}
                     </h3>

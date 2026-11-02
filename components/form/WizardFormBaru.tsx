@@ -132,9 +132,7 @@ export function WizardFormBaru({
                     alasan && 'cursor-not-allowed opacity-55 hover:bg-panel',
                   )}
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]">
-                    <Ikon className="size-5" />
-                  </span>
+                  <span aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--primary)]"><Ikon className="size-5" /></span>
                   <span className="min-w-0">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="text-[15px] font-semibold text-primary">{i.label}</span>

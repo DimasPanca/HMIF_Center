@@ -8,7 +8,7 @@
 | **Dimulai** | 2026-11-02 |
 | **Branch** | `claude/sharp-gates-ngoq4i` (belum di-merge ke `main`) |
 | **Commit terakhir sebelum tahap ini** | `1f5d926` |
-| **Status** | Tahap 1 selesai dibangun & dicek lokal (2026-11-02). Berikutnya: Tahap 2 (halaman lain). |
+| **Status** | Tahap 1 & Tahap 2 (putaran 1) selesai dan dicek lokal (2026-11-02). Sisa: lihat "Sisa Tahap 2". |
 
 ## Permintaan pemilik (ringkas, 2026-11-02)
 
@@ -78,7 +78,22 @@
 - [x] Report bug: tabel + storage privat + RLS, form (deskripsi + screenshot opsional), halaman Admin dengan status, pelapor melihat statusnya.
 - [x] Cek lokal: verify, e2e terkait, cek visual 3 lebar (desktop/tablet/HP) — baru push.
 
-**Tahap 2** — rapikan halaman lain (proker, acara, surat, keuangan, form, sekretariat, admin).
+**Tahap 2** — rapikan halaman lain (ADR-061)
+- [x] Kepala halaman tanpa ikon berkotak & label kapital (19 halaman).
+- [x] Label kapital kecil → huruf kalimat (tabel bersama, kalender, Kanban, audit, palet perintah, Gantt, form publik); RAB dikecualikan.
+- [x] Arsip surat: kolom digabung, tidak terpotong.
+- [x] Audit Web Interface Guidelines pada komponen Tahap 1.
+
+Verifikasi Tahap 2: `npm run verify` hijau (1100 tes). E2E arsip-surat, audit-viewer, data-pengurus,
+kanban, formulir, approval-proker, notulensi: setiap tes lolos minimal di satu dari dua putaran; yang
+gagal selalu timeout di server dev yang baru dinyalakan/sibuk (kanban "Master Gantt sudah terbuka",
+notulensi "konversi action item", audit "detail"). Cek ulang di build produksi bersama `kendala.spec`.
+
+**Sisa Tahap 2 (putaran berikutnya)**
+- [ ] Panel filter Kalender bersama (masih kotak berlabel besar) → baris filter ringkas.
+- [ ] Kaki sidebar terlalu tinggi untuk peran dengan banyak menu (Bantuan → Lapor bug perlu digulir).
+- [ ] Kerapatan tabel RAB & halaman detail proker/surat dicek satu per satu di 3 lebar.
+- [ ] Cek ulang `kendala.spec` "Kritis < 3 detik" di build produksi.
 
 ## Melanjutkan di komputer lain
 

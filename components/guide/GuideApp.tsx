@@ -119,7 +119,10 @@ export function GuideApp({
                 buka(pilih);
               } else if (e.key === 'Escape') setQ('');
             }}
-            placeholder="Cari di Guide — mis. upload nota, approval surat, kuota form"
+            placeholder="Cari di Guide — mis. upload nota, approval surat, kuota form…"
+            name="cari-guide"
+            autoComplete="off"
+            spellCheck={false}
             aria-label="Cari di Guide"
             aria-controls="guide-hasil"
             aria-expanded={hasil.length > 0}
@@ -158,7 +161,7 @@ export function GuideApp({
                   href={`/guide/${h.dokId}${h.id ? `#${h.id}` : ''}`}
                   onClick={() => setQ('')}
                   onMouseEnter={() => setPilih(i)}
-                  className={cn('block px-4 py-3 outline-none', i === pilih ? 'bg-subtle' : 'hover:bg-subtle')}
+                  className={cn('block px-4 py-3 outline-none focus-visible:bg-subtle focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)]', i === pilih ? 'bg-subtle' : 'hover:bg-subtle')}
                 >
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="text-[15px] font-medium text-primary">

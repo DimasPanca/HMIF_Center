@@ -42,7 +42,7 @@ export default async function HalamanTemplateForm() {
           if (!isi.length) return null;
           return (
             <section key={k}>
-              <h2 className="mb-2 text-[13px] font-semibold tracking-wide text-tertiary uppercase">{INFO_KATEGORI[k].label}</h2>
+              <h2 className="mb-2 text-[13px] font-semibold text-secondary">{INFO_KATEGORI[k].label}</h2>
               <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {isi.map((t) => (
                   <li key={t.id}>

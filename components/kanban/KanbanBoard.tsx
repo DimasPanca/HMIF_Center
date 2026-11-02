@@ -177,7 +177,7 @@ function Board({ departemenId, bolehUbah, daftarProker, pengurus }: BoardProps) 
   return (
     <main data-testid="kanban-board" className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">Departemen</p><h1 className="text-2xl font-semibold text-primary">Kanban pekerjaan</h1></div>
+        <div><p className="text-[12px] font-medium text-tertiary">Departemen</p><h1 className="text-2xl font-semibold text-primary">Kanban pekerjaan</h1></div>
         {bolehUbah ? <Button onClick={() => setDialogTerbuka(true)}><Plus aria-hidden="true" />Tambah kartu</Button> : <p className="text-[12px] text-secondary">Akses baca saja</p>}
       </div>
       <PanelFilterHp jumlahAktif={[filterAssignee, filterProker, filterPrioritas, filterDeadline].filter(Boolean).length}>

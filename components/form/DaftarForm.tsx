@@ -58,9 +58,6 @@ function Isi({ forms, bolehBuat, bolehTemplate, acaraId }: { forms: RingkasForm[
       {!acaraId && (
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]" aria-hidden>
-              <ClipboardList className="size-5" />
-            </span>
             <div>
               <h1 className="text-2xl font-semibold">Formulir</h1>
               <p className="mt-1 max-w-2xl text-[14px] leading-5 text-secondary">

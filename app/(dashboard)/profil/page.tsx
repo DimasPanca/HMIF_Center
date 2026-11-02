@@ -104,7 +104,7 @@ export default async function ProfilPage({ searchParams }: ProfilPageProps) {
 
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="max-w-2xl">
-          <p className="text-[11px] leading-4 font-semibold tracking-wide text-tertiary uppercase">
+          <p className="text-[12px] leading-4 font-medium text-tertiary">
             Akun dan identitas
           </p>
           <h1 className="mt-2 text-2xl leading-8 font-semibold">Profil & tanda tangan</h1>
