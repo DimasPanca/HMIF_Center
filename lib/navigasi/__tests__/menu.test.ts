@@ -64,3 +64,29 @@ describe('susunMenu — per peran (ADR-037)', () => {
     expect(m.map((g) => g.slug)).toEqual(expect.arrayContaining(['departemen', 'proker', 'admin']));
   });
 });
+
+describe('menu Formulir (ADR-038)', () => {
+  const hrefs = (roles: Parameters<typeof susunMenu>[0], fakta = tanpa) => susunMenu(roles, fakta).flatMap((g) => [g.href, ...g.items.map((i) => i.href)]);
+
+  it('Sekum & Admin: Semua Form + Template Form', () => {
+    for (const r of ['SEKUM', 'ADMIN'] as const) expect(hrefs([r]), r).toEqual(expect.arrayContaining(['/form', '/form/template']));
+  });
+  it('Ketua/Wakil: Formulir tanpa kelola template', () => {
+    for (const r of ['KETUA', 'WAKIL'] as const) {
+      expect(hrefs([r]), r).toContain('/form');
+      expect(hrefs([r]), r).not.toContain('/form/template');
+    }
+  });
+  it('Anggota/Kadept/Bendum hanya mendapat Formulir bila duduk di kepanitiaan; BPH tidak', () => {
+    for (const r of ['ANGGOTA', 'KADEPT', 'BENDUM'] as const) {
+      expect(hrefs([r], { kodeDepartemen: ['KAD'], panitia: true }), r).toContain('/form');
+      expect(hrefs([r], { kodeDepartemen: ['KAD'], panitia: false }), r).not.toContain('/form');
+    }
+    expect(hrefs(['BPH'])).not.toContain('/form');
+  });
+  it('editor & respons form menyalakan butir Formulir', () => {
+    const menu = susunMenu(['SEKUM'], tanpa);
+    expect(hrefAktif('/form/0b6c1c2e-1111-4222-8333-444455556666/respons', menu)).toBe('/form');
+    expect(hrefAktif('/form/template/baru', menu)).toBe('/form/template');
+  });
+});

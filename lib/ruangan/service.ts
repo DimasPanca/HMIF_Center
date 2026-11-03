@@ -240,7 +240,7 @@ export async function buatBooking(
     return {
       ok: false,
       kode: 'BENTROK',
-      pesan: 'Ruangan ini sudah tercatat dipinjam di tanggal yang sama. Keputusan akhir tetap di Dekanat — lanjutkan bila memang perlu.',
+      pesan: 'Ruangan ini sudah tercatat dipinjam di tanggal yang sama. Keputusan akhir tetap di Dekanat - lanjutkan bila memang perlu.',
       details: { bentrok },
     };
   }

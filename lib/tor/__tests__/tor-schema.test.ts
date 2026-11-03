@@ -86,10 +86,10 @@ describe('bobot parameter kelulusan', () => {
 
   it('kurang/lebih ditandai beserta selisihnya', () => {
     expect(peringatanBobot([{ bobot: 40 }, { bobot: 50 }])).toBe(
-      'Total bobot 90% — kurang 10% dari 100%.',
+      'Total bobot 90% - kurang 10% dari 100%.',
     );
     expect(peringatanBobot([{ bobot: 70 }, { bobot: 40.5 }])).toBe(
-      'Total bobot 110,5% — lebih 10,5% dari 100%.',
+      'Total bobot 110,5% - lebih 10,5% dari 100%.',
     );
     expect(peringatanBobot([{ bobot: null }])).toContain('kurang 100%');
   });

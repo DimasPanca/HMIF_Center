@@ -41,7 +41,7 @@ export function PeringatanBentrok({
           <ul className="mt-2 grid gap-1.5 border-t border-[var(--warning)] pt-2 text-[13px] leading-[18px]">
             {bentrok.map((b) => (
               <li key={b.id} data-testid="peringatan-bentrok-item">
-                <span className="font-medium">{b.kegiatan}</span> — {b.nama_ruangan}, {formatTanggalPanjang(b.tanggal)}, {b.label_waktu}
+                <span className="font-medium">{b.kegiatan}</span> - {b.nama_ruangan}, {formatTanggalPanjang(b.tanggal)}, {b.label_waktu}
                 <span className="text-secondary"> · dicatat {b.nama_pembuat}</span>
                 {b.tumpang_jam ? <span className="ml-1 font-medium text-[var(--warning)]">(jam beririsan)</span> : null}
               </li>

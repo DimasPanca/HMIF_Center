@@ -1,4 +1,4 @@
-# Panduan Sekretaris Umum — HMIF Center
+# Panduan Sekretaris Umum - HMIF Center
 
 Untuk **Sekretaris Umum**: membuat dan menyetujui surat, mengelola arsip surat,
 notulensi rapat, data pengurus, dan peminjaman ruangan.
@@ -29,7 +29,7 @@ dibuka lewat pencarian (**Ctrl/⌘ K**).
 | Program Kerja | baca | Daftar Proker, Kalender Ketersediaan |
 | Acara Besar | baca | Daftar acara; TOR, Proposal, RAB di tab tiap acara |
 
-Hanya Anda (dan Admin) yang membuat surat dari formulir — semua jenis.
+Hanya Anda (dan Admin) yang membuat surat dari formulir - semua jenis.
 Pengurus lain mengajukan **Surat Keterangan Aktif** atas nama sendiri; pengajuan
 itu masuk ke **Antrian Approval** Anda seperti surat lain (ADR-036).
 
@@ -45,22 +45,22 @@ itu masuk ke **Antrian Approval** Anda seperti surat lain (ADR-036).
    dapat diubah.
 4. Nomor di pratinjau masih **sementara** (`???`). Nomor resmi baru
    dialokasikan saat surat disetujui.
-5. Draf tersimpan otomatis — Anda dapat menutup halaman dan melanjutkan nanti.
+5. Draf tersimpan otomatis - Anda dapat menutup halaman dan melanjutkan nanti.
 6. Klik **Ajukan** setelah semua kolom wajib terisi (tombol nonaktif dan
    menyebut kolom yang kurang selama belum lengkap). Surat masuk antrian
    approval Ketua, Wakil, dan Sekum.
 
 Surat untuk sebuah acara dapat dibuat langsung dari halaman acara lewat
-**Buat Surat untuk acara ini** — kegiatan terisi otomatis.
+**Buat Surat untuk acara ini** - kegiatan terisi otomatis.
 
 ## 4. Menyetujui surat
 
 1. Buka **Persuratan → Antrian Approval**, buka surat, periksa pratinjaunya.
-2. **Setujui** — nomor dialokasikan berurutan dan DOCX terbit dengan tanda
+2. **Setujui** - nomor dialokasikan berurutan dan DOCX terbit dengan tanda
    tangan Ketua Himpunan (pastikan Ketua sudah mengunggahnya di Profil).
 3. Atau **Tolak** dengan alasan; surat berstatus Ditolak dan pembuatnya dapat
    memperbaiki lalu mengajukannya lagi.
-4. Surat massal (bagian 6) tidak muncul satu per satu di antrian — antrian
+4. Surat massal (bagian 6) tidak muncul satu per satu di antrian - antrian
    menautkan ke halaman massal, dan satu batch disetujui sekaligus.
 
 ![Antrian approval surat](img/surat-approval.png)
@@ -81,7 +81,7 @@ Surat untuk sebuah acara dapat dibuat langsung dari halaman acara lewat
 
 1. Di Arsip Surat klik **Surat aktif massal**.
 2. Pilih pengurus (atau **pilih semua pengurus aktif**) dan isi keperluan.
-3. Ajukan — satu surat per pengurus. Penyetuju menyetujui satu batch sekaligus;
+3. Ajukan - satu surat per pengurus. Penyetuju menyetujui satu batch sekaligus;
    nomornya berurutan tanpa disela surat lain. Hasil dapat diunduh sekaligus
    sebagai **ZIP** (`{nomor}-{nama}.docx`). Bila sebagian gagal terbit, pakai
    **Terbitkan ulang yang gagal**.
@@ -106,7 +106,7 @@ Sumbernya adalah **Data Pengurus** (bagian 8), jadi perbarui data itu dulu.
 
 1. Buka **Kesekretariatan → Data Pengurus**.
 2. **Tambah** untuk satu orang, atau **Import CSV/XLSX** untuk banyak sekaligus
-   — periksa pratinjau, baris bermasalah dilewati dengan alasannya.
+ - periksa pratinjau, baris bermasalah dilewati dengan alasannya.
 3. Ubah atau nonaktifkan lewat ikon pensil. Pengurus tidak harus punya akun
    aplikasi; data ini menjadi sumber daftar hadir notulensi dan Surat
    Keterangan Aktif.
@@ -122,7 +122,7 @@ Sumbernya adalah **Data Pengurus** (bagian 8), jadi perbarui data itu dulu.
 3. Klik **Catat peminjaman**, pilih ruangan, tanggal, jam, kegiatan, jumlah
    peserta, dan keperluan.
 4. Bila ruangan sudah tercatat dipinjam di tanggal yang sama, sistem memberi
-   peringatan (jam yang beririsan ditandai). Anda tetap dapat melanjutkan —
+   peringatan (jam yang beririsan ditandai). Anda tetap dapat melanjutkan - 
    keputusan akhir ada di Dekanat.
 5. Klik **Buat Surat Peminjaman Ruangan** pada peminjaman itu: draf surat
    peminjaman ruangan dibuat dan terisi data peminjaman (ruangan, kegiatan,

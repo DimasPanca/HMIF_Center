@@ -645,7 +645,7 @@ function GanttChartGrafik({
         <div className="hmif-gantt-grid">
           <div
             data-slot="gantt-label-header"
-            className="sticky top-0 left-0 z-40 flex h-[50px] items-center border-r border-b border-default bg-[var(--gantt-header-bg)] px-3 text-[12px] font-semibold tracking-wide text-secondary uppercase"
+            className="sticky top-0 left-0 z-40 flex h-[50px] items-center border-r border-b border-default bg-[var(--gantt-header-bg)] px-3 text-[12px] font-semibold text-secondary"
           >
             {labelColumnTitle}
           </div>

@@ -47,7 +47,7 @@ export async function buatPdfSurat(request: Request, konteks: Konteks, suratId: 
     if (e instanceof PdfTidakTersedia) return { ok: false, kode: 'PDF_NONAKTIF', pesan: e.message };
     console.error(`[pdf-ulang] surat ${suratId}`, e);
     const sebab = e instanceof GalatPdf ? e.message : 'Konversi PDF gagal.';
-    return { ok: false, kode: 'GAGAL', pesan: `${sebab} Coba lagi sebentar lagi — layanan PDF mungkin sedang bangun.` };
+    return { ok: false, kode: 'GAGAL', pesan: `${sebab} Coba lagi sebentar lagi - layanan PDF mungkin sedang bangun.` };
   }
 
   const key = keys.suratPdf(suratId);

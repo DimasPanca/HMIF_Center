@@ -78,7 +78,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (b.aksi === 'lanjut') {
     if (!(await bolehDilanjutkan(b.jobId))) {
-      return gagal('KONFLIK', 'Restore ini tidak sedang terputus — tunggu progresnya.', {
+      return gagal('KONFLIK', 'Restore ini tidak sedang terputus - tunggu progresnya.', {
         status: 409,
         headers: TANPA_CACHE,
       });

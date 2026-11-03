@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 // Token ada di URL: jangan bocor lewat header Referer, jangan diindeks.
 export const metadata: Metadata = {
-  title: 'Aktivasi akun — HMIF Center',
+  title: 'Aktivasi akun - HMIF Center',
   referrer: 'no-referrer',
   robots: { index: false, follow: false },
 };

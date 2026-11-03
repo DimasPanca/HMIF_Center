@@ -142,7 +142,7 @@ async function imporTabel(
     return { tabel, total: 0, baru: 0, berubah: 0, sama: 0, ...(terapkan ? { tertulis: 0 } : {}) };
   const { kolom: semua, pk, serial } = await strukturTabel(tx, tabel);
   if (!pk.length)
-    throw new Error(`Tabel ${tabel} tanpa primary key — tidak dapat diimpor per baris.`);
+    throw new Error(`Tabel ${tabel} tanpa primary key - tidak dapat diimpor per baris.`);
   const dariBackup = new Set(baris.flatMap((b) => Object.keys(b)));
   const kolom = semua.filter((k) => dariBackup.has(k));
   for (const k of pk)

@@ -134,7 +134,7 @@ async function lewatGotenberg(
   } catch (e) {
     throw new GalatPdf(`Layanan Gotenberg tidak dapat dihubungi: ${(e as Error).message}`);
   }
-  if (r.status === 401) throw new GalatPdf('Gotenberg menolak kredensial (HTTP 401) — periksa GOTENBERG_USERNAME/GOTENBERG_PASSWORD.');
+  if (r.status === 401) throw new GalatPdf('Gotenberg menolak kredensial (HTTP 401) - periksa GOTENBERG_USERNAME/GOTENBERG_PASSWORD.');
   if (!r.ok) throw new GalatPdf(`Gotenberg menolak konversi (HTTP ${r.status}).`);
   return Buffer.from(await r.arrayBuffer());
 }
@@ -178,7 +178,7 @@ export async function docxToPdf(docx: Buffer, konfig: KonfigPdf = bacaKonfigPdf(
   }
   if (jalur === 'HTML') {
     throw new PdfTidakTersedia(
-      'Jalur fallback HTML→PDF belum dipasang — butuh dependency di luar SYSTEM_DESIGN §2 (ADR-010). ' +
+      'Jalur fallback HTML→PDF belum dipasang - butuh dependency di luar SYSTEM_DESIGN §2 (ADR-010). ' +
         'Pasang Gotenberg atau LibreOffice.',
     );
   }
@@ -188,7 +188,7 @@ export async function docxToPdf(docx: Buffer, konfig: KonfigPdf = bacaKonfigPdf(
   if (pdf.subarray(0, 5).toString('latin1') !== '%PDF-') throw new GalatPdf('Konverter mengembalikan berkas yang bukan PDF.');
   const periksa = periksaPdfBerteks(pdf);
   if (!periksa.berteks) {
-    throw new GalatPdf('PDF hasil konversi tidak memuat lapisan teks (rasterisasi) dan ditolak — ADR-010.');
+    throw new GalatPdf('PDF hasil konversi tidak memuat lapisan teks (rasterisasi) dan ditolak - ADR-010.');
   }
   return { pdf, jalur, fidelitasRendah: false };
 }

@@ -85,7 +85,7 @@ export async function muatManifest(
   st: Penyimpanan = storageBawaan,
 ): Promise<Manifest> {
   const isi = await st.get(keys.backupBerkas(backupId, JALUR.manifest)).catch(() => null);
-  if (!isi) throw new Error('manifest.json tidak ditemukan — bundel tidak lengkap.');
+  if (!isi) throw new Error('manifest.json tidak ditemukan - bundel tidak lengkap.');
   const p = SkemaManifest.safeParse(JSON.parse(isi.toString('utf8')));
   if (!p.success) throw new Error('manifest.json tidak sesuai skema.');
   return p.data;
@@ -98,10 +98,10 @@ export function cekKecocokan(
   mode: 'PENUH' | 'MODUL',
 ): string | null {
   if (m.versiSkema !== sistem.versiSkema) {
-    return `Versi skema tidak cocok: backup v${m.versiSkema}, sistem v${sistem.versiSkema}. Restore dibatalkan — migrasi otomatis tidak dilakukan.`;
+    return `Versi skema tidak cocok: backup v${m.versiSkema}, sistem v${sistem.versiSkema}. Restore dibatalkan - migrasi otomatis tidak dilakukan.`;
   }
   if (mode === 'PENUH' && m.dump.metode !== 'sql_per_tabel') {
-    return 'Dump dibuat dengan pg_dump (berisi DDL) — pulihkan manual ke database kosong dengan psql, atau gunakan restore per modul.';
+    return 'Dump dibuat dengan pg_dump (berisi DDL) - pulihkan manual ke database kosong dengan psql, atau gunakan restore per modul.';
   }
   if (mode === 'PENUH' && m.migrasiTerakhir !== sistem.migrasiTerakhir) {
     return (
@@ -216,7 +216,7 @@ export async function pratinjauRestore(
       });
     }
     dasar.peringatan.push(
-      `Seluruh data (kecuali audit log) diganti dengan kondisi ${m.dibuatPada}. Perubahan setelah itu hilang — kecuali tersimpan di backup pra-restore yang dibuat otomatis.`,
+      `Seluruh data (kecuali audit log) diganti dengan kondisi ${m.dibuatPada}. Perubahan setelah itu hilang - kecuali tersimpan di backup pra-restore yang dibuat otomatis.`,
       'Akun dan role pengguna ikut dipulihkan: pengguna yang dibuat setelah backup tidak dapat masuk lagi.',
       `${m.jumlahBerkasStorage} berkas storage ditulis ulang; berkas yang lebih baru dari backup tidak dihapus.`,
     );
@@ -439,7 +439,7 @@ export async function jalankanRestore(
           rusak.push(`${f.path} (checksum tidak cocok)`);
         else cache.set(f.path, isi);
       }
-      if (rusak.length) throw new Error(`Backup rusak — restore dibatalkan: ${rusak.join(', ')}.`);
+      if (rusak.length) throw new Error(`Backup rusak - restore dibatalkan: ${rusak.join(', ')}.`);
       laporan.berkasDiperiksa = m.files.length;
       tahap = 'TERAPKAN';
       await perbarui(jobId, {

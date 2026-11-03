@@ -198,7 +198,7 @@ export function KendalaDetail({
           <div className="grid gap-1.5">
             <Label htmlFor={`${id}-assignee`}>Penanggung jawab</Label>
             <Select id={`${id}-assignee`} placeholder={null} value={assignee} disabled={!bolehUbah || proses} onChange={(e) => setAssignee(e.target.value)} data-testid="kendala-assignee">
-              <option value="">— Belum ditugaskan —</option>
+              <option value=""> - Belum ditugaskan - </option>
               {orang.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.nama}

@@ -274,7 +274,7 @@ function Form({ awal, editable, pilihanTujuan, departemen }: NotulensiFormProps)
   }
 
   const namaTujuan =
-    departemenNotulensi === null ? 'Himpunan' : (departemen.find((d) => d.id === departemenNotulensi)?.nama ?? '—');
+    departemenNotulensi === null ? 'Himpunan' : (departemen.find((d) => d.id === departemenNotulensi)?.nama ?? '-');
 
   return (
     <div className="space-y-5">
@@ -351,7 +351,7 @@ function Form({ awal, editable, pilihanTujuan, departemen }: NotulensiFormProps)
               <div className="space-y-1.5">
                 <Label htmlFor="notulensi-pemimpin">Pemimpin rapat</Label>
                 <Select id="notulensi-pemimpin" placeholder={null} loading={memuatPengurus} value={meta.pemimpin_id} onChange={ubahMeta('pemimpin_id')}>
-                  <option value="">— Belum dipilih —</option>
+                  <option value=""> - Belum dipilih - </option>
                   {awal?.pemimpin_id && !opsiOrang.some((o) => o.user_id === awal.pemimpin_id) ? (
                     <option value={awal.pemimpin_id}>{awal.pemimpin_nama}</option>
                   ) : null}
@@ -365,7 +365,7 @@ function Form({ awal, editable, pilihanTujuan, departemen }: NotulensiFormProps)
               <div className="space-y-1.5">
                 <Label htmlFor="notulensi-notulis">Notulis</Label>
                 <Select id="notulensi-notulis" placeholder={null} loading={memuatPengurus} value={meta.notulis_id} onChange={ubahMeta('notulis_id')}>
-                  <option value="">— Belum dipilih —</option>
+                  <option value=""> - Belum dipilih - </option>
                   {awal?.notulis_id && !opsiOrang.some((o) => o.user_id === awal.notulis_id) ? (
                     <option value={awal.notulis_id}>{awal.notulis_nama}</option>
                   ) : null}
@@ -385,12 +385,12 @@ function Form({ awal, editable, pilihanTujuan, departemen }: NotulensiFormProps)
           ) : (
             <dl className="grid gap-x-6 gap-y-3 text-[14px] sm:grid-cols-2">
               {[
-                ['Tanggal', awal ? formatTanggalPanjang(awal.tanggal) : '—'],
-                ['Waktu', awal?.waktu_mulai ? `${awal.waktu_mulai}${awal.waktu_selesai ? ` – ${awal.waktu_selesai}` : ''}` : '—'],
-                ['Tempat', awal?.tempat || '—'],
+                ['Tanggal', awal ? formatTanggalPanjang(awal.tanggal) : '-'],
+                ['Waktu', awal?.waktu_mulai ? `${awal.waktu_mulai}${awal.waktu_selesai ? ` – ${awal.waktu_selesai}` : ''}` : '-'],
+                ['Tempat', awal?.tempat || '-'],
                 ['Tingkat rapat', namaTujuan],
-                ['Pemimpin rapat', awal?.pemimpin_nama ?? '—'],
-                ['Notulis', awal?.notulis_nama ?? '—'],
+                ['Pemimpin rapat', awal?.pemimpin_nama ?? '-'],
+                ['Notulis', awal?.notulis_nama ?? '-'],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-[12px] text-secondary">{k}</dt>

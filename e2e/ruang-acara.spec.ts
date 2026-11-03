@@ -140,7 +140,7 @@ test('daftar acara memuat status, tanggal, PIC, total RAB, dan progres', async (
   await ketua.context().close();
 });
 
-test('delapan tab dapat dibuka dan tidak ada yang kosong tanpa penjelasan', async ({ browser }) => {
+test('setiap bagian dapat dibuka lewat fasenya dan tidak ada yang kosong tanpa penjelasan', async ({ browser }) => {
   const koor = await sesi(browser, AKUN.anggota);
   await koor.goto('/acara', { waitUntil: 'load' });
   const item = koor.getByTestId('acara-item').filter({ hasText: namaAcara });
@@ -151,7 +151,18 @@ test('delapan tab dapat dibuka dan tidak ada yang kosong tanpa penjelasan', asyn
   await expect(koor.getByTestId('acara-kode-kegiatan')).toHaveText(kode);
   await expect(koor.getByTestId('acara-peran-saya')).toContainText('Koordinator Divisi Konsumsi');
 
-  for (const slug of ['ringkasan', 'gantt', 'divisi', 'rab', 'tor', 'proposal', 'nota', 'lpj']) {
+  // Ikhtisar (ADR-039): jalur dokumen dan tugas saya untuk panitia.
+  await expect(koor.getByTestId('jalur-dokumen')).toBeVisible();
+  await expect(koor.getByTestId('tugas-saya')).toBeVisible();
+
+  // ADR-039: bagian dikelompokkan per fase — buka fasenya dulu, lalu bagiannya.
+  const fase: Record<string, string | null> = {
+    ringkasan: null, tor: 'persiapan', rab: 'persiapan', proposal: 'persiapan',
+    divisi: 'pelaksanaan', gantt: 'pelaksanaan', nota: 'laporan', lpj: 'laporan',
+  };
+  for (const [slug, grup] of Object.entries(fase)) {
+    // Fase hanya diklik bila bagiannya belum tampil (sudah di fase yang sama = tidak perlu).
+    if (grup && !(await koor.getByTestId(`acara-tab-${slug}`).isVisible())) await koor.getByTestId(`acara-grup-${grup}`).click();
     await koor.getByTestId(`acara-tab-${slug}`).click();
     await expect(koor.getByTestId(`acara-tab-${slug}`)).toHaveAttribute('aria-current', 'page', { timeout: 30_000 });
     const panel = koor.getByTestId(`acara-panel-${slug}`);

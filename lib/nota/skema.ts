@@ -92,7 +92,7 @@ export function pesanSelisih(
   const s = selisihAlokasi(totalNota, alokasi);
   if (s === 0) return null;
   const total = alokasi.reduce((x, a) => x + (a.nominal ?? 0), 0);
-  return `Alokasi ${format(total)} ≠ total nota ${format(totalNota)} — ${s < 0 ? 'kurang' : 'lebih'} ${format(Math.abs(s))}.`;
+  return `Alokasi ${format(total)} ≠ total nota ${format(totalNota)} - ${s < 0 ? 'kurang' : 'lebih'} ${format(Math.abs(s))}.`;
 }
 
 /** Tanggal belanja tidak boleh di masa depan (zona Jakarta, dibandingkan sebagai YYYY-MM-DD). */

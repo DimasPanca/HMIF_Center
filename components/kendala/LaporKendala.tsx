@@ -110,7 +110,7 @@ export function LaporKendala({
                 <div className="grid gap-1.5">
                   <Label htmlFor={`${id}-assignee`}>Penanggung jawab</Label>
                   <Select id={`${id}-assignee`} placeholder={null} value={assignee} onChange={(e) => setAssignee(e.target.value)} data-testid="lapor-assignee">
-                    <option value="">— Belum ditugaskan —</option>
+                    <option value=""> - Belum ditugaskan - </option>
                     {orang.map((o) => (
                       <option key={o.id} value={o.id}>
                         {o.nama}
@@ -122,7 +122,7 @@ export function LaporKendala({
               <div className="grid gap-1.5">
                 <Label htmlFor={`${id}-proker`}>Proker terkait (opsional)</Label>
                 <Select id={`${id}-proker`} placeholder={null} value={prokerId} onChange={(e) => setProkerId(e.target.value)} data-testid="lapor-proker">
-                  <option value="">— Tidak terkait proker —</option>
+                  <option value=""> - Tidak terkait proker - </option>
                   {proker.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.nama}

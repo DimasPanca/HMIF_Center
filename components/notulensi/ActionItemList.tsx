@@ -167,8 +167,8 @@ export function ActionItemList({
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium break-words text-primary">{item.tugas}</p>
                 <p className="text-[12px] text-secondary">
-                  PIC: {item.pic_nama ?? '—'} · Deadline: {item.deadline ? formatTanggalPendek(item.deadline) : '—'}
-                  {!himpunan || sudah ? ` · ${tujuan?.nama ?? '—'}` : null}
+                  PIC: {item.pic_nama ?? '-'} · Deadline: {item.deadline ? formatTanggalPendek(item.deadline) : '-'}
+                  {!himpunan || sudah ? ` · ${tujuan?.nama ?? '-'}` : null}
                 </p>
               </div>
 

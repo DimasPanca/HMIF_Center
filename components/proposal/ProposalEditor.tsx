@@ -350,7 +350,7 @@ export function ProposalEditor({
               className="border-t border-default pt-3 text-[12px] text-secondary"
               data-testid="proposal-baca-saja"
             >
-              Tampilan baca saja — proposal disusun panitia acara ini.
+              Tampilan baca saja - proposal disusun panitia acara ini.
             </p>
           )}
           {dokumenAt ? (
@@ -575,7 +575,7 @@ export function ProposalEditor({
 
         <Bagian id="kepanitiaan" no={5} judul="Susunan Kepanitiaan">
           <p className="text-[12px] text-secondary">
-            Diambil dari data panitia acara — ubah lewat pembentukan kepanitiaan, bukan di sini.
+            Diambil dari data panitia acara - ubah lewat pembentukan kepanitiaan, bukan di sini.
           </p>
           {awal.susunan.length ? (
             <div className="grid gap-3 sm:grid-cols-2" data-testid="proposal-susunan">
@@ -607,7 +607,7 @@ export function ProposalEditor({
 
         <Bagian id="anggaran" no={6} judul="Anggaran">
           <p className="text-[12px] text-secondary">
-            Diambil otomatis dari RAB — rincian per item ikut sebagai Lampiran I.
+            Diambil otomatis dari RAB - rincian per item ikut sebagai Lampiran I.
           </p>
           {ang === 'TERBATAS' ? (
             <p className="text-[13px] text-secondary">
@@ -667,7 +667,7 @@ export function ProposalEditor({
         <Bagian id="lampiran" no={8} judul="Lampiran">
           <p className="text-[12px] text-secondary">
             Lampiran I rincian RAB, Lampiran II struktur kepanitiaan, Lampiran III susunan kegiatan
-            — ditarik saat dokumen dibuat.
+ - ditarik saat dokumen dibuat.
           </p>
           {awal.rundown.length ? (
             <ul className="grid gap-1 text-[13px]" data-testid="proposal-rundown">
@@ -685,7 +685,7 @@ export function ProposalEditor({
             </ul>
           ) : (
             <p className="text-[13px] text-secondary">
-              Rundown belum disusun —{' '}
+              Rundown belum disusun - {' '}
               <Link href={`/acara/${awal.kepanitiaan_id}/tor#bagian-rundown`} className="underline">
                 susun di TOR
               </Link>

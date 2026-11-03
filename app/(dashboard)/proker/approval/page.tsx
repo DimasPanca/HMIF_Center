@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, CalendarRange, ClipboardCheck, Inbox } from 'lucide-react';
+import { ArrowRight, CalendarRange, Inbox } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 
 import { StatusPill } from '@/components/ui/status-pill';
@@ -31,17 +31,8 @@ export default async function ApprovalProkerPage() {
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
       <div className="mx-auto max-w-[92rem] space-y-5">
         <header className="flex items-start gap-3">
-          <span
-            className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]"
-            aria-hidden="true"
-          >
-            <ClipboardCheck className="size-5" />
-          </span>
           <div>
-            <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
-              Program kerja
-            </p>
-            <h1 className="mt-0.5 text-2xl font-semibold">Antrian approval proker</h1>
+            <h1 className="text-2xl font-semibold">Antrian approval proker</h1>
             <p className="mt-1 max-w-2xl text-[14px] leading-5 text-secondary">
               Tinjau pengajuan secara menyeluruh sebelum kalender dan ruang kerja kepanitiaan
               dibentuk.
@@ -87,7 +78,7 @@ export default async function ApprovalProkerPage() {
                     </span>
                     <span>
                       Diajukan{' '}
-                      {item.diajukan_at ? formatTanggalPendek(item.diajukan_at.slice(0, 10)) : '—'}
+                      {item.diajukan_at ? formatTanggalPendek(item.diajukan_at.slice(0, 10)) : '-'}
                     </span>
                     <span className="ml-auto inline-flex items-center gap-1 font-medium text-primary">
                       Buka detail

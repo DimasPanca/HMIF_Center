@@ -213,7 +213,7 @@ export function NotaForm({
         data-nota-id={selesai}
       >
         <Check aria-hidden="true" className="mx-auto size-8 text-success" />
-        <p className="text-[15px] font-semibold">Nota terkirim — menunggu verifikasi Bendahara.</p>
+        <p className="text-[15px] font-semibold">Nota terkirim - menunggu verifikasi Bendahara.</p>
         <Button
           type="button"
           variant="secondary"
@@ -259,7 +259,7 @@ export function NotaForm({
               <option value="">Pilih divisi…</option>
               {divisi.map((x) => (
                 <option key={x.id} value={x.id}>
-                  {x.nama} — {x.acara.nama}
+                  {x.nama} - {x.acara.nama}
                 </option>
               ))}
             </select>
@@ -283,7 +283,7 @@ export function NotaForm({
       <Langkah no={3} judul="Foto nota" aktif={adaPilihan}>
         {!adaPilihan ? (
           <p className="text-[13px] text-secondary" data-testid="nota-kamera-terkunci">
-            Pilih item RAB dulu — kamera aktif setelah item dipilih.
+            Pilih item RAB dulu - kamera aktif setelah item dipilih.
           </p>
         ) : null}
         {gambar && !kamera ? (

@@ -1,5 +1,5 @@
 /**
- * Skenario proker demo — 16 proker di enam departemen dengan SELURUH status:
+ * Skenario proker demo - 16 proker di enam departemen dengan SELURUH status:
  * Draf, Menunggu approval, Disetujui (mengunci kalender), Berjalan, Selesai,
  * Perlu revisi, Ditolak, dan Menunggu approval revisi (edit proker terkunci).
  *
@@ -77,7 +77,7 @@ export const SKENARIO: ScenarioProker[] = [
   {
     kunci: 'dies',
     dept: 'INT',
-    nama: 'Dies Natalis HMIF ke-12 — Malam Puncak',
+    nama: 'Dies Natalis HMIF ke-12 - Malam Puncak',
     kategori: 'TERJADWAL',
     deskripsi: 'Malam puncak peringatan Dies Natalis HMIF: penampilan unit kegiatan, penyerahan penghargaan pengurus berprestasi, dan temu alumni.',
     tujuan: 'Mempererat kekeluargaan pengurus, anggota, dan alumni Informatika UNTIRTA.',
@@ -106,7 +106,7 @@ export const SKENARIO: ScenarioProker[] = [
   {
     kunci: 'sync',
     dept: 'EKS',
-    nama: 'SYNCHRONIZE 2026 — Seminar Nasional Teknologi',
+    nama: 'SYNCHRONIZE 2026 - Seminar Nasional Teknologi',
     kategori: 'TERJADWAL',
     deskripsi: 'Seminar nasional satu hari dengan tiga pembicara dari industri dan akademisi, sesi tanya jawab, serta pameran proyek mahasiswa.',
     tujuan: 'Memperluas wawasan mahasiswa tentang kecerdasan buatan dan peluang kariernya.',
@@ -193,7 +193,7 @@ export const SKENARIO: ScenarioProker[] = [
   {
     kunci: 'cup',
     dept: 'MIKAT',
-    nama: 'Informatics Cup 2026 — Kompetisi Pemrograman',
+    nama: 'Informatics Cup 2026 - Kompetisi Pemrograman',
     kategori: 'TERJADWAL',
     deskripsi: 'Kompetisi pemrograman kompetitif tingkat mahasiswa dengan babak penyisihan daring dan final luring.',
     tujuan: 'Mengasah kemampuan algoritma dan pemecahan masalah mahasiswa.',
@@ -271,7 +271,7 @@ export const SKENARIO: ScenarioProker[] = [
   {
     kunci: 'banjir',
     dept: 'INT',
-    nama: 'Aksi Peduli Banjir — Penggalangan Dana dan Logistik',
+    nama: 'Aksi Peduli Banjir - Penggalangan Dana dan Logistik',
     kategori: 'RESPONSIF',
     deskripsi: 'Penggalangan dana dan pengumpulan logistik untuk warga terdampak banjir di sekitar kampus.',
     tujuan: 'Membantu warga terdampak secara cepat.',
@@ -342,7 +342,7 @@ export const SKENARIO: ScenarioProker[] = [
   {
     kunci: 'podcast',
     dept: 'KOMINFO',
-    nama: 'Podcast HMIF — Cerita Alumni',
+    nama: 'Podcast HMIF - Cerita Alumni',
     kategori: 'BERKALA',
     deskripsi: 'Podcast dua mingguan yang menghadirkan alumni dan praktisi.',
     tujuan: 'Berbagi pengalaman karier alumni.',
@@ -356,7 +356,7 @@ export const SKENARIO: ScenarioProker[] = [
   {
     kunci: 'riset',
     dept: 'RND',
-    nama: 'Riset Bersama Dosen — Kelompok Studi',
+    nama: 'Riset Bersama Dosen - Kelompok Studi',
     kategori: 'BERKALA',
     deskripsi: 'Kelompok studi riset yang bertemu mingguan dengan dosen pembimbing.',
     tujuan: 'Menumbuhkan budaya riset.',
@@ -414,7 +414,7 @@ function draftDari(s: ScenarioProker, deptId: string, pj: string, akun: Map<stri
   if (s.kepanitiaan) {
     const k = s.kepanitiaan;
     draft.kepanitiaan = {
-      nama_acara: s.nama.split(' — ')[0]!.length >= 3 ? s.nama.split(' — ')[0] : s.nama,
+      nama_acara: s.nama.split(' - ')[0]!.length >= 3 ? s.nama.split(' - ')[0] : s.nama,
       tema: k.tema,
       ketua_pelaksana: idOf(k.ketuplak),
       ...(k.wakil ? { wakil_pelaksana: idOf(k.wakil) } : {}),
@@ -431,7 +431,7 @@ function draftDari(s: ScenarioProker, deptId: string, pj: string, akun: Map<stri
   }
   if (s.gantt) {
     draft.gantt = {
-      judul: `Timeline ${s.nama.split(' — ')[0]}`,
+      judul: `Timeline ${s.nama.split(' - ')[0]}`,
       groups: s.gantt.map((g) => ({
         nama: g.fase,
         warna: g.warna,
@@ -473,7 +473,7 @@ export async function jalankanProker(
       const r = await kadept.wajib('POST', '/api/proker', draft, `buat draf ${s.kunci}`);
       prokerId = r.data.id;
       hasil.set(s.kunci, { prokerId });
-      ok(`${s.nama} — Draf`);
+      ok(`${s.nama} - Draf`);
       continue;
     }
 
@@ -509,7 +509,7 @@ export async function jalankanProker(
     const [kp] = await sql<{ id: string }[]>`SELECT id::text FROM kepanitiaan WHERE proker_id = ${prokerId}::uuid`;
     hasil.set(s.kunci, { prokerId, kepanitiaanId: kp?.id });
     const jadwal = s.jadwal ? ` (${rentangPanjang(dari(s.jadwal.hariH), dari(s.jadwal.hariHSelesai))})` : '';
-    ok(`${s.nama}${jadwal} — ${status}${kp ? ' · kepanitiaan terbentuk' : ''}`);
+    ok(`${s.nama}${jadwal} - ${status}${kp ? ' · kepanitiaan terbentuk' : ''}`);
   }
   return hasil;
 }
@@ -525,7 +525,7 @@ export interface BentrokKalender {
 /**
  * Proker terjadwal yang disetujui mengunci kalender periode secara eksklusif
  * (INV-09, `proker_lock`). Proker NON-demo yang sudah mengunci tanggal yang
- * dibutuhkan skenario membuat approval demo gagal di tengah jalan — maka
+ * dibutuhkan skenario membuat approval demo gagal di tengah jalan - maka
  * diperiksa sebelum satu baris pun dibuat.
  */
 export async function cekBentrokKalender(sql: Sql, latar: Latar): Promise<BentrokKalender[]> {
@@ -558,7 +558,7 @@ export async function pulihkanProker(sql: Sql): Promise<Map<string, HasilProker>
       WHERE p.nama = ${s.nama} ORDER BY p.created_at DESC LIMIT 1`;
     if (r) hasil.set(s.kunci, { prokerId: r.id, kepanitiaanId: r.kid ?? undefined });
   }
-  if (hasil.size === 0) throw new Error('Tidak ada proker demo di DB — jalankan seeder penuh dulu.');
+  if (hasil.size === 0) throw new Error('Tidak ada proker demo di DB - jalankan seeder penuh dulu.');
   return hasil;
 }
 

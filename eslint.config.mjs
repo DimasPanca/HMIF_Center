@@ -30,6 +30,8 @@ const eslintConfig = [
       'test-results/**',
       'next-env.d.ts',
       'tmp/**',
+      // Skill agen pihak ketiga (taste-skill, playwright-cli) — kode vendor, bukan aplikasi.
+      '.claude/**',
     ],
   },
 

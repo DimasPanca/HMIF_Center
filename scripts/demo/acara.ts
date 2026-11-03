@@ -10,7 +10,7 @@ import { SKENARIO, type HasilProker } from './proker';
 import type { InfoAkun, Latar } from './akun';
 
 // ---------------------------------------------------------------------------
-// Teks kaya (TipTap) — dipakai job desk, TOR, proposal, notulensi
+// Teks kaya (TipTap) - dipakai job desk, TOR, proposal, notulensi
 // ---------------------------------------------------------------------------
 
 export type Node = { type: string; attrs?: Record<string, unknown>; content?: Node[]; text?: string; marks?: Array<{ type: string }> };
@@ -195,7 +195,7 @@ async function isiPemasukanPeserta(sesi: Sesi, kunci: string, kepanitiaanId: str
   return { sumber, peserta };
 }
 
-/** Tugas Gantt divisi (nama, mulai, selesai, progres) per acara — relatif hari ini. */
+/** Tugas Gantt divisi (nama, mulai, selesai, progres) per acara - relatif hari ini. */
 const GANTT_DIVISI: Record<string, Record<string, Array<{ grup: string; warna: string; tugas: Array<[string, number, number, number]> }>>> = {
   sync: {
     Acara: [
@@ -355,7 +355,7 @@ export async function isiAcara(
       status = 'DISETUJUI';
     }
     ringkas.push(`RAB ${status}`);
-    ok(`${s.nama.split(' — ')[0]}: ${ringkas.join(' · ')}`);
+    ok(`${s.nama.split(' - ')[0]}: ${ringkas.join(' · ')}`);
   }
 
   const gDept = await isiGanttDepartemen(sesi, latar);

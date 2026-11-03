@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   if (!guard.ok) return guard.nilai;
   const baris = await daftarPengurusLengkap(guard.konteks, filterDariUrl(request.url));
   const tanggal = new Date().toISOString().slice(0, 10);
-  const isi = await exportPengurusXlsx(baris, `Data Pengurus HMIF — diekspor ${tanggal}`);
+  const isi = await exportPengurusXlsx(baris, `Data Pengurus HMIF - diekspor ${tanggal}`);
   return new Response(new Uint8Array(isi), {
     headers: {
       ...TANPA_CACHE,

@@ -322,7 +322,7 @@ export async function simpanManualLpj(
     return {
       ok: false,
       kode: 'KONFLIK',
-      pesan: 'LPJ sudah diajukan — kembalikan ke DRAFT untuk mengubahnya.',
+      pesan: 'LPJ sudah diajukan - kembalikan ke DRAFT untuk mengubahnya.',
     };
   // Foto dokumentasi wajib milik pengisi (diunggah lewat /api/images/upload).
   const ids = p.data.dokumentasi.map((x) => x.image_id);
@@ -366,7 +366,7 @@ export function ringkasanKeuangan(s: SnapshotLpj): string {
   b.push('RINCIAN PENGELUARAN');
   s.pengeluaran.forEach((p) =>
     b.push(
-      `${p.no}. ${formatTanggalPanjang(p.tanggal)} — ${p.uraian} (${p.divisi}): ${formatRupiah(p.nominal)} · saldo ${formatRupiah(p.saldo)}`,
+      `${p.no}. ${formatTanggalPanjang(p.tanggal)} - ${p.uraian} (${p.divisi}): ${formatRupiah(p.nominal)} · saldo ${formatRupiah(p.saldo)}`,
     ),
   );
   b.push(`Total pengeluaran: ${formatRupiah(s.totalAktual)}`, '');
@@ -573,7 +573,7 @@ export async function generateLpj(
     return {
       ok: false,
       kode: 'KONFLIK',
-      pesan: `LPJ berstatus ${data.status} — hanya DRAFT yang dapat di-generate ulang.`,
+      pesan: `LPJ berstatus ${data.status} - hanya DRAFT yang dapat di-generate ulang.`,
     };
 
   const belum = data.prasyarat.filter((p) => p.wajib && !p.terpenuhi).map((p) => p.label);
@@ -854,7 +854,7 @@ export async function aksiLpj(
       return {
         ok: false,
         kode: 'KONFLIK',
-        pesan: 'Generate LPJ dulu — snapshot analisis belum ada.',
+        pesan: 'Generate LPJ dulu - snapshot analisis belum ada.',
       };
     await tx.lpj.update({
       where: { kepanitiaan_id: kepanitiaanId },

@@ -327,7 +327,7 @@ async function kunciMenunggu(
     return {
       ok: false,
       kode: 'KONFLIK',
-      pesan: 'Nota ini sudah diproses — muat ulang antrian.',
+      pesan: 'Nota ini sudah diproses - muat ulang antrian.',
       details: { status: n.status },
     };
   }
@@ -455,7 +455,7 @@ export async function batalkanVerifikasi(
     return {
       ok: false,
       kode: 'KONFLIK',
-      pesan: 'LPJ acara ini sudah terbit — verifikasi nota tidak dapat dibatalkan.',
+      pesan: 'LPJ acara ini sudah terbit - verifikasi nota tidak dapat dibatalkan.',
     };
   await tx.nota.update({
     where: { id },

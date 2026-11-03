@@ -57,7 +57,7 @@ export function ItemRabSelector({
           <optgroup key={g.section} label={g.section}>
             {g.items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.jenis_barang} — RAB {formatRupiah(i.total)}
+                {i.jenis_barang} - RAB {formatRupiah(i.total)}
               </option>
             ))}
           </optgroup>
@@ -66,7 +66,7 @@ export function ItemRabSelector({
       </select>
       {items.length === 0 ? (
         <p className="text-[12px] text-secondary">
-          Divisi ini belum punya item RAB — hanya pengeluaran di luar RAB yang dapat dicatat.
+          Divisi ini belum punya item RAB - hanya pengeluaran di luar RAB yang dapat dicatat.
         </p>
       ) : null}
       {terpilih.length || luarRab ? (

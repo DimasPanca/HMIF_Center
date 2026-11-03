@@ -37,7 +37,7 @@ export function ScanPreview({
       </div>
       <p data-testid="scan-preview-status" data-terpindai={terpindai ? '1' : '0'} className="flex items-start gap-2 text-[13px] text-secondary">
         <ScanLine aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-        {terpindai ? 'Tepi dokumen terdeteksi — perspektif sudah diluruskan.' : (catatan ?? 'Foto dipakai apa adanya.')}
+        {terpindai ? 'Tepi dokumen terdeteksi - perspektif sudah diluruskan.' : (catatan ?? 'Foto dipakai apa adanya.')}
       </p>
       <div className="grid grid-cols-2 gap-3">
         <Button variant="secondary" className="h-12 text-[15px]" onClick={onAmbilUlang} data-testid="scan-ambil-ulang">

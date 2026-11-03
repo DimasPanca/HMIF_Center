@@ -393,16 +393,16 @@ interface Booking {
 }
 
 const BOOKING: Booking[] = [
-  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'Dies Natalis HMIF ke-12 — Malam Puncak', hari: -17, mulai: '16:00', selesai: '22:30', peserta: 120, keperluan: 'Gladi bersih dan acara malam puncak', oleh: 'sekum' },
-  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'SYNCHRONIZE 2026 — Hari 1 Seminar', hari: 12, mulai: '07:00', selesai: '16:30', peserta: 200, keperluan: 'Seminar nasional dan registrasi', oleh: 'sekum', surat: true },
-  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'LKMM-PD 2026 — Hari 1', hari: 41, mulai: '07:30', selesai: '17:30', peserta: 80, keperluan: 'Materi pelatihan kepemimpinan', oleh: 'kadept.kad' },
-  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'LKMM-PD 2026 — Hari 2', hari: 42, mulai: '07:30', selesai: '16:30', peserta: 80, keperluan: 'Simulasi kepanitiaan', oleh: 'kadept.kad' },
+  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'Dies Natalis HMIF ke-12 - Malam Puncak', hari: -17, mulai: '16:00', selesai: '22:30', peserta: 120, keperluan: 'Gladi bersih dan acara malam puncak', oleh: 'sekum' },
+  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'SYNCHRONIZE 2026 - Hari 1 Seminar', hari: 12, mulai: '07:00', selesai: '16:30', peserta: 200, keperluan: 'Seminar nasional dan registrasi', oleh: 'sekum', surat: true },
+  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'LKMM-PD 2026 - Hari 1', hari: 41, mulai: '07:30', selesai: '17:30', peserta: 80, keperluan: 'Materi pelatihan kepemimpinan', oleh: 'kadept.kad' },
+  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'LKMM-PD 2026 - Hari 2', hari: 42, mulai: '07:30', selesai: '16:30', peserta: 80, keperluan: 'Simulasi kepanitiaan', oleh: 'kadept.kad' },
   { ruangan: 'Ruang Seminar Lantai 3', kegiatan: 'Rapat Panitia SYNCHRONIZE 2026', hari: -1, mulai: '15:00', selesai: '17:30', peserta: 17, keperluan: 'Rapat koordinasi H-12', oleh: 'sekum' },
   { ruangan: 'Ruang Seminar Lantai 3', kegiatan: 'Workshop UI/UX untuk pemula', hari: 25, mulai: '09:00', selesai: '15:00', peserta: 60, keperluan: 'Workshop Departemen Minat dan Bakat', oleh: 'kadept.mikat' },
   { ruangan: 'Laboratorium Komputer 1', kegiatan: 'Babak penyisihan Informatics Cup', hari: 28, mulai: '08:00', selesai: '12:00', peserta: 40, keperluan: 'Penyisihan lomba pemrograman luring', oleh: 'kadept.mikat' },
   { ruangan: 'Laboratorium Jaringan', kegiatan: 'Pelatihan dasar jaringan komputer', hari: 18, mulai: '13:00', selesai: '16:00', peserta: 30, keperluan: 'Pelatihan Departemen Riset dan Development', oleh: 'kadept.rnd' },
   { ruangan: 'Sekretariat HMIF', kegiatan: 'Rapat Koordinasi BPH Mingguan', hari: 3, mulai: '19:00', selesai: '21:00', peserta: 11, keperluan: 'Rapat BPH dan Kadept', oleh: 'sekum' },
-  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'Seminar Prodi — Pengenalan Kurikulum Baru', hari: 12, mulai: '13:00', selesai: '15:00', peserta: 150, keperluan: 'Kegiatan program studi pada hari yang sama', oleh: 'kadept.int', bentrok: true },
+  { ruangan: 'Aula Fakultas Teknik', kegiatan: 'Seminar Prodi - Pengenalan Kurikulum Baru', hari: 12, mulai: '13:00', selesai: '15:00', peserta: 150, keperluan: 'Kegiatan program studi pada hari yang sama', oleh: 'kadept.int', bentrok: true },
 ];
 
 export async function isiRuangan(sql: Sql, sesi: Map<string, Sesi>): Promise<void> {
@@ -457,12 +457,12 @@ export async function jalankanBackup(sesi: Map<string, Sesi>): Promise<void> {
       return;
     }
   }
-  peringatan('Backup belum selesai setelah 3 menit — periksa Pengaturan → Backup.');
+  peringatan('Backup belum selesai setelah 3 menit - periksa Pengaturan → Backup.');
 }
 
 export async function jalankanCron(baseUrl: string, secret: string | undefined): Promise<void> {
   if (!secret) {
-    peringatan('CRON_SECRET kosong — cron harian tidak dijalankan.');
+    peringatan('CRON_SECRET kosong - cron harian tidak dijalankan.');
     return;
   }
   // Siklus status proker maju satu tahap per panggilan (DISETUJUI → BERJALAN → SELESAI);
@@ -479,5 +479,5 @@ export async function jalankanCron(baseUrl: string, secret: string | undefined):
     const lepas = j.data?.lepas;
     if (!lepas?.jadi_selesai && !lepas?.jadi_berjalan) break;
   }
-  ok(`Cron harian dijalankan — status proker mengikuti tanggal (batas deadline: ${JSON.stringify(terakhir.deadline)})`);
+  ok(`Cron harian dijalankan - status proker mengikuti tanggal (batas deadline: ${JSON.stringify(terakhir.deadline)})`);
 }

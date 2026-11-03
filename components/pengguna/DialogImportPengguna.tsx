@@ -189,7 +189,7 @@ export function DialogImportPengguna({ open, onOpenChange, contohDepartemen = 'K
                   {laporan.dilewati.map((d) => (
                     <tr key={`d${d.nomor}`} className="h-9 border-t border-subtle">
                       <td className="px-2 tabular-nums">{d.nomor}</td>
-                      <td className="px-2 text-tertiary">—</td>
+                      <td className="px-2 text-tertiary">-</td>
                       <td className="px-2 text-secondary">Dilewati</td>
                       <td className="px-2 text-secondary">{d.alasan}</td>
                     </tr>
@@ -310,7 +310,7 @@ export function DialogImportPengguna({ open, onOpenChange, contohDepartemen = 'K
             </DialogFooter>
             {memuat === 'simpan' ? (
               <p className="text-right text-[12px] text-secondary" role="status">
-                Mengundang {akanDiimpor} pengguna satu per satu — jangan tutup halaman ini.
+                Mengundang {akanDiimpor} pengguna satu per satu - jangan tutup halaman ini.
               </p>
             ) : null}
           </div>

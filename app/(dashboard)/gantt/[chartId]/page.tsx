@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { GanttEditor } from '@/components/gantt/GanttEditor';
 import { konteksSaatIni } from '@/lib/auth/guard';
 import { can } from '@/lib/auth/permissions';
+import { db } from '@/lib/db/client';
 import { LABEL_LEVEL } from '@/lib/gantt/skema';
 import { muatChart } from '@/lib/gantt/service';
 
@@ -21,15 +22,49 @@ export default async function GanttChartPage({ params }: { params: Promise<{ cha
   const data = await muatChart(konteks, chartId);
   if (!data) notFound();
 
+  // Chart milik acara/divisi: remah roti kembali ke ruang kerja acara, bukan indeks Gantt
+  // umum — pengguna datang dari tab Gantt acara (ADR-039). Hak baca sudah dicek muatChart.
+  const pemilik = await db.gantt_chart.findUnique({
+    where: { id: chartId },
+    select: {
+      kepanitiaan: { select: { id: true, nama_acara: true } },
+      divisi: { select: { id: true, nama: true, kepanitiaan: { select: { id: true, nama_acara: true } } } },
+    },
+  });
+  const acara = pemilik?.kepanitiaan ?? pemilik?.divisi?.kepanitiaan ?? null;
+
   return (
     <main className="space-y-4 p-4 sm:p-6">
       <header>
-        <p className="text-xs text-secondary">
-          <Link href="/proker/gantt" className="hover:underline">
-            Gantt
-          </Link>
-          {` / ${LABEL_LEVEL[data.chart.level]}`}
-        </p>
+        <nav aria-label="Breadcrumb" className="text-xs text-secondary">
+          {acara ? (
+            <>
+              <Link href="/acara" className="hover:underline">
+                Acara Besar
+              </Link>
+              {' / '}
+              <Link href={`/acara/${acara.id}?tab=gantt`} className="hover:underline">
+                {acara.nama_acara}
+              </Link>
+              {pemilik?.divisi ? (
+                <>
+                  {' / '}
+                  <Link href={`/acara/${acara.id}/divisi/${pemilik.divisi.id}`} className="hover:underline">
+                    Divisi {pemilik.divisi.nama}
+                  </Link>
+                </>
+              ) : null}
+              {' / Gantt'}
+            </>
+          ) : (
+            <>
+              <Link href="/proker/gantt" className="hover:underline">
+                Gantt
+              </Link>
+              {` / ${LABEL_LEVEL[data.chart.level]}`}
+            </>
+          )}
+        </nav>
         <h1 className="text-2xl font-semibold text-primary">{data.chart.judul}</h1>
       </header>
       <GanttEditor

@@ -114,7 +114,7 @@ function ImporPeserta({ url, onSelesai }: { url: string; onSelesai: () => void }
                   </p>
                   <div className="max-h-[45dvh] overflow-auto rounded-sm border border-default">
                     <table className="w-full border-collapse text-[12px]">
-                      <thead className="sticky top-0 bg-subtle text-left text-[11px] text-tertiary uppercase">
+                      <thead className="sticky top-0 bg-subtle text-left text-[12px] font-medium text-tertiary">
                         <tr>
                           <th className="px-2 py-1">Baris</th>
                           <th className="px-2 py-1">Status</th>
@@ -231,7 +231,7 @@ export function PesertaTable({
       <div data-kartu-hp="" className="rounded-sm border border-default md:overflow-x-auto">
         <LabelKolomOtomatis />
         <table className="w-full border-collapse text-[13px] md:min-w-[640px]">
-          <thead className="bg-subtle text-left text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+          <thead className="bg-subtle text-left text-[12px] font-medium text-tertiary">
             <tr>
               <th className="w-10 px-2 py-1.5">No</th>
               <th className="px-2 py-1.5">Nama lengkap</th>
@@ -254,7 +254,7 @@ export function PesertaTable({
               <tr key={p.id} data-testid="peserta-item" data-id={p.id} className="border-t border-default">
                 <td className="px-2 py-1 tabular-nums text-secondary">{p.no_urut}</td>
                 <td className="px-2 py-1">{p.nama_lengkap}</td>
-                <td className="px-2 py-1 tabular-nums">{p.nim ?? '—'}</td>
+                <td className="px-2 py-1 tabular-nums">{p.nim ?? '-'}</td>
                 <td className="px-2 py-1">
                   {izin.tulis ? (
                     <input
@@ -292,7 +292,7 @@ export function PesertaTable({
                   ) : p.tanggal_bayar ? (
                     formatTanggalPendek(p.tanggal_bayar)
                   ) : (
-                    '—'
+                    '-'
                   )}
                 </td>
                 <td className="px-2 py-1 text-right tabular-nums">

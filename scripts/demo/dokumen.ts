@@ -51,7 +51,7 @@ const ACARA: IsiAcara[] = [
   {
     kunci: 'dies',
     ketuplak: 'int1',
-    nama: 'Dies Natalis HMIF ke-12 — Malam Puncak',
+    nama: 'Dies Natalis HMIF ke-12 - Malam Puncak',
     tema: 'Satu Langkah, Seribu Karya',
     gambaran: [
       'Dies Natalis HMIF adalah peringatan tahunan berdirinya Himpunan Mahasiswa Informatika. Pada tahun kedua belas ini, malam puncak dirancang sebagai ruang bertemu seluruh keluarga besar Informatika UNTIRTA: pengurus, anggota, alumni, dan dosen.',
@@ -111,7 +111,7 @@ const ACARA: IsiAcara[] = [
   {
     kunci: 'sync',
     ketuplak: 'eks1',
-    nama: 'SYNCHRONIZE 2026 — Seminar Nasional Teknologi',
+    nama: 'SYNCHRONIZE 2026 - Seminar Nasional Teknologi',
     tema: 'Kecerdasan Buatan untuk Indonesia Tangguh',
     gambaran: [
       'SYNCHRONIZE adalah seminar nasional tahunan HMIF yang mempertemukan mahasiswa dengan praktisi dan akademisi di bidang teknologi informasi. Edisi 2026 mengangkat kecerdasan buatan dan dampaknya bagi dunia kerja dan masyarakat.',
@@ -130,8 +130,8 @@ const ACARA: IsiAcara[] = [
       ],
     },
     sesi: [
-      { sesi: 'Hari 1 — Seminar', hari: 12, waktu: '08.00 WIB s.d. 16.00 WIB', tempat: AULA },
-      { sesi: 'Hari 2 — Pameran dan jejaring', hari: 13, waktu: '09.00 WIB s.d. 14.00 WIB', tempat: 'Lobi Gedung Fakultas Teknik' },
+      { sesi: 'Hari 1 - Seminar', hari: 12, waktu: '08.00 WIB s.d. 16.00 WIB', tempat: AULA },
+      { sesi: 'Hari 2 - Pameran dan jejaring', hari: 13, waktu: '09.00 WIB s.d. 14.00 WIB', tempat: 'Lobi Gedung Fakultas Teknik' },
     ],
     sasaran: { uraian: ['Mahasiswa Informatika, siswa SMA/SMK se-Banten, dan masyarakat umum.'], estimasi: 200, kelompok: null },
     kondisi: [
@@ -150,8 +150,8 @@ const ACARA: IsiAcara[] = [
     rundown: [
       { hari: 12, mulai: '08.00', selesai: '09.00', acara: 'Registrasi peserta', ket: 'Panitia Acara' },
       { hari: 12, mulai: '09.00', selesai: '10.00', acara: 'Pembukaan dan sambutan', ket: 'Wakil Dekan III' },
-      { hari: 12, mulai: '10.00', selesai: '12.00', acara: 'Sesi 1 — AI generatif di industri', ket: 'Dr. Rina Kartika, M.Kom.' },
-      { hari: 12, mulai: '13.00', selesai: '15.00', acara: 'Sesi 2 — Produk AI bertanggung jawab', ket: 'Bayu Setiadi, S.T., M.T.' },
+      { hari: 12, mulai: '10.00', selesai: '12.00', acara: 'Sesi 1 - AI generatif di industri', ket: 'Dr. Rina Kartika, M.Kom.' },
+      { hari: 12, mulai: '13.00', selesai: '15.00', acara: 'Sesi 2 - Produk AI bertanggung jawab', ket: 'Bayu Setiadi, S.T., M.T.' },
       { hari: 12, mulai: '15.00', selesai: '16.00', acara: 'Diskusi panel dan penutupan', ket: 'Moderator' },
       { hari: 13, mulai: '09.00', selesai: '14.00', acara: 'Pameran proyek dan jejaring', ket: 'Panitia Perlengkapan' },
     ],
@@ -193,8 +193,8 @@ const ACARA: IsiAcara[] = [
       ],
     },
     sesi: [
-      { sesi: 'Hari 1 — Materi', hari: 41, waktu: '08.00 WIB s.d. 17.00 WIB', tempat: AULA },
-      { sesi: 'Hari 2 — Simulasi', hari: 42, waktu: '08.00 WIB s.d. 16.00 WIB', tempat: AULA },
+      { sesi: 'Hari 1 - Materi', hari: 41, waktu: '08.00 WIB s.d. 17.00 WIB', tempat: AULA },
+      { sesi: 'Hari 2 - Simulasi', hari: 42, waktu: '08.00 WIB s.d. 16.00 WIB', tempat: AULA },
     ],
     sasaran: { uraian: ['Mahasiswa baru angkatan 2026.'], estimasi: 80, kelompok: 8 },
     kondisi: [
@@ -213,8 +213,8 @@ const ACARA: IsiAcara[] = [
     ],
     rundown: [
       { hari: 41, mulai: '08.00', selesai: '09.00', acara: 'Registrasi dan pembukaan', ket: 'Panitia Acara' },
-      { hari: 41, mulai: '09.00', selesai: '12.00', acara: 'Materi 1 — Kepemimpinan dan organisasi', ket: 'Pemateri' },
-      { hari: 41, mulai: '13.00', selesai: '17.00', acara: 'Materi 2 — Manajemen waktu dan komunikasi', ket: 'Pemateri' },
+      { hari: 41, mulai: '09.00', selesai: '12.00', acara: 'Materi 1 - Kepemimpinan dan organisasi', ket: 'Pemateri' },
+      { hari: 41, mulai: '13.00', selesai: '17.00', acara: 'Materi 2 - Manajemen waktu dan komunikasi', ket: 'Pemateri' },
       { hari: 42, mulai: '08.00', selesai: '14.00', acara: 'Simulasi kepanitiaan', ket: 'Fasilitator kelompok' },
       { hari: 42, mulai: '14.00', selesai: '16.00', acara: 'Presentasi dan penutupan', ket: 'Panitia Acara' },
     ],

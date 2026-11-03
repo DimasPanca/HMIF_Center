@@ -68,3 +68,7 @@ desktop.ini
 !.vscode/settings.json
 *.swp
 *~
+
+# Berkas kerja skill design-taste-frontend (arah, tangkapan layar inspeksi)
+.taste-skill/
+.playwright-cli/

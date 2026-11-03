@@ -124,7 +124,7 @@ const BERKAS_STORAGE = {
 };
 
 describe('backup-service: modul & dump', () => {
-  it('12 modul PRD F-16.1, tanpa tabel ganda, tidak memuat tabel yang dikecualikan', () => {
+  it('12 modul PRD F-16.1 + formulir (ADR-038), tanpa tabel ganda, tidak memuat tabel yang dikecualikan', () => {
     expect(DAFTAR_MODUL).toEqual([
       'users',
       'periode',
@@ -137,7 +137,8 @@ describe('backup-service: modul & dump', () => {
       'surat',
       'notulensi',
       'pengurus',
-      'audit-log',
+            'audit-log',
+      'formulir',
     ]);
     const semua = Object.values(MODUL_BACKUP).flat();
     expect(new Set(semua).size).toBe(semua.length);

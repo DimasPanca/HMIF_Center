@@ -1,7 +1,7 @@
 'use client';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { CalendarRange, Filter, Layers3, RotateCcw } from 'lucide-react';
+import { Filter, Layers3, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { GanttChart } from '@/components/gantt/GanttChart';
@@ -272,30 +272,23 @@ export function MasterGantt({
         Status pembaruan langsung: {koneksi}
       </span>
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end">
-        <div className="flex items-start gap-3">
-          <span
-            className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-[var(--primary-subtle)] text-[var(--primary)]"
-            aria-hidden="true"
-          >
-            <CalendarRange className="size-5" />
-          </span>
-          <div>
-            <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
-              Kalender bersama
-            </p>
-            <h1 id="master-gantt-title" className="mt-0.5 text-2xl font-semibold text-primary">
-              Timeline program kerja HMIF
-            </h1>
-            <p className="mt-1 max-w-2xl text-[13px] leading-[18px] text-secondary">
-              Seluruh proker yang disetujui dan berjalan pada periode aktif.
-            </p>
-          </div>
+        {/* ADR-060: judul tenang gaya Linear — tanpa label kapital kecil dan ikon berkotak. */}
+        <div>
+          <h2 id="master-gantt-title" className="text-lg font-semibold text-primary">
+            Kalender bersama
+          </h2>
+          <p className="mt-0.5 max-w-2xl text-[13px] leading-[18px] text-secondary">
+            Timeline seluruh program kerja yang disetujui dan berjalan pada periode aktif.
+          </p>
         </div>
 
         {modeDaftarHp ? null : (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="w-32 space-y-1">
-            <Label htmlFor="master-gantt-skala">Skala</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* ADR-061: kontrol tampilan sebaris, label di samping — bukan kotak berlabel besar. */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="master-gantt-skala" className="text-[13px] font-normal text-secondary">
+              Skala
+            </Label>
             <Select
               id="master-gantt-skala"
               data-testid="master-gantt-skala"
@@ -331,12 +324,13 @@ export function MasterGantt({
       ) : null}
 
       <PanelFilterHp jumlahAktif={[departemenId, kategori, status].filter((v) => v !== SEMUA).length}>
-      <div
-        data-testid="master-gantt-filter"
-        className="grid gap-2 rounded-md border border-default bg-panel p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end"
-      >
-        <div className="space-y-1">
-          <Label htmlFor="master-gantt-departemen">Departemen</Label>
+      {/* Filter sebaris tanpa kotak; label tetap ada untuk pembaca layar (pilihan "Semua …" sudah
+          menjelaskan dirinya secara visual). */}
+      <div data-testid="master-gantt-filter" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="sm:w-52">
+          <Label htmlFor="master-gantt-departemen" className="sr-only">
+            Departemen
+          </Label>
           <Select
             id="master-gantt-departemen"
             data-testid="master-gantt-departemen"
@@ -352,8 +346,10 @@ export function MasterGantt({
             ))}
           </Select>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="master-gantt-kategori">Kategori</Label>
+        <div className="sm:w-44">
+          <Label htmlFor="master-gantt-kategori" className="sr-only">
+            Kategori
+          </Label>
           <Select
             id="master-gantt-kategori"
             data-testid="master-gantt-kategori"
@@ -367,8 +363,10 @@ export function MasterGantt({
             <option value="RESPONSIF">Responsif</option>
           </Select>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="master-gantt-status">Status</Label>
+        <div className="sm:w-44">
+          <Label htmlFor="master-gantt-status" className="sr-only">
+            Status
+          </Label>
           <Select
             id="master-gantt-status"
             data-testid="master-gantt-status"

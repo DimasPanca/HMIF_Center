@@ -265,7 +265,7 @@ async function susunImport(k: Klien, kepanitiaanId: string, matriks: string[][],
     periksaTambahan: (d, nomor) => {
       if (d.nim && nimAda.has(d.nim)) {
         terdaftar.add(nomor);
-        return [{ tingkat: 'PERINGATAN', kolom: 'nim', pesan: `NIM ${d.nim} sudah terdaftar — barisnya akan diperbarui.` }];
+        return [{ tingkat: 'PERINGATAN', kolom: 'nim', pesan: `NIM ${d.nim} sudah terdaftar - barisnya akan diperbarui.` }];
       }
       return [];
     },
@@ -327,7 +327,7 @@ export async function simpanImportPeserta(
       await tx.peserta.update({ where: { id: idLama }, data });
       laporan.diperbarui++;
     } else if (d.nim && nimBerkas.has(d.nim)) {
-      laporan.dilewati.push({ nomor: b.nomor, alasan: `NIM ${d.nim} ganda di berkas — baris pertama yang dipakai.` });
+      laporan.dilewati.push({ nomor: b.nomor, alasan: `NIM ${d.nim} ganda di berkas - baris pertama yang dipakai.` });
     } else {
       if (d.nim) nimBerkas.add(d.nim);
       baru.push({ kepanitiaan_id: kepanitiaanId, no_urut: ++no, ...data });

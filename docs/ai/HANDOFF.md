@@ -65,6 +65,53 @@ b30f61d T-106 (fondasi data): notulensi rapat — service, sanitasi, DOCX, RLS, 
 
 ## 2. Yang paling baru selesai
 
+### Rombak desain v2 Tahap 1: gaya Linear, Guide, Dhana, Lapor bug (2026-11-02, permintaan pemilik)
+
+Keputusan di **ADR-060**; status & rencana lengkap di `docs/ai/CHECKPOINT_REDESAIN.md` (baca itu
+untuk melanjutkan). Skill desain terpasang di `.claude/skills/`. `GEMINI_API_KEY` hanya di
+`.env.local` (dan perlu diisi di Vercel). Migrasi `054_laporan_bug.sql` sudah diterapkan ke DB dummy
+tanpa `db:reset` (keputusan pemilik).
+
+### Rombak tampilan: acara per fase, jalur dokumen, beranda tugas dulu (2026-11-01, permintaan pemilik)
+
+Keputusan di **ADR-039**. Ringkasnya:
+
+- Ruang kerja acara: 9 tab → 4 fase (Ikhtisar / Persiapan: TOR·RAB·Proposal / Pelaksanaan:
+  Divisi·Gantt·Formulir / Laporan: Nota·LPJ) di `components/acara/TabNav.tsx`. `?tab=` lama tetap
+  berlaku; slug fase membuka bagian pertamanya.
+- Ikhtisar: jalur dokumen TOR→LPJ dengan satu langkah "berikutnya" (`lib/acara/jalur.ts` murni +
+  `jalur-data.ts`), tugas saya (kartu kanban milik pengguna di acara itu), form yang sedang dibuka.
+  Kepala acara: hitung mundur, tema, kalimat peran.
+- Daftar acara: "Berjalan dan mendatang" (panitia didahulukan) + "Sudah lewat" terlipat.
+- Beranda: sapaan → panel peran → kalender bersama; kartu kosong diringkas jadi satu baris.
+- Gantt milik acara/divisi: remah roti kembali ke acara.
+- Audit HP 375 px seluruh halaman utama Sekum: tidak ada yang meluber.
+
+### Formulir HMIF Center — pengganti Google Form (2026-11-01, permintaan pemilik)
+
+Keputusan pemilik (sesi tanya-jawab) tercatat di **ADR-038**; kontrak teknis di
+`docs/ai/FORM_CONTRACT.md`. Ringkasnya: kategori wajib (Pendaftaran/Evaluasi terikat acara,
+Oprec/Pendataan organisasi, Lainnya bebas), 13 tipe pertanyaan + bagian + logika lompat, akses
+PUBLIK/INTERNAL per form, anonim, batas waktu & kuota, unggah berkas (privat), template global
+Sekum/Admin.
+
+- DB: migrasi `052_formulir.sql` + `053_formulir_peran_positif.sql`, tes `supabase/tests/052_formulir.sql`.
+  Respons TIDAK punya policy INSERT — hanya server (`lib/form/respons.ts kirimRespons`).
+- Server: `lib/form/{skema,jawaban,akses,service,respons,template,template-bawaan}.ts`.
+  Validasi jawaban (`jawaban.ts`) dipakai klien & server.
+- Integrasi: Pendaftaran → baris `peserta` otomatis; Pendataan → tombol "Terapkan" (Sekum/Admin)
+  upsert `pengurus` by NIM; Oprec → `status_seleksi`.
+- Rute: `/form`, `/form/baru` (wizard 3 langkah), `/form/{id}` (editor, auto-save 1 dtk),
+  `/form/{id}/respons`, `/form/template[/{id}|/baru]`, publik `/f/{token}` + `/api/f/{token}`
+  (rate limit 20/jam/IP/form, honeypot `situs_web`). Tab acara ke-9 "Formulir" (`?tab=formulir`).
+  Menu "Formulir" di sidebar Ketua/Wakil/Sekum/Admin, dan Bendum/Kadept/Anggota bila panitia.
+- **Batas unggah 4 MB/berkas, 4,4 MB/kiriman** — badan permintaan Vercel maks 4,5 MB; foto
+  dikompres di peramban (`IsiForm kecilkanGambar`).
+- **Template KT1 masih kerangka** (nama + NIM). Isi aslinya menyusul dari pemilik — isi lewat
+  `/form/template` (UI) atau ubah `TEMPLATE_BAWAAN` (hanya menyemai bila nama belum ada).
+- Gate: `e2e/formulir.spec.ts` (desktop + mobile), `lib/form/__tests__/*`, menu test.
+- Berikutnya yang disepakati: **rombak tampilan/UX** (psikologi pengguna, isi halaman acara).
+
 ### Sidebar per peran, surat hanya Sekum, HP tanpa geser (2026-10-19, permintaan pemilik)
 
 Pemilik mencoba data demo di HP dan meminta: tampilan HP muat tanpa geser ke samping (huruf

@@ -1,4 +1,4 @@
-# Panduan Ketua Umum — HMIF Center
+# Panduan Ketua Umum - HMIF Center
 
 Untuk **Ketua Umum HMIF**: menyetujui program kerja dan surat, memantau
 seluruh departemen dari Beranda, menyetujui LPJ akhir, dan menyediakan tanda
@@ -10,7 +10,7 @@ tangan untuk surat resmi.
 ## 1. Masuk dan Beranda
 
 1. Buka HMIF Center, isi **Email** dan **Kata sandi**, klik **Masuk**.
-2. Beranda menampilkan **Master Gantt** — timeline seluruh proker yang disetujui
+2. Beranda menampilkan **Master Gantt** - timeline seluruh proker yang disetujui
    dan berjalan, dikelompokkan per departemen. Garis biru "Hari ini" menandai
    tanggal sekarang; bagian gelap pada bar adalah Hari-H.
 3. Ubah **Skala** (Minggu/Bulan/Kuartal), saring per departemen, kategori, atau
@@ -18,7 +18,7 @@ tangan untuk surat resmi.
 4. Indikator **Langsung terhubung** di atas berarti perubahan proker dari
    pengurus lain muncul otomatis tanpa memuat ulang halaman.
 
-![Beranda Ketua — Master Gantt](img/beranda-ketua.png)
+![Beranda Ketua - Master Gantt](img/beranda-ketua.png)
 
 Gulir ke bawah untuk panel Ketua: **Antrian approval**, **Kendala kritis**
 seluruh departemen, **Ringkasan keuangan** seluruh acara, dan **Aktivitas
@@ -58,15 +58,15 @@ terbit dapat diunduh di halaman yang sama (ADR-036).
    Hari-H, penanggung jawab, estimasi peserta & anggaran, sumber dana, dan
    rencana kepanitiaan.
 3. Tentukan keputusan:
-   - **Setujui** — sistem menjalankan pemeriksaan bentrok jadwal terakhir.
+   - **Setujui** - sistem menjalankan pemeriksaan bentrok jadwal terakhir.
      Proker *terjadwal* yang disetujui **mengunci kalender** pada rentangnya,
      sehingga departemen lain tidak dapat mengajukan acara besar di tanggal
      yang sama. Untuk acara besar, kepanitiaan dan ruang kerjanya terbentuk
      otomatis.
-   - **Minta revisi** — proker kembali ke pengusul untuk diperbaiki.
-   - **Tolak** — proker ditutup.
+   - **Minta revisi** - proker kembali ke pengusul untuk diperbaiki.
+   - **Tolak** - proker ditutup.
 4. Untuk **Tolak** dan **Minta revisi**, isi **Alasan penolakan atau catatan
-   revisi** — wajib, dan dibaca langsung oleh pengusul.
+   revisi** - wajib, dan dibaca langsung oleh pengusul.
 
 ![Detail approval proker](img/proker-approval-detail.png)
 
@@ -80,7 +80,7 @@ pengusul menggeser tanggal.
 
 1. Buka **Persuratan → Antrian Approval**.
 2. Buka surat untuk melihat pratinjaunya.
-3. Klik **Setujui** — nomor surat dialokasikan otomatis dan berurutan, lalu
+3. Klik **Setujui** - nomor surat dialokasikan otomatis dan berurutan, lalu
    dokumen DOCX dibuat dengan tanda tangan Ketua Himpunan. Surat berstatus **Terbit**
    dan dapat diunduh pembuatnya (**Unduh DOCX**).
 4. Atau **Tolak** dan tulis alasannya; surat kembali ke pembuat untuk
@@ -98,7 +98,7 @@ terbit tidak pernah dipakai ulang, termasuk bila suratnya kemudian dibatalkan.
 3. Tanda tangan ini dipasang pada **setiap** surat resmi HMIF, siapa pun yang
    menyetujuinya (Ketua, Wakil, atau Sekum). Selama belum diunggah, surat
    tidak dapat terbit dan persetujuan berhenti dengan pesan "… (Ketua
-   Himpunan) belum mengunggah tanda tangan" — unggah dulu, lalu setujui lagi.
+   Himpunan) belum mengunggah tanda tangan" - unggah dulu, lalu setujui lagi.
 
 ## 6. LPJ akhir acara
 
@@ -116,4 +116,4 @@ terbit tidak pernah dipakai ulang, termasuk bila suratnya kemudian dibatalkan.
 - **Departemen → Kanban/Kendala**, serta tab **RAB/LPJ** di halaman acara,
   dapat Anda pantau.
 - **Audit Log** (lewat pencarian **Ctrl/⌘ K**) mencatat setiap perubahan
-  data — siapa, kapan, dan apa.
+  data - siapa, kapan, dan apa.

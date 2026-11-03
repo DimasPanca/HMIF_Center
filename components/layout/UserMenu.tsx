@@ -43,7 +43,8 @@ export function UserMenu({ email, nama, roles }: UserMenuProps) {
             </p>
           </div>
         </div>
-        <form onSubmit={logout} className="pt-1">
+        {/* action asli: tetap keluar walau ditekan sebelum hidrasi selesai. */}
+        <form action="/api/auth/logout" method="post" onSubmit={logout} className="pt-1">
           <button
             type="submit"
             data-testid="logout-submit"

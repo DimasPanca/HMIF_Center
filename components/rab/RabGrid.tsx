@@ -265,7 +265,17 @@ function Grid({ awal, fokusDivisi }: { awal: DataRab; fokusDivisi?: string }) {
                   />
                   {terbukaSection ? (
                     <div className="rab-kartu-hp px-2 pb-2 md:overflow-x-auto">
-                      <table className="w-full border-collapse md:min-w-[720px]">
+                      {/* ADR-061: lebar kolom tetap — Jumlah/Harga/Total sejajar di semua bagian. */}
+                      <table className="w-full border-collapse md:min-w-[720px] md:table-fixed">
+                        <colgroup>
+                          <col className="w-12" />
+                          <col />
+                          <col className="w-36" />
+                          <col className="w-36" />
+                          <col className="w-36" />
+                          <col className="w-56" />
+                          <col className="w-9" />
+                        </colgroup>
                         <thead>
                           <tr className="text-left text-[11px] font-semibold tracking-wide text-tertiary uppercase">
                             <th className="px-2 py-1">No</th>

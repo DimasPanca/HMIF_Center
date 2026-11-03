@@ -149,7 +149,7 @@ export async function setujuiProker(
     return {
       ok: false,
       kode: 'STATUS_TIDAK_SESUAI',
-      pesan: `Proker berstatus ${proker.status} — hanya yang menunggu approval dapat disetujui.`,
+      pesan: `Proker berstatus ${proker.status} - hanya yang menunggu approval dapat disetujui.`,
     };
   }
 
@@ -218,7 +218,7 @@ export async function tolakRevisi(
     return {
       ok: false,
       kode: 'STATUS_TIDAK_SESUAI',
-      pesan: `Proker berstatus ${proker.status} — hanya revisi yang menunggu dapat ditolak di sini.`,
+      pesan: `Proker berstatus ${proker.status} - hanya revisi yang menunggu dapat ditolak di sini.`,
     };
   }
 

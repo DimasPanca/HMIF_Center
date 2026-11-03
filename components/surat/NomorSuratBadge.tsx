@@ -25,7 +25,7 @@ import { useToast } from '@/components/ui/toast';
 import { adalahNomorSementara } from '@/lib/surat/nomor';
 import { cn } from '@/lib/utils';
 
-export const TEKS_SEMENTARA = 'nomor sementara — ditetapkan saat disetujui';
+export const TEKS_SEMENTARA = 'nomor sementara - ditetapkan saat disetujui';
 
 type Toaster = Pick<ReturnType<typeof useToast>, 'success' | 'error'>;
 

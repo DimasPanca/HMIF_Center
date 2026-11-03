@@ -14,7 +14,7 @@ export const AKAR = path.resolve(import.meta.dirname, '..', '..');
 
 export type Sql = ReturnType<typeof postgres>;
 
-/** Kata sandi seluruh akun demo — ditampilkan di akhir proses. */
+/** Kata sandi seluruh akun demo - ditampilkan di akhir proses. */
 export const PASSWORD_DEMO = 'DemoHMIF2026';
 export const DOMAIN_DEMO = 'demo.hmif.test';
 
@@ -92,7 +92,7 @@ export const tidur = (ms: number): Promise<void> => new Promise((r) => setTimeou
 
 /**
  * Menjalankan `fn` dalam transaksi yang menyetel `app.user_id` dst., persis
- * seperti `withAuditContext` — supaya baris audit hasil seed SQL punya pelaku
+ * seperti `withAuditContext` - supaya baris audit hasil seed SQL punya pelaku
  * (INV-07) dan jejaknya terbaca di halaman Audit Log.
  */
 export async function sebagai<T>(sql: Sql, userId: string | null, periodeId: string, fn: (tx: Sql) => Promise<T>): Promise<T> {

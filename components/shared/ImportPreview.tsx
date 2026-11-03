@@ -87,9 +87,9 @@ export function ImportPreview({
         <summary className="cursor-pointer px-3 py-2 text-[13px] font-medium text-primary">
           Pemetaan kolom
           {hilang.length ? (
-            <span className="ml-2 text-danger">— {hilang.length} kolom wajib belum dipetakan</span>
+            <span className="ml-2 text-danger"> - {hilang.length} kolom wajib belum dipetakan</span>
           ) : (
-            <span className="ml-2 text-secondary">— terdeteksi otomatis, ubah bila keliru</span>
+            <span className="ml-2 text-secondary"> - terdeteksi otomatis, ubah bila keliru</span>
           )}
         </summary>
         <div className="grid gap-3 border-t border-subtle p-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -106,7 +106,7 @@ export function ImportPreview({
                 error={hilang.includes(k.kunci) ? 'Wajib dipetakan.' : undefined}
                 onChange={(e) => onUbahPeta(k.kunci, Number(e.target.value))}
               >
-                <option value="-1">— tidak dipakai —</option>
+                <option value="-1"> - tidak dipakai - </option>
                 {header.map((h, i) => (
                   <option key={i} value={i}>
                     {h || `(kolom ${i + 1} tanpa judul)`}

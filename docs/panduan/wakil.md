@@ -1,4 +1,4 @@
-# Panduan Wakil Ketua — HMIF Center
+# Panduan Wakil Ketua - HMIF Center
 
 Untuk **Wakil Ketua HMIF**: ikut menyetujui program kerja dan surat bersama
 Ketua, serta memantau jalannya kepengurusan.
@@ -52,13 +52,13 @@ terbit dapat diunduh di halaman yang sama (ADR-036).
 
 ![Detail approval proker](img/proker-approval-detail.png)
 
-Satu proker cukup diputuskan oleh satu penyetuju — bila Ketua sudah
+Satu proker cukup diputuskan oleh satu penyetuju - bila Ketua sudah
 memutuskan, proker itu hilang dari antrian Anda.
 
 ## 4. Menyetujui surat
 
 1. Buka **Persuratan → Antrian Approval**, buka surat, periksa pratinjaunya.
-2. **Setujui** — nomor surat dialokasikan otomatis dan dokumen DOCX terbit
+2. **Setujui** - nomor surat dialokasikan otomatis dan dokumen DOCX terbit
    dengan tanda tangan Ketua Himpunan.
 3. Atau **Tolak** dengan alasan; surat kembali ke pembuatnya.
 
@@ -73,4 +73,4 @@ memutuskan, proker itu hilang dari antrian Anda.
    Disetujui, Berjalan, Perlu revisi).
 2. Saring per departemen, kategori, atau status; klik nama proker untuk detail.
 3. **Kalender Ketersediaan** memperlihatkan rentang yang sudah terkunci acara
-   lain — berguna saat menengahi bentrok jadwal antar-departemen.
+   lain - berguna saat menengahi bentrok jadwal antar-departemen.

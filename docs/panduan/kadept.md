@@ -1,4 +1,4 @@
-# Panduan Kepala Departemen — HMIF Center
+# Panduan Kepala Departemen - HMIF Center
 
 Untuk **Kepala Departemen (Kadept)**: mengajukan program kerja departemen,
 memeriksa ketersediaan kalender, mengelola Gantt, Kanban, dan kendala
@@ -10,8 +10,8 @@ departemen.
 ## 1. Masuk dan Beranda
 
 1. Buka HMIF Center, isi **Email** dan **Kata sandi**, klik **Masuk**.
-2. Beranda menampilkan Master Gantt seluruh proker HMIF — gunakan saringan
-   **Departemen** untuk fokus ke departemen Anda — lalu panel Kadept di bawahnya
+2. Beranda menampilkan Master Gantt seluruh proker HMIF - gunakan saringan
+   **Departemen** untuk fokus ke departemen Anda - lalu panel Kadept di bawahnya
    (proker departemen, ringkasan Kanban, kendala terbuka, deadline terdekat).
 3. Tekan `Ctrl`/`⌘` + `K` untuk mencari dan melompat ke halaman mana pun.
 
@@ -44,27 +44,27 @@ terbit dapat diunduh di halaman yang sama (ADR-036).
 
 1. Buka **Program Kerja → Daftar Proker**, klik **Tambah proker** di kanan atas
    (atau `Ctrl`/`⌘` + `K` → **Buat Proker Baru**).
-2. **Informasi Dasar** — departemen terisi otomatis. Pilih **Kategori**:
-   - *Terjadwal* — acara besar dengan masa persiapan dan Hari-H; mengunci
+2. **Informasi Dasar** - departemen terisi otomatis. Pilih **Kategori**:
+   - *Terjadwal* - acara besar dengan masa persiapan dan Hari-H; mengunci
      kalender setelah disetujui dan otomatis membentuk kepanitiaan.
-   - *Berkala* — kegiatan rutin (setiap minggu/bulan).
-   - *Responsif* — kegiatan yang muncul sesuai kebutuhan.
+   - *Berkala* - kegiatan rutin (setiap minggu/bulan).
+   - *Responsif* - kegiatan yang muncul sesuai kebutuhan.
    Isi nama, deskripsi, tujuan, sasaran, dan penanggung jawab.
-3. **Penjadwalan** — pilih tanggal mulai persiapan dan Hari-H. Untuk proker
+3. **Penjadwalan** - pilih tanggal mulai persiapan dan Hari-H. Untuk proker
    terjadwal, masa persiapan wajib **15–45 hari** sebelum Hari-H.
    Bila rentang Anda menabrak acara yang sudah mengunci kalender, muncul
    peringatan **Konflik jadwal** beserta nama proker dan departemen yang
    bertabrakan, dan tombol **Lanjut** tertahan. **Geser tanggal** sampai
-   peringatan hilang — lihat
+   peringatan hilang - lihat
    **Kalender Ketersediaan** (bagian 4) untuk mencari rentang kosong.
-4. **Anggaran & Kebutuhan** — estimasi anggaran, peserta, sumber dana,
+4. **Anggaran & Kebutuhan** - estimasi anggaran, peserta, sumber dana,
    kebutuhan barang dan ruangan.
-5. **Kepanitiaan** (terjadwal) — nama acara, tema, divisi, dan anggotanya.
-6. **Gantt Chart** — rencana timeline awal per fase.
-7. **Tinjau & Ajukan** — periksa ringkasan, lalu **Ajukan proker**. Sistem
+5. **Kepanitiaan** (terjadwal) - nama acara, tema, divisi, dan anggotanya.
+6. **Gantt Chart** - rencana timeline awal per fase.
+7. **Tinjau & Ajukan** - periksa ringkasan, lalu **Ajukan proker**. Sistem
    memeriksa konflik sekali lagi; proker masuk **Antrian Approval** Ketua/Wakil.
 
-Draf tersimpan otomatis di setiap langkah — Anda dapat berhenti dan melanjutkan
+Draf tersimpan otomatis di setiap langkah - Anda dapat berhenti dan melanjutkan
 nanti dari Daftar Proker.
 
 Bila Ketua meminta **revisi**, proker berstatus *Perlu revisi* beserta
@@ -86,7 +86,7 @@ catatannya: buka proker, perbaiki, ajukan lagi.
 2. Perubahan kecil (nama, deskripsi, tujuan, sasaran, estimasi, penanggung
    jawab, sumber dana) langsung tersimpan;
    status dan kunci kalender tidak berubah.
-3. Perubahan besar — **tanggal apa pun, kategori, atau departemen** — diajukan
+3. Perubahan besar - **tanggal apa pun, kategori, atau departemen** - diajukan
    sebagai **revisi** dan menunggu persetujuan Ketua/Wakil (sistem memberi
    peringatan sebelum Anda menyimpan). Selama menunggu, jadwal lama tetap
    berlaku dan tetap mengunci kalender.

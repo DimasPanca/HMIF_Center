@@ -146,7 +146,7 @@ function Kalender({
 
       <div role="grid" aria-label="Kalender booking" className="mt-3 hidden grid-cols-7 gap-px overflow-hidden rounded-sm border border-default bg-[var(--border-default)] sm:grid">
         {NAMA_HARI.map((h) => (
-          <div key={h} role="columnheader" className="bg-subtle px-2 py-1 text-[11px] font-semibold text-tertiary uppercase">
+          <div key={h} role="columnheader" className="bg-subtle px-2 py-1 text-[12px] font-medium text-tertiary">
             {h}
           </div>
         ))}

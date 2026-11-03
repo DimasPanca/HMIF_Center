@@ -345,7 +345,7 @@ export async function prosesBackup(
     if ('sql' in dump) await unggah(JALUR.dump, gzipSync(dump.sql), MIME.gzip);
     else {
       keterbatasan.push(
-        `pg_dump tidak dipakai (${dump.gagal}); dump berisi DATA per tabel tanpa DDL — ` +
+        `pg_dump tidak dipakai (${dump.gagal}); dump berisi DATA per tabel tanpa DDL - ` +
           `pulihkan ke database yang sudah dimigrasi sampai ${migrasi}.`,
       );
     }

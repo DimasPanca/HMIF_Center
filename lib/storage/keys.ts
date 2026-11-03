@@ -123,6 +123,12 @@ export const keys = {
   kendalaLampiran: (kendalaId: string, lampiranId: string, ekstensi: string): string =>
     `kendala/${aman(kendalaId, 'kendalaId')}/${aman(lampiranId, 'lampiranId')}.${aman(ekstensi, 'ekstensi')}`,
 
+  // --- Berkas jawaban formulir (ADR-038) — PRIVAT, bukan di PREFIX_PUBLIK ---
+  /** Lampiran tangkapan layar laporan bug (ADR-060) — privat, hanya pelapor & Admin. */
+  laporanBug: (laporanId: string, ekstensi: EkstensiGambar): string => `laporan-bug/${aman(laporanId, 'laporanId')}.${ekstensi}`,
+  formBerkas: (formId: string, responsId: string, berkasId: string, ekstensi: 'jpg' | 'png' | 'webp' | 'pdf'): string =>
+    `form/${aman(formId, 'formId')}/${aman(responsId, 'responsId')}/${aman(berkasId, 'berkasId')}.${ekstensi}`,
+
   // --- Template dan aset ---------------------------------------------------
   template: (templateId: string, versi: number): string =>
     `template/${aman(templateId, 'templateId')}_v${Math.trunc(versi)}.docx`,

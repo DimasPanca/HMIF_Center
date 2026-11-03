@@ -129,7 +129,7 @@ function keObjek(nilai: NilaiJson): Record<string, NilaiJson | undefined> {
 }
 
 function teksNilai(nilai: NilaiJson | undefined): string {
-  if (nilai === undefined) return '—';
+  if (nilai === undefined) return '-';
   if (nilai === null) return 'null';
   if (typeof nilai === 'string') return nilai || '(kosong)';
   return JSON.stringify(nilai, null, 2);
@@ -153,7 +153,7 @@ function DetailPerubahan({ item }: { item: ItemAudit }) {
 
   return (
     <div className="space-y-2" data-testid="audit-detail-perubahan">
-      <div className="grid grid-cols-[minmax(7rem,0.7fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 px-3 text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+      <div className="grid grid-cols-[minmax(7rem,0.7fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 px-3 text-[12px] font-medium text-tertiary">
         <span>Bidang</span>
         <span>Nilai lama</span>
         <span>Nilai baru</span>

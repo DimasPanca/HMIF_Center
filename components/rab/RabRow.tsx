@@ -123,7 +123,7 @@ export function RabRow({
                 }}
                 aria-pressed={item.total_manual}
                 aria-label={item.total_manual ? 'Kembalikan total ke hitungan otomatis' : 'Isi total secara manual'}
-                title={item.total_manual ? 'Total diisi manual — klik untuk menghitung otomatis' : 'Override total manual'}
+                title={item.total_manual ? 'Total diisi manual - klik untuk menghitung otomatis' : 'Override total manual'}
                 data-testid="rab-total-manual"
                 className="flex size-7 shrink-0 items-center justify-center rounded-sm text-tertiary hover:bg-subtle hover:text-primary"
               >

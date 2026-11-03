@@ -1,7 +1,7 @@
-# Panduan Badan Pengurus Harian (BPH) — HMIF Center
+# Panduan Badan Pengurus Harian (BPH) - HMIF Center
 
 Untuk **BPH**: memantau seluruh kegiatan himpunan tanpa mengubah data. Semua
-menu Anda berlabel **Baca** — Anda dapat membuka, mencari, dan mengunduh,
+menu Anda berlabel **Baca** - Anda dapat membuka, mencari, dan mengunduh,
 tetapi tidak menyunting.
 
 > Tangkapan layar diambil dari lingkungan demo (data contoh). Nama, tanggal,

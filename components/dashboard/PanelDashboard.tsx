@@ -1,11 +1,12 @@
-import { ArrowUpRight, CircleAlert, Inbox } from 'lucide-react';
+import { ArrowUpRight, Circle, CircleCheck, CircleDashed, CircleDot, Inbox, OctagonAlert, SignalHigh } from 'lucide-react';
 import Link from 'next/link';
 
 import { DeadlineBadge } from '@/components/shared/DeadlineBadge';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { AmbangDeadline } from '@/lib/deadline';
+import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/utils/format-rupiah';
 import { formatTanggalPendek } from '@/lib/utils/format-tanggal';
 
@@ -46,12 +47,6 @@ function formatNilai(item: ItemDashboard): string | null {
   return item.nilai.toLocaleString('id-ID');
 }
 
-function tonePrioritas(prioritas: string): BadgeTone {
-  if (prioritas === 'KRITIS' || prioritas === 'TINGGI') return 'danger';
-  if (prioritas === 'SEDANG') return 'warning';
-  return 'neutral';
-}
-
 function labelKode(nilai: string): string {
   return nilai
     .toLocaleLowerCase('id-ID')
@@ -59,36 +54,59 @@ function labelKode(nilai: string): string {
     .replace(/^./, (huruf) => huruf.toLocaleUpperCase('id-ID'));
 }
 
+/**
+ * ADR-060 — baris gaya Linear: status kartu Kanban sebagai ikon kecil di kiri, prioritas hanya
+ * bila Tinggi/Kritis, tenggat di kanan. Status lain (proker, surat, kendala) tetap teks kecil.
+ */
+const STATUS_KANBAN: Record<string, { ikon: typeof Circle; label: string; kelas: string }> = {
+  TODO: { ikon: Circle, label: 'Belum mulai', kelas: 'text-tertiary' },
+  IN_PROGRESS: { ikon: CircleDot, label: 'Dikerjakan', kelas: 'text-[var(--warning)]' },
+  REVIEW: { ikon: CircleDashed, label: 'Ditinjau', kelas: 'text-[var(--info)]' },
+  DONE: { ikon: CircleCheck, label: 'Selesai', kelas: 'text-[var(--success)]' },
+};
+
 function IsiItem({ item, tenggat }: { item: ItemDashboard; tenggat?: TenggatDashboard }) {
   const nilai = formatNilai(item);
+  const kanban = item.status ? STATUS_KANBAN[item.status] : undefined;
+  const IkonStatus = kanban?.ikon;
 
   return (
-    <div className="flex min-w-0 items-start justify-between gap-3">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] leading-[18px] font-medium text-primary">{item.label}</p>
-        {item.keterangan ? (
-          <p className="mt-0.5 truncate text-xs leading-4 text-secondary">{item.keterangan}</p>
-        ) : null}
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          {item.status ? <Badge tone="info">{labelKode(item.status)}</Badge> : null}
-          {item.prioritas ? (
-            <Badge tone={tonePrioritas(item.prioritas)}>
-              <CircleAlert data-slot="badge-icon" aria-hidden="true" />
-              {labelKode(item.prioritas)}
-            </Badge>
-          ) : null}
-          {item.deadline ? <DeadlineBadge deadline={item.deadline} ambang={tenggat?.ambang} hariIni={tenggat?.hariIni} /> : null}
-          {item.tanggal ? (
-            <span className="text-[11px] leading-4 text-tertiary">
-              {formatTanggalPendek(item.tanggal)}
-            </span>
-          ) : null}
-        </div>
-      </div>
-      {nilai ? (
-        <span className="shrink-0 text-right text-sm font-semibold text-primary">{nilai}</span>
+    <div className="flex min-w-0 items-start gap-2.5 px-1 py-0.5">
+      {IkonStatus ? (
+        <IkonStatus className={cn('mt-0.5 size-4 shrink-0', kanban.kelas)} strokeWidth={2} aria-label={kanban.label} role="img" />
       ) : null}
-      {item.href ? <ArrowUpRight className="mt-0.5 size-4 shrink-0" aria-hidden="true" /> : null}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] leading-5 font-medium text-primary">{item.label}</p>
+        {item.keterangan ? <p className="mt-0.5 truncate text-[12px] leading-4 text-secondary">{item.keterangan}</p> : null}
+        {(item.status && !kanban) || item.prioritas === 'KRITIS' || item.prioritas === 'TINGGI' || item.tanggal || item.deadline ? (
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] leading-4 text-secondary">
+            {/* HP: tenggat turun ke baris keterangan supaya judul tidak terpotong. */}
+            {item.deadline ? (
+              <span className="sm:hidden">
+                <DeadlineBadge deadline={item.deadline} ambang={tenggat?.ambang} hariIni={tenggat?.hariIni} />
+              </span>
+            ) : null}
+            {item.status && !kanban ? <span>{labelKode(item.status)}</span> : null}
+            {item.prioritas === 'KRITIS' ? (
+              <span className="inline-flex items-center gap-1 font-medium text-[var(--danger)]">
+                <OctagonAlert className="size-3.5" aria-hidden="true" /> Kritis
+              </span>
+            ) : item.prioritas === 'TINGGI' ? (
+              <span className="inline-flex items-center gap-1">
+                <SignalHigh className="size-3.5" aria-hidden="true" /> Prioritas tinggi
+              </span>
+            ) : null}
+            {item.tanggal && !item.deadline ? <span className="text-tertiary">{formatTanggalPendek(item.tanggal)}</span> : null}
+          </div>
+        ) : null}
+      </div>
+      {item.deadline ? (
+        <span className="hidden shrink-0 sm:block">
+          <DeadlineBadge deadline={item.deadline} ambang={tenggat?.ambang} hariIni={tenggat?.hariIni} />
+        </span>
+      ) : null}
+      {nilai ? <span className="shrink-0 text-right text-[14px] font-semibold tabular-nums text-primary">{nilai}</span> : null}
+      {item.href ? <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-tertiary" aria-hidden="true" /> : null}
     </div>
   );
 }
@@ -106,7 +124,7 @@ function DaftarItem({ data, tenggat }: { data: readonly ItemDashboard[]; tenggat
   return (
     <ul className="divide-y divide-[var(--border-subtle)]">
       {data.slice(0, 8).map((item) => (
-        <li key={item.id} className="py-2.5 first:pt-0 last:pb-0">
+        <li key={item.id} className="py-2 first:pt-0 last:pb-0">
           {item.href ? (
             <Link
               href={item.href}
@@ -124,6 +142,19 @@ function DaftarItem({ data, tenggat }: { data: readonly ItemDashboard[]; tenggat
 }
 
 export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardProps) {
+  // ADR-039: kartu yang kosong tidak memakan satu kotak penuh — diringkas menjadi satu
+  // baris "tidak ada yang perlu ditindak" sehingga kartu berisi naik ke atas.
+  // Kartu yang seluruh isinya sudah tampil di kartu sebelumnya (mis. "Deadline terdekat"
+  // Anggota = subset "Tugas saya") tidak diulang — data sama dua kali membingungkan.
+  const sudahTampil = new Set<string>();
+  const unik = kartu.filter((k) => {
+    if (!k.tersedia || k.data.length === 0) return true;
+    const adaBaru = k.data.some((d) => !sudahTampil.has(d.id));
+    for (const d of k.data) sudahTampil.add(d.id);
+    return adaBaru;
+  });
+  const terisi = unik.filter((k) => !k.tersedia || k.data.length > 0);
+  const kosong = unik.filter((k) => k.tersedia && k.data.length === 0);
   return (
     <section data-testid={`panel-${panel}`} aria-labelledby={`panel-${panel}-title`}>
       <div className="mb-3">
@@ -135,27 +166,54 @@ export function PanelDashboard({ kartu, panel, judul, tenggat }: PanelDashboardP
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-        {kartu.map((item) => (
-          <Card key={item.kunci} data-testid={`dashboard-card-${item.kunci}`}>
-            <CardHeader className="flex min-h-10 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 pb-3">
-              <CardTitle>{item.judul}</CardTitle>
-              {item.kunci === 'approval-antrian' && item.tersedia ? (
-                <Badge data-testid="dashboard-approval-badge" tone="warning">
-                  {item.data.length}
-                </Badge>
-              ) : null}
-            </CardHeader>
-            <CardContent className="pt-3">
-              {item.tersedia ? (
-                <DaftarItem data={item.data} tenggat={tenggat} />
-              ) : (
-                <p className="text-xs leading-4 text-secondary">{item.menunggu}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {terisi.length ? (
+        <div
+          className={cn(
+            'grid gap-3',
+            // Jumlah kolom mengikuti jumlah kartu berisi — tidak ada separuh layar yang kosong.
+            terisi.length === 2 && 'md:grid-cols-2',
+            terisi.length === 3 && 'md:grid-cols-2 xl:grid-cols-3',
+            terisi.length >= 4 && 'md:grid-cols-2 2xl:grid-cols-4',
+          )}
+        >
+          {terisi.map((item) => (
+            <Card key={item.kunci} data-testid={`dashboard-card-${item.kunci}`}>
+              <CardHeader className="flex min-h-10 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 pb-3">
+                <CardTitle>{item.judul}</CardTitle>
+                {item.kunci === 'approval-antrian' && item.tersedia ? (
+                  <Badge data-testid="dashboard-approval-badge" tone="warning">
+                    {item.data.length}
+                  </Badge>
+                ) : null}
+              </CardHeader>
+              <CardContent className="pt-3">
+                {item.tersedia ? (
+                  <DaftarItem data={item.data} tenggat={tenggat} />
+                ) : (
+                  <p className="text-xs leading-4 text-secondary">{item.menunggu}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : null}
+
+      {kosong.length ? (
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md border border-dashed border-default px-3 py-2.5 text-[13px] text-secondary',
+            terisi.length > 0 && 'mt-3',
+          )}
+        >
+          <Inbox className="size-4 shrink-0 text-tertiary" aria-hidden="true" />
+          <span>{terisi.length ? 'Tidak ada yang perlu ditindak di' : 'Semua beres - tidak ada yang perlu ditindak di'}</span>
+          {kosong.map((item) => (
+            <span key={item.kunci} data-testid={`dashboard-card-${item.kunci}`} className="rounded-full bg-subtle px-2 py-0.5 text-[12px] text-primary">
+              {item.judul}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

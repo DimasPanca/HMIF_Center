@@ -36,7 +36,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   let isi: Buffer;
   try {
-    isi = await storage.get(g.master_path); // master_path — BUKAN preview_path/thumbnail_path
+    isi = await storage.get(g.master_path); // master_path - BUKAN preview_path/thumbnail_path
   } catch (e) {
     console.error(`[images] master ${g.master_path} tidak terbaca`, e);
     return gagal('TIDAK_DITEMUKAN', 'Berkas gambar tidak tersedia.', { status: 404, headers: TANPA_CACHE });

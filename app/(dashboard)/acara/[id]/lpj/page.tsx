@@ -25,8 +25,8 @@ const POLA_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 
 const LABEL_STATUS: Record<string, string> = {
   DRAFT: 'Draft',
-  DIAJUKAN: 'Diajukan — menunggu Bendahara',
-  DISETUJUI_BENDUM: 'Disetujui Bendahara — menunggu Ketua',
+  DIAJUKAN: 'Diajukan - menunggu Bendahara',
+  DISETUJUI_BENDUM: 'Disetujui Bendahara - menunggu Ketua',
   FINAL: 'Final',
 };
 
@@ -104,7 +104,7 @@ function LaporanKeuangan({ a, snapshot }: { a: AnalisisLpj; snapshot: boolean })
         </div>
         <div data-testid="lpj-luar-rab">
           <h3 className="font-semibold text-warning">
-            Di luar RAB — temuan ({a.diLuarRab.length})
+            Di luar RAB - temuan ({a.diLuarRab.length})
           </h3>
           <ul className="text-secondary">
             {a.diLuarRab.map((x, i) => (

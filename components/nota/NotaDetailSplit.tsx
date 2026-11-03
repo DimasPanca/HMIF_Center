@@ -117,7 +117,7 @@ export function NotaDetailSplit({ nota, aksi }: { nota: DetailNota; aksi: React.
         {!seimbang ? (
           <p role="alert" className="text-[12px] text-danger">
             Alokasi tidak sama dengan total nota (selisih{' '}
-            {formatRupiah(Math.abs(nota.total_alokasi - nota.total_nota))}) — nota ini tidak dapat
+            {formatRupiah(Math.abs(nota.total_alokasi - nota.total_nota))}) - nota ini tidak dapat
             disetujui.
           </p>
         ) : null}

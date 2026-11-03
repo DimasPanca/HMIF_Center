@@ -1173,3 +1173,110 @@ model deadline_ringkasan {
   terlambat     Int      @default(0)
   dihitung_pada DateTime @default(now()) @db.Timestamptz(6)
 }
+
+// ---------------------------------------------------------------------------
+// Formulir (ADR-038, migrasi 052/053). Ditulis tangan: relasi hanya antar-tabel
+// formulir; FK ke periode/kepanitiaan/app_user dijaga database (kolom skalar).
+// ---------------------------------------------------------------------------
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form_template {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nama        String
+  kategori    String
+  deskripsi   String   @default("")
+  isi         Json     @default("{\"bagian\":[]}")
+  bawaan      Boolean  @default(false)
+  aktif       Boolean  @default(true)
+  dibuat_oleh String?  @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  form        form[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form {
+  id             String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  periode_id     String            @db.Uuid
+  kepanitiaan_id String?           @db.Uuid
+  kategori       String
+  judul          String
+  deskripsi      String            @default("")
+  status         String            @default("DRAF")
+  akses          String            @default("PUBLIK")
+  anonim         Boolean           @default(false)
+  satu_respons   Boolean           @default(false)
+  ditutup_pada   DateTime?         @db.Timestamptz(6)
+  kuota          Int?
+  pesan_selesai  String            @default("Terima kasih, jawaban Anda sudah tercatat.")
+  token          String            @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
+  template_id    String?           @db.Uuid
+  dibuat_oleh    String            @db.Uuid
+  dibuka_at      DateTime?         @db.Timestamptz(6)
+  created_at     DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime          @default(now()) @db.Timestamptz(6)
+  template       form_template?    @relation(fields: [template_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  bagian         form_bagian[]
+  pertanyaan     form_pertanyaan[]
+  respons        form_respons[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form_bagian {
+  id         String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  form_id    String            @db.Uuid
+  urutan     Int
+  judul      String            @default("")
+  deskripsi  String            @default("")
+  lanjut_ke  String?
+  form       form              @relation(fields: [form_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pertanyaan form_pertanyaan[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form_pertanyaan {
+  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  form_id       String         @db.Uuid
+  bagian_id     String         @db.Uuid
+  urutan        Int
+  tipe          String
+  judul         String
+  deskripsi     String         @default("")
+  wajib         Boolean        @default(false)
+  opsi          Json           @default("{}")
+  peran         String?
+  diarsipkan_at DateTime?      @db.Timestamptz(6)
+  form          form           @relation(fields: [form_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  bagian        form_bagian    @relation(fields: [bagian_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jawaban       form_jawaban[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form_respons {
+  id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  form_id         String         @db.Uuid
+  user_id         String?        @db.Uuid
+  responden_kunci String?
+  status_seleksi  String         @default("BARU")
+  integrasi       Json           @default("{}")
+  dikirim_at      DateTime       @default(now()) @db.Timestamptz(6)
+  form            form           @relation(fields: [form_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jawaban         form_jawaban[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form_jawaban {
+  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  respons_id    String          @db.Uuid
+  pertanyaan_id String          @db.Uuid
+  nilai_teks    String?
+  nilai_angka   Decimal?        @db.Decimal
+  nilai_tanggal DateTime?       @db.Date
+  nilai_waktu   DateTime?       @db.Time(6)
+  nilai_json    Json?
+  berkas        Json?
+  respons       form_respons    @relation(fields: [respons_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pertanyaan    form_pertanyaan @relation(fields: [pertanyaan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([respons_id, pertanyaan_id])
+}

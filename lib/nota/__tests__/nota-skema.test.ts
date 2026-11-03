@@ -25,7 +25,7 @@ describe('skema nota (T-101)', () => {
   it('contoh PRD: Rp50.000 + Rp25.000 pada Rp75.000 seimbang; Rp60.000 + Rp25.000 lebih Rp10.000', () => {
     expect(selisihAlokasi(75000, [baris(ITEM_A, 50000), baris(ITEM_B, 25000)])).toBe(0);
     expect(selisihAlokasi(75000, [baris(ITEM_A, 60000), baris(ITEM_B, 25000)])).toBe(10000);
-    expect(pesanSelisih(75000, [baris(ITEM_A, 60000), baris(ITEM_B, 25000)], rp)).toBe('Alokasi Rp85.000 ≠ total nota Rp75.000 — lebih Rp10.000.');
+    expect(pesanSelisih(75000, [baris(ITEM_A, 60000), baris(ITEM_B, 25000)], rp)).toBe('Alokasi Rp85.000 ≠ total nota Rp75.000 - lebih Rp10.000.');
     expect(pesanSelisih(75000, [baris(ITEM_A, 70000)], rp)).toContain('kurang Rp5.000');
   });
 

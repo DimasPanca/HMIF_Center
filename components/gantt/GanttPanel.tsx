@@ -18,12 +18,12 @@ const formatPersentase = new Intl.NumberFormat('id-ID', {
 
 function nilaiAtauStrip(value: string | undefined): string {
   const normalized = value?.trim();
-  return normalized || '—';
+  return normalized || '-';
 }
 
 function formatStatus(status: string | undefined): string {
   const normalized = status?.trim();
-  if (!normalized) return '—';
+  if (!normalized) return '-';
   if (!/^[A-Z0-9_]+$/.test(normalized)) return normalized;
 
   return normalized
@@ -37,7 +37,7 @@ function formatHariH(item: GanttDisplayItem): string {
   const start = item.hariHStart ?? item.hariHEnd;
   const end = item.hariHEnd ?? item.hariHStart;
 
-  return start && end ? formatRentangTanggal(start, end) : '—';
+  return start && end ? formatRentangTanggal(start, end) : '-';
 }
 
 function formatProgress(progress: number): string {
@@ -74,7 +74,7 @@ function GanttPanel({ item, open, onClose, className }: GanttPanelProps) {
     >
       <header className="flex min-h-14 items-start justify-between gap-3 border-b border-default px-4 py-3">
         <div className="min-w-0">
-          <p className="text-[11px] leading-[14px] font-medium tracking-wide text-tertiary uppercase">
+          <p className="text-[12px] leading-4 font-medium text-tertiary">
             Detail Gantt
           </p>
           <h2

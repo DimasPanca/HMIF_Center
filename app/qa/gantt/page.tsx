@@ -100,7 +100,7 @@ const model100Task = transformGanttRows({
     return {
       id: `task-${taskIndex}`,
       group_id: groupId,
-      nama: `Task ${taskIndex + 1} — ${groupName}`,
+      nama: `Task ${taskIndex + 1} - ${groupName}`,
       tanggal_mulai: tanggal(geser),
       tanggal_selesai: tanggal(geser + 12),
       progres: (taskIndex * 7) % 101,
@@ -129,7 +129,7 @@ async function GanttQaPage({ searchParams }: GanttQaPageProps) {
     <main className="min-h-dvh bg-app p-4 text-primary sm:p-6">
       <div className="mx-auto max-w-[96rem] space-y-4">
         <header>
-          <p className="text-[11px] font-semibold tracking-wide text-tertiary uppercase">
+          <p className="text-[12px] font-medium text-tertiary">
             Halaman verifikasi nonproduksi
           </p>
           <h1 className="mt-1 text-xl font-semibold">Harness Gantt</h1>

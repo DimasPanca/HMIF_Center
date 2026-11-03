@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     const tanggal = new Date().toISOString().slice(0, 10);
     const isi = await buatExcelArsip(
       baris,
-      `Arsip Surat HMIF — diekspor ${tanggal}${baris.length >= MAKS_EXPORT ? ` (dibatasi ${MAKS_EXPORT} baris)` : ''}`,
+      `Arsip Surat HMIF - diekspor ${tanggal}${baris.length >= MAKS_EXPORT ? ` (dibatasi ${MAKS_EXPORT} baris)` : ''}`,
     );
     return new Response(new Uint8Array(isi), {
       headers: {

@@ -86,7 +86,7 @@ export function KanbanCard({
           {kartu.checklist_selesai}/{kartu.checklist_total}
         </span>
       </div>
-      <p className="mt-2 text-[10px] font-semibold tracking-wide text-secondary uppercase">
+      <p className="mt-2 text-[11px] font-medium text-secondary">
         Prioritas {kartu.prioritas.toLowerCase()}
       </p>
       {onPindah && bolehUbah ? (

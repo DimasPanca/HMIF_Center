@@ -47,7 +47,7 @@ const BPH = ['ketua', 'wakil', 'sekum', 'bendum', 'bph'];
 const DAFTAR: SpesifikasiNotulensi[] = [
   {
     pembuat: 'sekum',
-    judul: 'Rapat Pleno Pengurus — Evaluasi Awal Periode',
+    judul: 'Rapat Pleno Pengurus - Evaluasi Awal Periode',
     hari: -21,
     mulai: '19:00',
     selesai: '21:15',
@@ -111,7 +111,7 @@ const DAFTAR: SpesifikasiNotulensi[] = [
     hari: -7,
     mulai: '20:00',
     selesai: '21:00',
-    tempat: 'Daring — Google Meet',
+    tempat: 'Daring - Google Meet',
     pemimpin: 'ketua',
     notulis: 'sekum',
     dept: null,
@@ -132,7 +132,7 @@ const DAFTAR: SpesifikasiNotulensi[] = [
   },
   {
     pembuat: 'sekum',
-    judul: 'Rapat Panitia SYNCHRONIZE 2026 — H-12',
+    judul: 'Rapat Panitia SYNCHRONIZE 2026 - H-12',
     hari: -1,
     mulai: '15:30',
     selesai: '17:00',
@@ -157,7 +157,7 @@ const DAFTAR: SpesifikasiNotulensi[] = [
   },
   {
     pembuat: 'kadept.kad',
-    judul: 'Rapat Departemen Kaderisasi — Persiapan LKMM-PD',
+    judul: 'Rapat Departemen Kaderisasi - Persiapan LKMM-PD',
     hari: -3,
     mulai: '18:30',
     selesai: '19:45',
@@ -180,11 +180,11 @@ const DAFTAR: SpesifikasiNotulensi[] = [
   },
   {
     pembuat: 'kadept.kominfo',
-    judul: 'Rapat Departemen Kominfo — Kalender Konten Oktober',
+    judul: 'Rapat Departemen Kominfo - Kalender Konten Oktober',
     hari: -2,
     mulai: '19:30',
     selesai: '20:30',
-    tempat: 'Daring — Discord',
+    tempat: 'Daring - Discord',
     pemimpin: 'kadept.kominfo',
     notulis: 'kominfo2',
     dept: 'KOMINFO',
